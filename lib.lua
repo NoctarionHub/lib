@@ -11,6 +11,7 @@
     Modifications and redistribution are permitted under the terms of MPL 2.0.
     Any distribution of this Source Code Form must retain this license notice.
 
+    This Version is unstable version 
 ]]
 
 local CoreGui = game:GetService("CoreGui")
@@ -830,7 +831,6 @@ function fontManager.loadFont(
     if saveToDisk == nil then
         saveToDisk = self.defaultOptions.saveToDisk
     end
-        local startTime = os.clock()
     if skipCache == nil then
         skipCache = self.defaultOptions.skipCache
     end
@@ -892,10 +892,6 @@ function fontManager.loadFont(
     pendingLoads[pendingKey] = {}
 
     local ok, result = pcall(fetchFont, self, resolvedId, requestedFontWeight, requestedFontStyle, cacheKey)
-    if os.clock() - startTime > 5 then
-        log.warn("Font load exceeded 5s, using fallback")
-        result = self.defaultOptions.fallbackFont
-    end
     local loadedFont = if ok then result else self.defaultOptions.fallbackFont
 
     waiting = pendingLoads[pendingKey]
@@ -3842,35 +3838,18 @@ function persistenceWrite.tempPathFor(fullPath: string): string
     return fullPath .. parkedExtension
 end
 
-local activeWrites = {}
-local writeQueue = {}
-
 function persistenceWrite.write(dir: string, fullPath: string, contents: string)
-    if activeWrites[fullPath] then
-        writeQueue[fullPath] = contents
-        return
-    end
-    activeWrites[fullPath] = true
-
     local tempPath = persistenceWrite.tempPathFor(fullPath)
 
     filesystem.ensureDir(dir)
     filesystem.writefile(tempPath, contents)
 
     if filesystem.readfile(tempPath) ~= contents then
-        activeWrites[fullPath] = nil
         error("parked copy did not write cleanly")
     end
 
     filesystem.writefile(fullPath, contents)
     pcall(filesystem.delfile, tempPath)
-
-    activeWrites[fullPath] = nil
-    if writeQueue[fullPath] then
-        local queued = writeQueue[fullPath]
-        writeQueue[fullPath] = nil
-        persistenceWrite.write(dir, fullPath, queued)
-    end
 end
 
 return persistenceWrite
@@ -9209,11 +9188,10 @@ function Notification.new(window, properties)
         self.window._liveNotifications = live
     end
     table.insert(live, self)
-        local overflow = #live - maxLive
-    for _ = 1, overflow do
+    while #live > maxLive do
         local oldest = table.remove(live, 1)
         if oldest and oldest ~= self then
-            task.defer(oldest._dismiss, oldest)
+            task.spawn(oldest._dismiss, oldest)
         end
     end
 
@@ -9296,10 +9274,9 @@ function Notification:_show()
 end
 
 function Notification:_dismiss()
-    if self._dismissed or self._dismissing then
+    if self._dismissed then
         return
     end
-    self._dismissing = true
     self._dismissed = true
 
     local live = self.window._liveNotifications
@@ -13921,11 +13898,10 @@ function Toast.new(window, properties, container)
     end
     self._live = live
     table.insert(live, self)
-        local overflow = #live - maxLive
-    for _ = 1, overflow do
+    while #live > maxLive do
         local oldest = table.remove(live, 1)
         if oldest and oldest ~= self then
-            task.defer(oldest._dismiss, oldest)
+            task.spawn(oldest._dismiss, oldest)
         end
     end
 
@@ -16874,7 +16850,6 @@ function Window:_quickRestore()
     variables.tweenService:Create(self.windowCorner, cornerInfo, { CornerRadius = self.theme.CornerRoundness }):Play()
 
     task.delay(0.22, function()
-        if self.unloaded then return end
         self.topbar.Visible = true
         self:_setContentVisible(true)
 
@@ -16917,7 +16892,6 @@ function Window:_quickRestore()
     end)
 
     task.delay(0.22, function()
-        if self.unloaded then return end
         local dragPos = self._restoreDragPosition
             or UDim2.new(target.X.Scale, target.X.Offset, target.Y.Scale, target.Y.Offset + self.size.Y.Offset / 2 + 15)
         self._restoreDragPosition = nil
@@ -16931,7 +16905,6 @@ function Window:_quickRestore()
     end)
 
     task.delay(0.6, function()
-        if self.unloaded then return end
         self.animating = false
         self._revealing = false
     end)
@@ -16952,10 +16925,8 @@ function Window:_firstShow()
         )
         :Play()
     task.wait(0.85)
-    if self.unloaded or not self.hidden then return end
     self:_fadeSurfaces(true, TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out))
     task.wait(0.3)
-    if self.unloaded or not self.hidden then return end
 
     if self.icon then
         variables.tweenService
@@ -16976,8 +16947,6 @@ function Window:_firstShow()
             :Play()
     end
     task.wait(0.1)
-    if self.unloaded or not self.hidden then return end
-
     if self.subtitle then
         variables.tweenService
             :Create(
@@ -17006,8 +16975,6 @@ function Window:_firstShow()
     end
 
     task.wait(0.2)
-    if self.unloaded or not self.hidden then return end
-
 
     task.spawn(function()
         local info = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
@@ -17033,8 +17000,6 @@ function Window:_firstShow()
     self:_revealElements(0.03, 2)
 
     task.wait(1)
-    if self.unloaded or not self.hidden then return end
-
 
     self:_syncDragBar()
     self.drag.drag.Visible = true
