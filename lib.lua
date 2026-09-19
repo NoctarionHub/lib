@@ -17711,16 +17711,6 @@ function Window:Unload()
         self._liveTween = nil
     end
 
-    -- Cancel every outstanding tween owned by TweenService on our instances,
-    -- so nothing fires on destroyed objects after this point.
-    for _, instance in self.instances do
-        if instance and instance.Parent then
-            pcall(function()
-                variables.tweenService:GetTweensInfo and nil
-            end)
-        end
-    end
-
     for i = #self.connections, 1, -1 do
         self.connections[i]:Disconnect()
     end
