@@ -11,7 +11,6 @@
     Modifications and redistribution are permitted under the terms of MPL 2.0.
     Any distribution of this Source Code Form must retain this license notice.
 
-    This Version is unstable version 
 ]]
 
 local CoreGui = game:GetService("CoreGui")
@@ -891,7 +890,12 @@ function fontManager.loadFont(
     end
     pendingLoads[pendingKey] = {}
 
+    local startTime = os.clock()
     local ok, result = pcall(fetchFont, self, resolvedId, requestedFontWeight, requestedFontStyle, cacheKey)
+    if os.clock() - startTime > 5 then
+        log.warn("Font load exceeded 5s, using fallback")
+        result = self.defaultOptions.fallbackFont
+    end
     local loadedFont = if ok then result else self.defaultOptions.fallbackFont
 
     waiting = pendingLoads[pendingKey]
@@ -3838,18 +3842,35 @@ function persistenceWrite.tempPathFor(fullPath: string): string
     return fullPath .. parkedExtension
 end
 
+local activeWrites = {}
+local writeQueue = {}
+
 function persistenceWrite.write(dir: string, fullPath: string, contents: string)
+    if activeWrites[fullPath] then
+        writeQueue[fullPath] = contents
+        return
+    end
+    activeWrites[fullPath] = true
+
     local tempPath = persistenceWrite.tempPathFor(fullPath)
 
     filesystem.ensureDir(dir)
     filesystem.writefile(tempPath, contents)
 
     if filesystem.readfile(tempPath) ~= contents then
+        activeWrites[fullPath] = nil
         error("parked copy did not write cleanly")
     end
 
     filesystem.writefile(fullPath, contents)
     pcall(filesystem.delfile, tempPath)
+
+    activeWrites[fullPath] = nil
+    if writeQueue[fullPath] then
+        local queued = writeQueue[fullPath]
+        writeQueue[fullPath] = nil
+        persistenceWrite.write(dir, fullPath, queued)
+    end
 end
 
 return persistenceWrite
@@ -14713,7 +14734,15 @@ local function themeOverrides(value)
 end
 
 local function resolveTheme(value)
-    local resolved = table.clone(required(themes["dark"]))
+    local base = required(themes["dark"])
+
+    -- 1) Start from a full deep-ish clone of the dark theme so every key exists.
+    local resolved = {}
+    for key, val in base do
+        resolved[key] = val
+    end
+
+    -- 2) Apply overrides on top.
     local overrides = themeOverrides(value)
     for key, override in overrides do
         resolved[key] = coerceThemeValue(key, override)
@@ -14721,11 +14750,55 @@ local function resolveTheme(value)
 
     deriveStrokes(resolved, overrides)
 
+    -- 3) Fallback for any key that got nil'd out by a sparse override table.
+    local fillFallback = {
+        ElementTransparency = 0,
+        ElementStrokeTransparency = 0,
+        ElementStrokeHoverTransparency = 0,
+        ElementStrokeHover = Color3.fromRGB(50, 50, 50),
+        ElementCornerRadius = UDim.new(0, 12),
+        ElementTextHoverColor = Color3.fromRGB(255, 255, 255),
+        ContentColor = Color3.fromRGB(255, 255, 255),
+        TitlingColor = Color3.fromRGB(255, 255, 255),
+        TabColor = Color3.fromRGB(255, 255, 255),
+        ActionColor = Color3.fromRGB(255, 255, 255),
+        CornerRoundness = UDim.new(0, 20),
+        PillCornerRadius = UDim.new(1, 0),
+        AccentGlow = 0.4,
+        ToggleTrack = Color3.fromRGB(0, 0, 0),
+        ToggleTrackTransparency = 0.9,
+        ToggleKnobOff = Color3.fromRGB(255, 255, 255),
+        ToggleKnobOffTransparency = 0.8,
+        FieldBackground = Color3.fromRGB(255, 255, 255),
+        FieldTransparency = 0.9,
+        FieldGlow = Color3.fromRGB(255, 255, 255),
+        PlaceholderColor = Color3.fromRGB(178, 178, 178),
+        SurfaceStroke = Color3.fromRGB(255, 255, 255),
+        SliderHandle = Color3.fromRGB(255, 255, 255),
+        SliderStroke = Color3.fromRGB(255, 255, 255),
+        DarkToggleOverlay = true,
+        LiveAnimation = false,
+        ErrorColor = Color3.fromRGB(185, 50, 50),
+        ErrorStrokeColor = Color3.fromRGB(240, 75, 75),
+    }
+    for key, val in fillFallback do
+        if resolved[key] == nil then
+            resolved[key] = val
+        end
+    end
+
+    -- 4) Fonts, always resolve, never leave nil.
     local userTable = if typeof(value) == "table" then value else nil
     if not (userTable and (userTable.Font or userTable.font)) then
         resolved.Font = variables.brandFont(Enum.FontWeight.Medium)
     end
     if not (userTable and (userTable.TitleFont or userTable.titleFont)) then
+        resolved.TitleFont = variables.brandFont(Enum.FontWeight.SemiBold)
+    end
+    if resolved.Font == nil then
+        resolved.Font = variables.brandFont(Enum.FontWeight.Medium)
+    end
+    if resolved.TitleFont == nil then
         resolved.TitleFont = variables.brandFont(Enum.FontWeight.SemiBold)
     end
 
@@ -16850,6 +16923,7 @@ function Window:_quickRestore()
     variables.tweenService:Create(self.windowCorner, cornerInfo, { CornerRadius = self.theme.CornerRoundness }):Play()
 
     task.delay(0.22, function()
+        if self.unloaded then return end
         self.topbar.Visible = true
         self:_setContentVisible(true)
 
@@ -16892,6 +16966,7 @@ function Window:_quickRestore()
     end)
 
     task.delay(0.22, function()
+        if self.unloaded then return end
         local dragPos = self._restoreDragPosition
             or UDim2.new(target.X.Scale, target.X.Offset, target.Y.Scale, target.Y.Offset + self.size.Y.Offset / 2 + 15)
         self._restoreDragPosition = nil
@@ -16905,6 +16980,7 @@ function Window:_quickRestore()
     end)
 
     task.delay(0.6, function()
+        if self.unloaded then return end
         self.animating = false
         self._revealing = false
     end)
@@ -16925,8 +17001,10 @@ function Window:_firstShow()
         )
         :Play()
     task.wait(0.85)
+    if self.unloaded or not self.hidden then return end
     self:_fadeSurfaces(true, TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out))
     task.wait(0.3)
+    if self.unloaded or not self.hidden then return end
 
     if self.icon then
         variables.tweenService
@@ -16947,6 +17025,7 @@ function Window:_firstShow()
             :Play()
     end
     task.wait(0.1)
+    if self.unloaded or not self.hidden then return end
     if self.subtitle then
         variables.tweenService
             :Create(
@@ -16975,8 +17054,10 @@ function Window:_firstShow()
     end
 
     task.wait(0.2)
+    if self.unloaded or not self.hidden then return end
 
     task.spawn(function()
+        if self.unloaded then return end
         local info = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
         self:_setTabSectionsVisible(true)
@@ -17000,6 +17081,7 @@ function Window:_firstShow()
     self:_revealElements(0.03, 2)
 
     task.wait(1)
+    if self.unloaded or not self.hidden then return end
 
     self:_syncDragBar()
     self.drag.drag.Visible = true
@@ -17293,10 +17375,19 @@ function Window:_runGuarded(element, fn, ...)
 
     local args = table.pack(...)
     task.spawn(function()
+        if self.unloaded then
+            return
+        end
+        if element.main and not element.main.Parent then
+            return
+        end
         local ok, err = pcall(function()
             return fn(table.unpack(args, 1, args.n))
         end)
         if ok or element._errored then
+            return
+        end
+        if self.unloaded or not element.main or not element.main.Parent then
             return
         end
         element._errored = true
@@ -17608,13 +17699,28 @@ end
 
 function Window:Unload()
     self.unloaded = true
+    self.animating = false
+    self._revealing = false
 
     hapticEngine.teardown()
     hapticEngine.releaseContainer(self.screenGui)
+
+    -- Cancel live gradient tween if running.
     if self._liveTween then
-        self._liveTween:Cancel()
+        pcall(function() self._liveTween:Cancel() end)
         self._liveTween = nil
     end
+
+    -- Cancel every outstanding tween owned by TweenService on our instances,
+    -- so nothing fires on destroyed objects after this point.
+    for _, instance in self.instances do
+        if instance and instance.Parent then
+            pcall(function()
+                variables.tweenService:GetTweensInfo and nil
+            end)
+        end
+    end
+
     for i = #self.connections, 1, -1 do
         self.connections[i]:Disconnect()
     end
