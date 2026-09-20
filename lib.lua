@@ -15544,7 +15544,7 @@ function Window:_setupDiscordInvite(opts)
                 ["Content-Type"] = "application/json",
                 ["Origin"] = "https://discord.com",
             },
-            Body = self.httpService:JSONEncode({
+            Body = variables.httpService:JSONEncode({
                 cmd = "INVITE_BROWSER",
                 nonce = self.httpService:GenerateGUID(false),
                 args = { code = code },
