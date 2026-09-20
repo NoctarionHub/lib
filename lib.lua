@@ -1848,7 +1848,7 @@ return {
 end)(required)
 
 Themes["neon void"] = (function(require)
-    return {
+return {
         WindowColor = ColorSequence.new({
         ColorSequenceKeypoint.new(0,      Color3.fromRGB(6, 8, 14)),
         ColorSequenceKeypoint.new(0.9999, Color3.fromRGB(10, 14, 20)),
@@ -14758,6 +14758,7 @@ local themeAliasMap = {
     ["gold"] = "gold",
     ["rose"] = "rose",
     ["midnight"] = "midnight",
+    ["neon void"] = "neon void", ["neonvoid"] = "neon void", ["void"] = "neon void",
 }
 
 local function normalizeThemeName(value)
