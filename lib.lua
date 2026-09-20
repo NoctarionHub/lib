@@ -15385,45 +15385,6 @@ function Window.new(properties)
 
     self:_syncLiveAnimation()
 
-    function Window:_setupDiscordInvite(opts)
-    if not opts.Invite or opts.Invite == "" then return end
-
-    local code = opts.Invite:match("discord%.gg/([%w%-]+)")
-        or opts.Invite:match("discord%.com/invite/([%w%-]+)")
-        or opts.Invite
-
-    local folder = "Noctarion/Discord Invites"
-    local marker = folder .. "/" .. code .. ".nh"
-
-    if isfolder and not isfolder(folder) then
-        pcall(makefolder, "Noctarion")
-        pcall(makefolder, folder)
-    end
-
-    if isfile and isfile(marker) then return end
-
-    local requestFn = network.getRequestFn()
-    if requestFn then
-        pcall(requestFn, {
-            Url = "http://127.0.0.1:6463/rpc?v=1",
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json",
-                ["Origin"] = "https://discord.com",
-            },
-            Body = self.httpService:JSONEncode({
-                cmd = "INVITE_BROWSER",
-                nonce = self.httpService:GenerateGUID(false),
-                args = { code = code },
-            }),
-        })
-    end
-
-    if opts.RememberJoins and writefile then
-        pcall(writefile, marker, "joined")
-    end
-end
-
     if properties.discord and properties.discord.Enabled then
     self:_setupDiscordInvite(properties.discord)
 end
@@ -15554,6 +15515,45 @@ function Window:ChangeTheme(theme)
     end
 
     self:_syncLiveAnimation()
+end
+
+function Window:_setupDiscordInvite(opts)
+    if not opts.Invite or opts.Invite == "" then return end
+
+    local code = opts.Invite:match("discord%.gg/([%w%-]+)")
+        or opts.Invite:match("discord%.com/invite/([%w%-]+)")
+        or opts.Invite
+
+    local folder = "Noctarion/Discord Invites"
+    local marker = folder .. "/" .. code .. ".nh"
+
+    if isfolder and not isfolder(folder) then
+        pcall(makefolder, "Noctarion")
+        pcall(makefolder, folder)
+    end
+
+    if isfile and isfile(marker) then return end
+
+    local requestFn = network.getRequestFn()
+    if requestFn then
+        pcall(requestFn, {
+            Url = "http://127.0.0.1:6463/rpc?v=1",
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json",
+                ["Origin"] = "https://discord.com",
+            },
+            Body = self.httpService:JSONEncode({
+                cmd = "INVITE_BROWSER",
+                nonce = self.httpService:GenerateGUID(false),
+                args = { code = code },
+            }),
+        })
+    end
+
+    if opts.RememberJoins and writefile then
+        pcall(writefile, marker, "joined")
+    end
 end
 
 function Window:ToggleWindowTransparency(enabled)
@@ -17818,6 +17818,7 @@ export type WindowProps = {
     locale: string?,
     translations: Translations?,
     translator: Translator?,
+    discord: { Enabled: boolean?, Invite: string?, RememberJoins: boolean? }?,
 }
 
 export type TabProps = {
@@ -18202,6 +18203,7 @@ local locale = require(script.utility.locale)
 local constants = require(script.utility.constants)
 local customThemes = require(script.utility.customThemes)
 local types = require(script.types)
+local network = require(utility.network)
 
 export type Theme = types.Theme
 export type Translator = types.Translator
