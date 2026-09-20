@@ -147,7 +147,7 @@ constants.icons = {
     check = 125626312718314,
     dot = 91452555903853,
     colorpicker = 91452555903853,
-    banner = 82213459696859,
+    banner = "rbxassetid://82213459696859",
     config = 125823673784681,
     rayfield = 80387863064905,
 }
