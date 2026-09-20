@@ -1890,6 +1890,20 @@ Themes["neon void"] = (function(require)
     NeutralButton       = Color3.fromRGB(22, 28, 34),
     NeutralButtonHover  = Color3.fromRGB(30, 38, 44),
     NeutralButtonStroke = Color3.fromRGB(255, 255, 255),
+
+    ContentColor = Color3.fromRGB(190, 205, 200),
+    TitlingColor = Color3.fromRGB(230, 255, 245),
+    ActionColor  = Color3.fromRGB(255, 255, 255),
+
+    AccentColor  = Color3.fromRGB(70, 255, 190),
+    AccentStroke = Color3.fromRGB(140, 255, 220),
+    AccentGlow   = 0.4,
+
+    StatBackground    = Color3.fromRGB(12, 16, 20),
+    DropdownHighlight = Color3.fromRGB(70, 255, 190),
+
+    ErrorColor       = Color3.fromRGB(220, 70, 70),
+    ErrorStrokeColor = Color3.fromRGB(255, 100, 100),
 }
 end)(required)
 
