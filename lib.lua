@@ -15424,6 +15424,10 @@ function Window.new(properties)
     end
 end
 
+    if properties.discord and properties.discord.Enabled then
+    self:_setupDiscordInvite(properties.discord)
+end
+
     return self
 end
 
