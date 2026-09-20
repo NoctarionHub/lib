@@ -14641,6 +14641,7 @@ local search = require(script.Parent.search)
 local sidebar = require(script.Parent.sidebar)
 
 local variables = require(utility.variables)
+local network = require(utility.network)
 
 local themes = Themes
 
@@ -18203,7 +18204,6 @@ local locale = require(script.utility.locale)
 local constants = require(script.utility.constants)
 local customThemes = require(script.utility.customThemes)
 local types = require(script.types)
-local network = require(utility.network)
 
 export type Theme = types.Theme
 export type Translator = types.Translator
