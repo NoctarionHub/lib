@@ -18193,7 +18193,7 @@ local function createBanner()
     bannerImage.BorderSizePixel = 0
     bannerImage.Image = image.resolve(constants.icons.banner)
     bannerImage.Position = UDim2.new(0.5, -26, 0.5, 0)
-    bannerImage.Size = UDim2.fromOffset(262, 60)
+    bannerImage.Size = UDim2.fromOffset(262, 262)
     bannerImage.Parent = banner
 
     local plusLabel = Instance.new("TextLabel")
