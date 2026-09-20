@@ -15387,8 +15387,8 @@ function Window.new(properties)
     self:_syncLiveAnimation()
 
     if properties.discord and properties.discord.Enabled then
-    self:_setupDiscordInvite(properties.discord)
-end
+        self:_setupDiscordInvite(properties.discord)
+    end
 
     return self
 end
@@ -15546,7 +15546,7 @@ function Window:_setupDiscordInvite(opts)
             },
             Body = variables.httpService:JSONEncode({
                 cmd = "INVITE_BROWSER",
-                nonce = self.httpService:GenerateGUID(false),
+                nonce = variables.httpService:GenerateGUID(false),
                 args = { code = code },
             }),
         })
