@@ -15320,7 +15320,7 @@ function Window.new(properties)
     local _INIT_THEMES = {
         ["Dark"] = "default", ["Amethyst"] = "amethyst", ["Rose"] = "rose",
         ["Frost"] = "frost", ["Cobalt"] = "cobalt", ["Ember"] = "ember",
-        ["Blood Red"] = "bloodred", ["Gold"] = "gold", ["Midnight"] = "midnight",
+        ["Blood Red"] = "bloodred", ["Gold"] = "gold", ["Midnight"] = "midnight", ["Neon Void"] = "neon void",
     }
     local initFonts = {
         ["Gotham"]           = Font.new("rbxasset://fonts/families/GothamSSm.json",       Enum.FontWeight.Medium,  Enum.FontStyle.Normal),
