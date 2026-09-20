@@ -14944,7 +14944,7 @@ function Window.new(properties)
     })
 
     self.settings = {
-        toggleKeybind = Enum.KeyCode.K,
+        toggleKeybind = Enum.KeyCode.F,
         mouseOverride = true,
         windowComponents = true,
         welcomeToast = true,
@@ -15384,6 +15384,45 @@ function Window.new(properties)
     self:_buildSettingsUI()
 
     self:_syncLiveAnimation()
+
+    function Window:_setupDiscordInvite(opts)
+    if not opts.Invite or opts.Invite == "" then return end
+
+    local code = opts.Invite:match("discord%.gg/([%w%-]+)")
+        or opts.Invite:match("discord%.com/invite/([%w%-]+)")
+        or opts.Invite
+
+    local folder = "Noctarion/Discord Invites"
+    local marker = folder .. "/" .. code .. ".nh"
+
+    if isfolder and not isfolder(folder) then
+        pcall(makefolder, "Noctarion")
+        pcall(makefolder, folder)
+    end
+
+    if isfile and isfile(marker) then return end
+
+    local requestFn = network.getRequestFn()
+    if requestFn then
+        pcall(requestFn, {
+            Url = "http://127.0.0.1:6463/rpc?v=1",
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json",
+                ["Origin"] = "https://discord.com",
+            },
+            Body = self.httpService:JSONEncode({
+                cmd = "INVITE_BROWSER",
+                nonce = self.httpService:GenerateGUID(false),
+                args = { code = code },
+            }),
+        })
+    end
+
+    if opts.RememberJoins and writefile then
+        pcall(writefile, marker, "joined")
+    end
+end
 
     return self
 end
