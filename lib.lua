@@ -1723,65 +1723,7 @@ return {
     NeutralButtonStroke = Color3.fromRGB(200, 156, 50),
 }
 end)(required)
-Themes["Neon Void"] = (function(require)
-return {
-    WindowColor = ColorSequence.new({
-        ColorSequenceKeypoint.new(0,      Color3.fromRGB(6, 8, 14)),
-        ColorSequenceKeypoint.new(0.9999, Color3.fromRGB(10, 14, 20)),
-        ColorSequenceKeypoint.new(1,      Color3.fromRGB(14, 20, 26)),
-    }),
-    ShadowColor = Color3.fromRGB(4, 5, 8),
 
-    ElementGradient                = Color3.fromRGB(16, 20, 26),
-    ElementStroke                  = Color3.fromRGB(30, 40, 38),
-    ElementStrokeGradient          = Color3.fromRGB(40, 55, 50),
-    ElementStrokeHover             = Color3.fromRGB(70, 255, 190),
-    ElementTransparency            = 0,
-    ElementStrokeTransparency      = 0,
-    ElementStrokeHoverTransparency = 0,
-    ElementTextHoverColor          = Color3.fromRGB(255, 255, 255),
-
-    TabColor      = Color3.fromRGB(230, 255, 245),
-    TabBackground = Color3.fromRGB(18, 24, 30),
-    TabStroke     = Color3.fromRGB(70, 255, 190),
-
-    SliderBackground      = Color3.fromRGB(16, 20, 26),
-    SliderBackgroundHover = Color3.fromRGB(24, 30, 38),
-    SliderProgress        = Color3.fromRGB(70, 255, 190),
-    SliderStroke          = Color3.fromRGB(255, 255, 255),
-    SliderHandle          = Color3.fromRGB(255, 255, 255),
-
-    ToggleTrack               = Color3.fromRGB(0, 0, 0),
-    ToggleTrackTransparency   = 0.9,
-    ToggleKnobOff             = Color3.fromRGB(255, 255, 255),
-    ToggleKnobOffTransparency = 0.8,
-    DarkToggleOverlay         = true,
-
-    FieldBackground   = Color3.fromRGB(255, 255, 255),
-    FieldTransparency = 0.92,
-    FieldGlow         = Color3.fromRGB(70, 255, 190),
-    PlaceholderColor  = Color3.fromRGB(150, 165, 160),
-    SurfaceStroke     = Color3.fromRGB(255, 255, 255),
-
-    NeutralButton       = Color3.fromRGB(22, 28, 34),
-    NeutralButtonHover  = Color3.fromRGB(30, 38, 44),
-    NeutralButtonStroke = Color3.fromRGB(255, 255, 255),
-
-    ContentColor = Color3.fromRGB(190, 205, 200),
-    TitlingColor = Color3.fromRGB(230, 255, 245),
-    ActionColor  = Color3.fromRGB(255, 255, 255),
-
-    AccentColor  = Color3.fromRGB(70, 255, 190),
-    AccentStroke = Color3.fromRGB(140, 255, 220),
-    AccentGlow   = 0.4,
-
-    StatBackground    = Color3.fromRGB(12, 16, 20),
-    DropdownHighlight = Color3.fromRGB(70, 255, 190),
-
-    ErrorColor       = Color3.fromRGB(220, 70, 70),
-    ErrorStrokeColor = Color3.fromRGB(255, 100, 100),
-}
-end)(required)
 Themes["rose"] = (function(require)
 return {
     WindowColor = ColorSequence.new({
@@ -1902,6 +1844,52 @@ return {
     NeutralButton       = Color3.fromRGB(28, 22, 64),
     NeutralButtonHover  = Color3.fromRGB(40, 32, 88),
     NeutralButtonStroke = Color3.fromRGB(100, 88, 200),
+}
+end)(required)
+
+Themes["neon void"] = (function(require)
+    return {
+        WindowColor = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,      Color3.fromRGB(6, 8, 14)),
+        ColorSequenceKeypoint.new(0.9999, Color3.fromRGB(10, 14, 20)),
+        ColorSequenceKeypoint.new(1,      Color3.fromRGB(14, 20, 26)),
+    }),
+    ShadowColor = Color3.fromRGB(4, 5, 8),
+
+    ElementGradient                = Color3.fromRGB(16, 20, 26),
+    ElementStroke                  = Color3.fromRGB(30, 40, 38),
+    ElementStrokeGradient          = Color3.fromRGB(40, 55, 50),
+    ElementStrokeHover             = Color3.fromRGB(70, 255, 190),
+    ElementTransparency            = 0,
+    ElementStrokeTransparency      = 0,
+    ElementStrokeHoverTransparency = 0,
+    ElementTextHoverColor          = Color3.fromRGB(255, 255, 255),
+
+    TabColor      = Color3.fromRGB(230, 255, 245),
+    TabBackground = Color3.fromRGB(18, 24, 30),
+    TabStroke     = Color3.fromRGB(70, 255, 190),
+
+    SliderBackground      = Color3.fromRGB(16, 20, 26),
+    SliderBackgroundHover = Color3.fromRGB(24, 30, 38),
+    SliderProgress        = Color3.fromRGB(70, 255, 190),
+    SliderStroke          = Color3.fromRGB(255, 255, 255),
+    SliderHandle          = Color3.fromRGB(255, 255, 255),
+
+    ToggleTrack               = Color3.fromRGB(0, 0, 0),
+    ToggleTrackTransparency   = 0.9,
+    ToggleKnobOff             = Color3.fromRGB(255, 255, 255),
+    ToggleKnobOffTransparency = 0.8,
+    DarkToggleOverlay         = true,
+
+    FieldBackground   = Color3.fromRGB(255, 255, 255),
+    FieldTransparency = 0.92,
+    FieldGlow         = Color3.fromRGB(70, 255, 190),
+    PlaceholderColor  = Color3.fromRGB(150, 165, 160),
+    SurfaceStroke     = Color3.fromRGB(255, 255, 255),
+
+    NeutralButton       = Color3.fromRGB(22, 28, 34),
+    NeutralButtonHover  = Color3.fromRGB(30, 38, 44),
+    NeutralButtonStroke = Color3.fromRGB(255, 255, 255),
 }
 end)(required)
 
@@ -16233,6 +16221,7 @@ function Window:_buildSettingsUI()
         ["Blood Red"] = "bloodred",
         ["Gold"]      = "gold",
         ["Midnight"]  = "midnight",
+        ["Neon Void"] = "neon void",
     }
     local appearanceFonts = {
         ["Gotham"]           = Font.new("rbxasset://fonts/families/GothamSSm.json",       Enum.FontWeight.Medium,  Enum.FontStyle.Normal),
