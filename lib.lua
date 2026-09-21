@@ -15265,7 +15265,6 @@ function Window.new(properties)
             if self.logoTitle then
                 self.logoTitleLabel = self:Create("TextLabel", {
                     Text = self.logoTitle,
-                    Position = UDim2.new(0.5, 0, 0, self.logoSize - 10),
                     Size = UDim2.new(1, 0, 0, 20),
                     BackgroundTransparency = 1,
                     TextSize = 18,
