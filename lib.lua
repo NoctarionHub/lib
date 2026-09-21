@@ -15248,7 +15248,7 @@ function Window.new(properties)
                 FillDirection = Enum.FillDirection.Vertical,
                 HorizontalAlignment = Enum.HorizontalAlignment.Center,
                 VerticalAlignment = Enum.VerticalAlignment.Center,
-                Padding = UDim.new(0, 0),
+                Padding = UDim.new(0, -3),
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = self.logoFrame,
             })
@@ -15261,15 +15261,6 @@ function Window.new(properties)
                 LayoutOrder = 0,
                 Parent = self.logoFrame,
             }, { ImageColor3 = "TitlingColor" })
-
-            -- SPACER
-            self:Create("Frame", {
-                Name = "Spacer",
-                Size = UDim2.new(1, 0, 0, 20),   -- <-- tinggi spacer = geser turun
-                BackgroundTransparency = 1,
-                LayoutOrder = 1,
-                Parent = self.logoFrame,
-            })
 
             if self.logoTitle then
                 self.logoTitleLabel = self:Create("TextLabel", {
