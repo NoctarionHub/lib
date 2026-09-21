@@ -2270,17 +2270,7 @@ end
 function image.assign(instance: Instance, property: string, value: unknown)
     local target = instance :: any
     if not imageProperties[property] then
-        local resolved = image.resolve(value)
-target[property] = resolved
-
--- kalau URL dan belum siap, tunggu callback
-if type(value) == "string" and string.match(value, "^https?://") and resolved == "" then
-    imageCache.resolveUrl(value, function(uri)
-        if instance.Parent then
-            instance[property] = uri
-        end
-    end)
-end
+        target[property] = value
         return
     end
 
@@ -2326,6 +2316,14 @@ end
     end
 
     target[property] = image.resolve(value)
+
+    if type(value) == "string" and string.match(value, "^https?://") and target[property] == "" then
+        imageCache.resolveUrl(value, function(uri)
+            if instance.Parent then
+                instance[property] = uri
+            end
+        end)
+    end
 
     if variables.secureMode and not settled then
         local id = idOf(value)
@@ -2423,6 +2421,7 @@ local filesystem = require(script.Parent.filesystem)
 local path = require(script.Parent.path)
 local variables = require(script.Parent.variables)
 local constants = require(script.Parent.constants)
+local network = require(script.Parent.network)
 
 export type RewriteMap = { [number]: string }
 export type CacheSettledCallback = (failed: number) -> ()
