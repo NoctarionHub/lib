@@ -15464,7 +15464,7 @@ function Window.new(properties)
     self:Create("UIShadow", {
         BlurRadius = UDim.new(0, 12),
         Color = Color3.fromRGB(0, 0, 0),
-        Transparency = 1,
+        Transparency = 0.5,
         Offset = UDim2.new(0, 0, 0, 2),
         Spread = UDim2.new(0, 2, 0, 2),
         ZIndex = -1,
@@ -15485,21 +15485,6 @@ function Window.new(properties)
         ScaleType = Enum.ScaleType.Crop,
         ZIndex = 0,
         Parent = self.logoFrame,
-    })
-
-    -- shade gelap biar teks kebaca
-    self.logoShade = self:Create("Frame", {
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        ZIndex = 1,
-        Parent = self.logoFrame,
-    })
-
-    self:Create("UICorner", {
-        CornerRadius = UDim.new(0, 12),
-        Parent = self.logoShade,
     })
 
     self:Create("UIGradient", {
