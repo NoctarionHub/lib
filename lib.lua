@@ -15487,12 +15487,6 @@ function Window.new(properties)
         Parent = self.logoFrame,
     })
 
-    self:Create("UIGradient", {
-        Rotation = 90,
-        Transparency = NumberSequence.new(1),
-        Parent = self.logoShade,
-    })
-
     -- container teks overlay, nempel kiri bawah
     self.logoTextFrame = self:Create("Frame", {
         AnchorPoint = Vector2.new(0, 1),
