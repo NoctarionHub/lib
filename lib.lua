@@ -15417,11 +15417,14 @@ function Window.new(properties)
 
         -- logo di atas tab list (sidebar)
         if self.logo then
+    -- card pembungkus, punya bg, stroke, shadow sendiri
     self.logoFrame = self:Create("Frame", {
         Name = "LogoFrame",
-        Size = UDim2.new(1, -30, 0, self.logoSize),
+        Size = UDim2.new(1, -30, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
         Position = UDim2.fromOffset(15, 15),
-        BackgroundTransparency = 1,
+        BackgroundColor3 = Color3.fromRGB(15, 10, 25),
+        BackgroundTransparency = 0.3,
         BorderSizePixel = 0,
         ClipsDescendants = true,
         Parent = self.sidebar,
@@ -15449,68 +15452,71 @@ function Window.new(properties)
         Parent = self.logoFrame,
     })
 
-    -- gambar full nutup seluruh card
-    self.logoLabel = self:Create("ImageLabel", {
-        Image = self.logo,
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency = 1,
-        ImageTransparency = 0,
-        ScaleType = Enum.ScaleType.Crop,
-        ZIndex = 0,
-        Parent = self.logoFrame,
-    })
-
-    -- container teks overlay, nempel kiri bawah, di atas gambar
-    self.logoTextFrame = self:Create("Frame", {
-        AnchorPoint = Vector2.new(0, 1),
-        Position = UDim2.new(0, 14, 1, -12),
-        Size = UDim2.new(1, -28, 0, 0),
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundTransparency = 1,
-        ZIndex = 2,
-        Parent = self.logoFrame,
-    })
-
+    -- isi card: numpuk vertikal
     self:Create("UIListLayout", {
         FillDirection = Enum.FillDirection.Vertical,
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
-        VerticalAlignment = Enum.VerticalAlignment.Bottom,
-        Padding = UDim.new(0, 2),
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        VerticalAlignment = Enum.VerticalAlignment.Top,
+        Padding = UDim.new(0, 6),
         SortOrder = Enum.SortOrder.LayoutOrder,
-        Parent = self.logoTextFrame,
+        Parent = self.logoFrame,
     })
 
+    self:Create("UIPadding", {
+        PaddingTop = UDim.new(0, 10),
+        PaddingBottom = UDim.new(0, 10),
+
+        Parent = self.logoFrame,
+    })
+
+    -- 1. gambar logo
+    self.logoLabel = self:Create("ImageLabel", {
+        Image = self.logo,
+        Size = UDim2.fromOffset(self.logoSize, self.logoSize),
+        BackgroundTransparency = 1,
+        ImageTransparency = 1,
+        ScaleType = Enum.ScaleType.Fit,
+        LayoutOrder = 0,
+        Parent = self.logoFrame,
+    })
+
+    -- 2. logoTitle
     if self.logoTitle then
         self.logoTitleLabel = self:Create("TextLabel", {
             Text = self.logoTitle,
-            Size = UDim2.new(1, 0, 0, 22),
+            Size = UDim2.new(1, -20, 0, 20),
             BackgroundTransparency = 1,
             TextSize = 18,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.TextYAlignment.Bottom,
+            TextXAlignment = Enum.TextXAlignment.Center,
             TextTransparency = 1,
-            LayoutOrder = 0,
-            ZIndex = 3,
-            Parent = self.logoTextFrame,
+            LayoutOrder = 1,
+            Parent = self.logoFrame,
         }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
     end
 
+    -- 3. logoSubtitle (kalau ada)
     if self.logoSubtitle then
         self.logoSubtitleLabel = self:Create("TextLabel", {
             Text = self.logoSubtitle,
-            Size = UDim2.new(1, 0, 0, 16),
+            Size = UDim2.new(1, -20, 0, 16),
             BackgroundTransparency = 1,
             TextSize = 13,
-            TextXAlignment = Enum.TextXAlignment.Left,
+            TextXAlignment = Enum.TextXAlignment.Center,
             TextTransparency = 1,
-            LayoutOrder = 1,
-            ZIndex = 3,
-            Parent = self.logoTextFrame,
+            LayoutOrder = 2,
+            Parent = self.logoFrame,
         }, { TextColor3 = "TitlingColor", FontFace = "Font" })
     end
 
-    self.tabList.Position = UDim2.fromOffset(0, self.logoSize + 30)
-    self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoSize + 30))
+    -- geser tabList setelah card selesai layout
+    task.defer(function()
+        local h = self.logoFrame.AbsoluteSize.Y
+        if h <= 0 then
+            h = self.logoSize + (if self.logoTitle then 26 else 0) + (if self.logoSubtitle then 22 else 0) + 20
+        end
+        self.tabList.Position = UDim2.fromOffset(0, h + 35)
+        self.tabList.Size = UDim2.new(1, 0, 1, -(h + 35))
+    end)
 end
     else
         self.tabList = self:Create("ScrollingFrame", {
