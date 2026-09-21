@@ -15436,14 +15436,39 @@ function Window.new(properties)
 
         -- logo di atas tab list (sidebar)
         if self.logo then
-    -- container card logo
-    self.logoFrame = self:Create("Frame", {
+        self.logoFrame = self:Create("Frame", {
         Name = "LogoFrame",
         Size = UDim2.new(1, -30, 0, self.logoSize),
         Position = UDim2.fromOffset(15, 15),
-        BackgroundTransparency = 1,
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0),   -- <-- bg sendiri
+        BackgroundTransparency = 0.85,                -- <-- tipis aja
+        BorderSizePixel = 0,
         ClipsDescendants = true,
         Parent = self.sidebar,
+    })
+
+    self:Create("UICorner", {
+        CornerRadius = UDim.new(0, 12),
+        Parent = self.logoFrame,
+    })
+
+    -- stroke biar ada garis batas dari window
+    self:Create("UIStroke", {
+        Color = Color3.fromRGB(255, 255, 255),
+        Thickness = 1,
+        Transparency = 0.85,
+        Parent = self.logoFrame,
+    })
+
+    -- shadow biar keliatan "ngambang"
+    self:Create("UIShadow", {
+        BlurRadius = UDim.new(0, 12),
+        Color = Color3.fromRGB(0, 0, 0),
+        Transparency = 0.5,
+        Offset = UDim2.new(0, 0, 0, 2),
+        Spread = UDim2.new(0, 2, 0, 2),
+        ZIndex = -1,
+        Parent = self.logoFrame,
     })
 
     self:Create("UICorner", {
@@ -15456,7 +15481,7 @@ function Window.new(properties)
         Image = self.logo,
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
-        ImageTransparency = 0,
+        ImageTransparency = 1,
         ScaleType = Enum.ScaleType.Crop,
         ZIndex = 0,
         Parent = self.logoFrame,
