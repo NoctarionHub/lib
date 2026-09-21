@@ -15469,6 +15469,11 @@ function Window.new(properties)
         Parent = self.logoFrame,
     })
 
+    self:Create("UISizeConstraint", {
+    MaxSize = Vector2.new(math.huge, 120),
+    Parent = self.logoFrame,
+})
+
     -- 1. gambar logo
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
