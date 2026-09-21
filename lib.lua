@@ -15441,7 +15441,7 @@ function Window.new(properties)
         Size = UDim2.new(1, -30, 0, self.logoSize),
         Position = UDim2.fromOffset(15, 15),
         BackgroundColor3 = Color3.fromRGB(0, 0, 0),   -- <-- bg sendiri
-        BackgroundTransparency = 0.85,                -- <-- tipis aja
+        BackgroundTransparency = 1,                -- <-- tipis aja
         BorderSizePixel = 0,
         ClipsDescendants = true,
         Parent = self.sidebar,
