@@ -15490,7 +15490,7 @@ function Window.new(properties)
             Parent = self.logoTextFrame,
         }, {
             TextColor3 = Color3.fromRGB(255, 255, 255),
-            FontFace = variables.brandFont(Enum.FontWeight.SemiBold),
+           
         })
     end
 
@@ -15507,7 +15507,7 @@ function Window.new(properties)
             Parent = self.logoTextFrame,
         }, {
             TextColor3 = Color3.fromRGB(220, 220, 220),
-            FontFace = variables.brandFont(Enum.FontWeight.Medium),
+            
         })
     end
 
