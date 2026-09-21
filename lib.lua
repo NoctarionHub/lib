@@ -15440,7 +15440,7 @@ function Window.new(properties)
         Name = "LogoFrame",
         Size = UDim2.new(1, -30, 0, self.logoSize),
         Position = UDim2.fromOffset(15, 15),
-        BackgroundColor3 = Color3.fromRGB(0, 0, 0),   -- <-- bg sendiri
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),   -- <-- bg sendiri
         BackgroundTransparency = 1,                -- <-- tipis aja
         BorderSizePixel = 0,
         ClipsDescendants = true,
