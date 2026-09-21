@@ -16194,6 +16194,9 @@ end
 if self.logoTitleLabel then
     variables.tweenService:Create(self.logoTitleLabel, fadeInfo, { TextTransparency = 1 }):Play()
 end
+if self.logoSubtitleLabel then
+    variables.tweenService:Create(self.logoSubtitleLabel, fadeInfo, { TextTransparency = 1 }):Play()
+end
 
     for _, tab in pairs(self.tabs) do
         if not tab.neglectSelector and tab.topbarItem then
@@ -17346,6 +17349,9 @@ end
 if self.logoTitleLabel then
     variables.tweenService:Create(self.logoTitleLabel, fadeInfo, { TextTransparency = 0 }):Play()
 end
+if self.logoSubtitleLabel then
+    variables.tweenService:Create(self.logoSubtitleLabel, fadeInfo, { TextTransparency = 0.35 }):Play()
+end
 
         for _, tab in pairs(self.tabs) do
             if not tab.neglectSelector and tab.topbarItem then
@@ -17448,10 +17454,18 @@ function Window:_firstShow()
             { ImageTransparency = 0 })
         :Play()
 end
+
 if self.logoTitleLabel then
     variables.tweenService
         :Create(self.logoTitleLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out),
             { TextTransparency = 0 })
+        :Play()
+end
+
+if self.logoSubtitleLabel then
+    variables.tweenService
+        :Create(self.logoSubtitleLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out),
+            { TextTransparency = 0.35 })
         :Play()
 end
 
