@@ -15279,7 +15279,7 @@ function Window.new(properties)
                     TextSize = 18,
                     TextXAlignment = Enum.TextXAlignment.Center,
                     TextTransparency = 1,
-                    LayoutOrder = 1,
+                    LayoutOrder = 2,
                     Parent = self.logoFrame,
                 }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
             end
