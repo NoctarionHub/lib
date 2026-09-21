@@ -15440,62 +15440,6 @@ function Window.new(properties)
     self:_watchViewport()
     self:_buildSettingsUI()
 
-    if self.logo then
-    task.defer(function()
-        local firstTab
-        for _, tab in self.tabs do
-            if not tab.neglectSelector then
-                firstTab = tab
-                break
-            end
-        end
-        if not firstTab then return end
-
-        local hasTitle = self.logoTitle ~= nil and self.logoTitle ~= ""
-        local frameHeight = self.logoSize + 16 + (if hasTitle then 28 else 0)
-
-        self.logoFrame = self:Create("Frame", {
-            Name = "LogoFrame",
-            Size = UDim2.new(1, -20, 0, frameHeight),
-            BackgroundTransparency = 1,
-            LayoutOrder = -1,
-            Parent = firstTab.tabPage,
-        })
-
-        self:Create("UIListLayout", {
-            FillDirection = Enum.FillDirection.Vertical,
-            HorizontalAlignment = Enum.HorizontalAlignment.Center,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            Padding = UDim.new(0, 8),
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Parent = self.logoFrame,
-        })
-
-        self.logoLabel = self:Create("ImageLabel", {
-            Name = "Logo",
-            Image = self.logo,
-            Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-            BackgroundTransparency = 1,
-            ImageTransparency = 1,
-            LayoutOrder = 0,
-            Parent = self.logoFrame,
-        }, { ImageColor3 = "TitlingColor" })
-
-        if hasTitle then
-            self.logoTitleLabel = self:Create("TextLabel", {
-                Name = "LogoTitle",
-                Text = self.logoTitle,
-                Size = UDim2.new(1, 0, 0, 20),
-                BackgroundTransparency = 1,
-                TextSize = 18,
-                TextXAlignment = Enum.TextXAlignment.Center,
-                TextTransparency = 1,
-                LayoutOrder = 1,
-                Parent = self.logoFrame,
-            }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
-        end
-    end)
-end
 
     self:_syncLiveAnimation()
 
