@@ -15248,7 +15248,7 @@ function Window.new(properties)
                 FillDirection = Enum.FillDirection.Vertical,
                 HorizontalAlignment = Enum.HorizontalAlignment.Center,
                 VerticalAlignment = Enum.VerticalAlignment.Center,
-                Padding = UDim.new(0, 0),
+                Padding = UDim.new(0, 8),
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = self.logoFrame,
             })
@@ -15265,6 +15265,7 @@ function Window.new(properties)
             if self.logoTitle then
                 self.logoTitleLabel = self:Create("TextLabel", {
                     Text = self.logoTitle,
+                    Position = UDim2.new(0.5, 0, 0, self.logoSize - 10),
                     Size = UDim2.new(1, 0, 0, 20),
                     BackgroundTransparency = 1,
                     TextSize = 18,
