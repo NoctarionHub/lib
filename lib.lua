@@ -15239,7 +15239,7 @@ function Window.new(properties)
             self.logoFrame = self:Create("Frame", {
                 Name = "LogoFrame",
                 Size = UDim2.new(1, -30, 0, self.logoSize + (if self.logoTitle then 28 else 16)),
-                Position = UDim2.fromOffset(15, 5),
+                Position = UDim2.fromOffset(15, 15),
                 BackgroundTransparency = 1,
                 Parent = self.sidebar,
             })
@@ -15265,6 +15265,8 @@ function Window.new(properties)
             if self.logoTitle then
                 self.logoTitleLabel = self:Create("TextLabel", {
                     Text = self.logoTitle,
+                    AnchorPoint = Vector2.new(0.5, 0),
+                    Position = UDim2.new(0.5, 0, 0, self.logoSize - 5),
                     Size = UDim2.new(1, 0, 0, 20),
                     BackgroundTransparency = 1,
                     TextSize = 18,
