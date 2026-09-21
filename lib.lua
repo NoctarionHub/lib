@@ -15436,12 +15436,11 @@ function Window.new(properties)
 
         -- logo di atas tab list (sidebar)
         if self.logo then
-        self.logoFrame = self:Create("Frame", {
+    self.logoFrame = self:Create("Frame", {
         Name = "LogoFrame",
         Size = UDim2.new(1, -30, 0, self.logoSize),
         Position = UDim2.fromOffset(15, 15),
-        BackgroundColor3 = Color3.fromRGB(255, 255, 255),   -- <-- bg sendiri
-        BackgroundTransparency = 1,                -- <-- tipis aja
+        BackgroundTransparency = 1,
         BorderSizePixel = 0,
         ClipsDescendants = true,
         Parent = self.sidebar,
@@ -15452,7 +15451,6 @@ function Window.new(properties)
         Parent = self.logoFrame,
     })
 
-    -- stroke biar ada garis batas dari window
     self:Create("UIStroke", {
         Color = Color3.fromRGB(255, 255, 255),
         Thickness = 1,
@@ -15460,7 +15458,6 @@ function Window.new(properties)
         Parent = self.logoFrame,
     })
 
-    -- shadow biar keliatan "ngambang"
     self:Create("UIShadow", {
         BlurRadius = UDim.new(0, 12),
         Color = Color3.fromRGB(0, 0, 0),
@@ -15471,18 +15468,18 @@ function Window.new(properties)
         Parent = self.logoFrame,
     })
 
-    -- gambar sebagai background card
+    -- gambar full nutup seluruh card
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
-        ImageTransparency = 1,
+        ImageTransparency = 0,
         ScaleType = Enum.ScaleType.Crop,
         ZIndex = 0,
         Parent = self.logoFrame,
     })
 
-    -- container teks overlay, nempel kiri bawah
+    -- container teks overlay, nempel kiri bawah, di atas gambar
     self.logoTextFrame = self:Create("Frame", {
         AnchorPoint = Vector2.new(0, 1),
         Position = UDim2.new(0, 14, 1, -12),
@@ -15507,7 +15504,7 @@ function Window.new(properties)
             Text = self.logoTitle,
             Size = UDim2.new(1, 0, 0, 22),
             BackgroundTransparency = 1,
-            TextSize = 14,
+            TextSize = 18,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextYAlignment = Enum.TextYAlignment.Bottom,
             TextTransparency = 1,
@@ -15522,7 +15519,7 @@ function Window.new(properties)
             Text = self.logoSubtitle,
             Size = UDim2.new(1, 0, 0, 16),
             BackgroundTransparency = 1,
-            TextSize = 12,
+            TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextTransparency = 1,
             LayoutOrder = 1,
@@ -15531,7 +15528,6 @@ function Window.new(properties)
         }, { TextColor3 = "TitlingColor", FontFace = "Font" })
     end
 
-    -- posisi tabList di bawah card
     self.tabList.Position = UDim2.fromOffset(0, self.logoSize + 30)
     self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoSize + 30))
 end
