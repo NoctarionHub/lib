@@ -15445,37 +15445,116 @@ function Window.new(properties)
         AutomaticSize = Enum.AutomaticSize.Y,
         Position = UDim2.fromOffset(15, 15),
         BackgroundTransparency = 1,
+        ClipsDescendants = true,
         Parent = self.sidebar,
+    })
+
+    self:Create("UICorner", {
+        CornerRadius = UDim.new(0, 12),
+        Parent = self.logoFrame,
+    })
+
+    -- gambar logo sebagai background card
+    self.logoLabel = self:Create("ImageLabel", {
+        Image = self.logo,
+        Size = UDim2.new(1, 0, 0, self.logoSize),
+        BackgroundTransparency = 1,
+        ImageTransparency = 1,
+        ScaleType = Enum.ScaleType.Crop,
+        LayoutOrder = 0,
+        ZIndex = 0,
+        Parent = self.logoFrame,
+    })
+
+    -- gradient gelap di bawah biar teks kebaca
+    self.logoShade = self:Create("Frame", {
+        Size = UDim2.fromScale(1, 1),
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 0.35,
+        BorderSizePixel = 0,
+        ZIndex = 1,
+        Parent = self.logoFrame,
+    })
+
+    self:Create("UICorner", {
+        CornerRadius = UDim.new(0, 12),
+        Parent = self.logoShade,
+    })
+
+    self:Create("UIGradient", {
+        Rotation = 90,
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.5, 0.5),
+            NumberSequenceKeypoint.new(1, 0),
+        }),
+        Parent = self.logoShade,
+    })
+
+    -- container teks overlay di kiri bawah
+    self.logoTextFrame = self:Create("Frame", {
+        AnchorPoint = Vector2.new(0, 1),
+        Position = UDim2.new(0, 16, 1, -14),
+        Size = UDim2.new(1, -32, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundTransparency = 1,
+        ZIndex = 2,
+        Parent = self.logoFrame,
     })
 
     self:Create("UIListLayout", {
         FillDirection = Enum.FillDirection.Vertical,
-        HorizontalAlignment = Enum.HorizontalAlignment.Center,
-        VerticalAlignment = Enum.VerticalAlignment.Top,
-        Padding = UDim.new(0, 6),
+        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+        VerticalAlignment = Enum.VerticalAlignment.Bottom,
+        Padding = UDim.new(0, 2),
         SortOrder = Enum.SortOrder.LayoutOrder,
-        Parent = self.logoFrame,
+        Parent = self.logoTextFrame,
     })
 
-    self.logoLabel = self:Create("ImageLabel", {
-        Image = self.logo,
-        Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-        BackgroundTransparency = 1,
-        ImageTransparency = 1,
-        LayoutOrder = 0,
-        Parent = self.logoFrame,
-    }, { ImageColor3 = "TitlingColor" })
+    if self.logoTitle then
+        self.logoTitleLabel = self:Create("TextLabel", {
+            Text = self.logoTitle,
+            Size = UDim2.new(1, 0, 0, 22),
+            BackgroundTransparency = 1,
+            TextSize = 20,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Bottom,
+            TextTransparency = 1,
+            LayoutOrder = 0,
+            ZIndex = 2,
+            Parent = self.logoTextFrame,
+        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+    end
 
+    if self.subheading then
+        self.logoSubtitleLabel = self:Create("TextLabel", {
+            Text = self.subheading,
+            Size = UDim2.new(1, 0, 0, 16),
+            BackgroundTransparency = 1,
+            TextSize = 15,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextTransparency = 1,
+            LayoutOrder = 1,
+            ZIndex = 2,
+            Parent = self.logoTextFrame,
+        }, { TextColor3 = "TitlingColor", FontFace = "Font" })
+    end
+
+    -- sesuaikan tinggi card sama aspect ratio gambar
     local function applyLogoAspect(a: number?)
         if not a or a <= 0 then return end
-        local logoH = math.floor(self.logoSize / a)
-        self.logoLabel.Size = UDim2.fromOffset(self.logoSize, logoH)
-        -- frame-nya gak di-set manual; AutomaticSize.Y yang ngurus
+        local logoH = math.floor((self.logoSize + 40) / a)
+        self.logoFrame.Size = UDim2.new(1, -30, 0, logoH)
+        self.logoLabel.Size = UDim2.new(1, 0, 0, logoH)
     end
 
     local cachedAspect = self.logoAspect or image.getAspect(self.logo)
     if cachedAspect then
         applyLogoAspect(cachedAspect)
+    else
+        -- fallback kalau aspect belum ke-load
+        self.logoFrame.Size = UDim2.new(1, -30, 0, 110)
+        self.logoLabel.Size = UDim2.new(1, 0, 0, 110)
     end
 
     if type(self.logo) == "string" and string.match(self.logo, "^https?://") then
@@ -15485,27 +15564,24 @@ function Window.new(properties)
         end)
     end
 
-    if self.logoTitle then
-        self.logoTitleLabel = self:Create("TextLabel", {
-            Text = self.logoTitle,
-            Size = UDim2.new(1, 0, 0, 20),
-            BackgroundTransparency = 1,
-            TextSize = 18,
-            TextXAlignment = Enum.TextXAlignment.Center,
-            TextTransparency = 1,
-            LayoutOrder = 1,
-            Parent = self.logoFrame,
-        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
-    end
+    -- reveal animations
+    task.spawn(function()
+        if self.unloaded then return end
+        variables.tweenService:Create(self.logoLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { ImageTransparency = 0 }):Play()
+        if self.logoTitleLabel then
+            variables.tweenService:Create(self.logoTitleLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { TextTransparency = 0 }):Play()
+        end
+        if self.logoSubtitleLabel then
+            variables.tweenService:Create(self.logoSubtitleLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { TextTransparency = 0.25 }):Play()
+        end
+    end)
 
-    -- tunggu layout selesai baru geser tabList
+    -- geser tabList setelah layout pass
     task.defer(function()
         local h = self.logoFrame.AbsoluteSize.Y
-        if h <= 0 then
-            h = self.logoSize + (if self.logoTitle then 28 else 16)
-        end
-        self.tabList.Position = UDim2.fromOffset(0, h + 20)
-        self.tabList.Size = UDim2.new(1, 0, 1, -(h + 20))
+        if h <= 0 then h = 110 end
+        self.tabList.Position = UDim2.fromOffset(0, h + 35)
+        self.tabList.Size = UDim2.new(1, 0, 1, -(h + 35))
     end)
 end
     else
