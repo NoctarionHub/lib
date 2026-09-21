@@ -15456,7 +15456,7 @@ function Window.new(properties)
                 FillDirection = Enum.FillDirection.Vertical,
                 HorizontalAlignment = Enum.HorizontalAlignment.Center,
                 VerticalAlignment = Enum.VerticalAlignment.Center,
-                Padding = UDim.new(0, 8),
+                Padding = UDim.new(0, -5),
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = self.logoFrame,
             })
@@ -15466,7 +15466,7 @@ function Window.new(properties)
                 Size = UDim2.fromOffset(self.logoSize, self.logoSize),
                 BackgroundTransparency = 1,
                 ImageTransparency = 1,
-                LayoutOrder = 0,
+                LayoutOrder = 1,
                 Parent = self.logoFrame,
             }, { ImageColor3 = "TitlingColor" })
 
@@ -15503,7 +15503,7 @@ function Window.new(properties)
                     TextSize = 18,
                     TextXAlignment = Enum.TextXAlignment.Center,
                     TextTransparency = 1,
-                    LayoutOrder = 1,
+                    LayoutOrder = 0,
                     Parent = self.logoFrame,
                 }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
             end
