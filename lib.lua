@@ -15244,14 +15244,14 @@ function Window.new(properties)
                 Parent = self.sidebar,
             })
 
-            self:Create("UIListLayout", {
+            --[[self:Create("UIListLayout", {
                 FillDirection = Enum.FillDirection.Vertical,
                 HorizontalAlignment = Enum.HorizontalAlignment.Center,
                 VerticalAlignment = Enum.VerticalAlignment.Center,
                 Padding = UDim.new(0, 8),
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = self.logoFrame,
-            })
+            })]]
 
             self.logoLabel = self:Create("ImageLabel", {
                 Image = self.logo,
@@ -15265,8 +15265,7 @@ function Window.new(properties)
             if self.logoTitle then
                 self.logoTitleLabel = self:Create("TextLabel", {
                     Text = self.logoTitle,
-                    AnchorPoint = Vector2.new(0.5, 0),
-                    Position = UDim2.new(0.5, 0, 0, self.logoSize - 5),
+                    Position = UDim2.new(0.5, 0, 0, self.logoSize - 10),
                     Size = UDim2.new(1, 0, 0, 20),
                     BackgroundTransparency = 1,
                     TextSize = 18,
