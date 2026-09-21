@@ -14779,9 +14779,8 @@ local function themeOverrides(value)
         return value
     elseif typeof(value) == "string" then
         local key = normalizeThemeName(value)
-        local named = key and themes:FindFirstChild(key)
-        if named then
-            return required(named)
+        if key and themes[key] then
+            return themes[key]   -- themes[key] udah table resolved
         end
 
         local custom = customThemes.resolve(value)
@@ -14793,7 +14792,7 @@ local function themeOverrides(value)
     elseif value ~= nil then
         log.warn("Rayfield: invalid theme (expected a built-in name or a theme table), using default")
     end
-    return required(themes["dark"])
+    return themes["dark"]   -- udah table resolved
 end
 
 local function resolveTheme(value)
