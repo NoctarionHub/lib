@@ -15248,7 +15248,7 @@ function Window.new(properties)
                 FillDirection = Enum.FillDirection.Vertical,
                 HorizontalAlignment = Enum.HorizontalAlignment.Center,
                 VerticalAlignment = Enum.VerticalAlignment.Center,
-                Padding = UDim.new(0, 8),
+                Padding = UDim.new(0, 0),
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = self.logoFrame,
             })
