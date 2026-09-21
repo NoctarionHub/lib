@@ -15022,6 +15022,7 @@ function Window.new(properties)
         logo = properties.logo or properties.Logo,
         logoSize = properties.logoSize or properties.LogoSize or 72,
         logoTitle = properties.logoTitle or properties.LogoTitle,
+        logoSubtitle = properties.logoSubtitle or properties.LogoSubtitle,
         showName = openButton.Title or openButton.title
             or properties.showName or properties.ShowName
             or "RayField",
@@ -15521,9 +15522,9 @@ function Window.new(properties)
         }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
     end
 
-    if self.subheading then
+    if self.logoSubtitle then
         self.logoSubtitleLabel = self:Create("TextLabel", {
-            Text = self.subheading,
+            Text = self.logoSubtitle,
             Size = UDim2.new(1, 0, 0, 16),
             BackgroundTransparency = 1,
             TextSize = 15,
