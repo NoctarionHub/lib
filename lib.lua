@@ -15444,54 +15444,60 @@ function Window.new(properties)
 
         -- logo di atas tab list (sidebar)
         if self.logo then
+    -- container thumbnail, absolute
     self.logoFrame = self:Create("Frame", {
         Name = "LogoFrame",
-        Size = UDim2.new(1, -30, 0, self.logoSize + (if self.logoTitle then 28 else 16)),
-        Position = UDim2.fromOffset(15, 15),
+        Size = UDim2.new(1, 0, 0, 160),
+        Position = UDim2.new(0, 0, 0, 0),
         BackgroundTransparency = 1,
-        Parent = self.sidebar,
+        ZIndex = 5,
+        Parent = self.sidebar,   -- parent sidebar
     })
 
-    -- logo dulu
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
-        Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-        Position = UDim2.new(0.5, 0, 0, 0),
-        AnchorPoint = Vector2.new(0.5, 0),
+        Size = UDim2.fromScale(1, 1),
         BackgroundTransparency = 1,
         ImageTransparency = 1,
-        ScaleType = Enum.ScaleType.Fit,
-        ZIndex = 1,
+        ScaleType = Enum.ScaleType.Crop,
+        ZIndex = 5,
         Parent = self.logoFrame,
-    }, { ImageColor3 = "TitlingColor" })
+    })
 
-    -- title di atas logo, ZIndex lebih tinggi
+    -- gradasi gelap di bawah biar text tab kebaca
+    self:Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 60),
+        Position = UDim2.new(0, 0, 1, -60),
+        BackgroundColor3 = Color3.new(0, 0, 0),
+        BackgroundTransparency = 0.4,
+        BorderSizePixel = 0,
+        ZIndex = 6,
+        Parent = self.logoFrame,
+    }, {
+        self:Create("UIGradient", {
+            Rotation = 90,
+            Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 1),
+                NumberSequenceKeypoint.new(1, 0.2),
+            }),
+        })
+    })
+
+    -- logoTitle (MZXHUB + gameName) di atas thumbnail bawah
     if self.logoTitle then
         self.logoTitleLabel = self:Create("TextLabel", {
             Text = self.logoTitle,
-            Size = UDim2.new(1, 0, 0, 20),
-            Position = UDim2.new(0.5, 0, 0, 0),          -- geser sesuai selera
-            AnchorPoint = Vector2.new(0.5, 0),
+            Size = UDim2.new(1, -20, 0, 20),
+            Position = UDim2.new(0, 10, 1, -46),
             BackgroundTransparency = 1,
             TextSize = 18,
-            TextXAlignment = Enum.TextXAlignment.Center,
-            TextTransparency = 1,
-            TextColor3 = Color3.new(1, 1, 1),
             FontFace = Font.new(..., Enum.FontWeight.Bold),
-            ZIndex = 2,                                   -- di atas logo
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextColor3 = Color3.new(1,1,1),
+            TextTransparency = 1,
+            ZIndex = 7,
             Parent = self.logoFrame,
         })
-    end
-
-    -- helper apply aspect, JANGAN resize logoFrame kalau mau title overlay
-    local function applyLogoAspect(a)
-        if not a or a <= 0 then return end
-        local logoH = math.floor(self.logoSize / a)
-        self.logoLabel.Size = UDim2.fromOffset(self.logoSize, logoH)
-        -- kalau title overlay di tengah, frame tinggi = logoH saja
-        self.logoFrame.Size = UDim2.new(1, -30, 0, logoH)
-        self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
-        self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
     end
 
             -- coba langsung dari cache
