@@ -2693,13 +2693,6 @@ function imageCache.resolveUrl(url: string, onReady): string
         local ok, uri = pcall(getfenv().getcustomasset, filePath)
         if ok and type(uri) == "string" then
             urlCache[url] = uri
-            -- BARU: baca bytes dari disk untuk hitung rasio
-            if not urlAspect[url] then
-                local readOk, body = pcall(filesystem.readfile, filePath)
-                if readOk and type(body) == "string" then
-                    rememberAspect(url, body)
-                end
-            end
             return uri
         end
     end
@@ -2728,8 +2721,6 @@ function imageCache.resolveUrl(url: string, onReady): string
             pcall(filesystem.ensureFolder, cacheRoot)
             pcall(filesystem.ensureFolder, cacheFolder)
             if pcall(filesystem.writefile, filePath, body) then
-                -- BARU: hitung rasio dari bytes yang baru di-download
-                rememberAspect(url, body)
                 local ok, res = pcall(getfenv().getcustomasset, filePath)
                 if ok and type(res) == "string" then
                     uri = res
@@ -15444,73 +15435,110 @@ function Window.new(properties)
 
         -- logo di atas tab list (sidebar)
         if self.logo then
-            self.logoFrame = self:Create("Frame", {
-                Name = "LogoFrame",
-                Size = UDim2.new(1, -30, 0, self.logoSize + (if self.logoTitle then 28 else 16)),
-                Position = UDim2.fromOffset(15, 15),
-                BackgroundTransparency = 1,
-                Parent = self.sidebar,
-            })
+    -- container card logo
+    self.logoFrame = self:Create("Frame", {
+        Name = "LogoFrame",
+        Size = UDim2.new(1, -30, 0, self.logoSize),
+        Position = UDim2.fromOffset(15, 15),
+        BackgroundTransparency = 1,
+        ClipsDescendants = true,
+        Parent = self.sidebar,
+    })
 
-            self:Create("UIListLayout", {
-                FillDirection = Enum.FillDirection.Vertical,
-                HorizontalAlignment = Enum.HorizontalAlignment.Center,
-                VerticalAlignment = Enum.VerticalAlignment.Center,
-                Padding = UDim.new(0, -5),
-                SortOrder = Enum.SortOrder.LayoutOrder,
-                Parent = self.logoFrame,
-            })
+    self:Create("UICorner", {
+        CornerRadius = UDim.new(0, 12),
+        Parent = self.logoFrame,
+    })
 
-            self.logoLabel = self:Create("ImageLabel", {
-                Image = self.logo,
-                Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-                BackgroundTransparency = 1,
-                ImageTransparency = 1,
-                LayoutOrder = 1,
-                Parent = self.logoFrame,
-            }, { ImageColor3 = "TitlingColor" })
+    -- gambar sebagai background card
+    self.logoLabel = self:Create("ImageLabel", {
+        Image = self.logo,
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        ImageTransparency = 1,
+        ScaleType = Enum.ScaleType.Crop,
+        ZIndex = 0,
+        Parent = self.logoFrame,
+    })
 
-            local function applyLogoAspect(a: number?)
-                if not a or a <= 0 then return end
-                local logoH = math.floor(self.logoSize / a)
-                self.logoLabel.Size = UDim2.fromOffset(self.logoSize, logoH)
+    -- shade gelap biar teks kebaca
+    self.logoShade = self:Create("Frame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 0.4,
+        BorderSizePixel = 0,
+        ZIndex = 1,
+        Parent = self.logoFrame,
+    })
 
-                local titleH = if self.logoTitle then 28 else 16
-                self.logoFrame.Size = UDim2.new(1, -30, 0, logoH + titleH)
-                self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
-                self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
-            end
+    self:Create("UICorner", {
+        CornerRadius = UDim.new(0, 12),
+        Parent = self.logoShade,
+    })
 
-            -- coba langsung dari cache
-            local cachedAspect = self.logoAspect or image.getAspect(self.logo)
-            if cachedAspect then
-                applyLogoAspect(cachedAspect)
-            end
+    self:Create("UIGradient", {
+        Rotation = 90,
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.5, 0.4),
+            NumberSequenceKeypoint.new(1, 0),
+        }),
+        Parent = self.logoShade,
+    })
 
-            -- kalau belum ke-load, dengerin resolveUrl selesai
-            if type(self.logo) == "string" and string.match(self.logo, "^https?://") then
-                imageCache.resolveUrl(self.logo, function()
-                    local a = image.getAspect(self.logo)
-                    if a then applyLogoAspect(a) end
-                end)
-            end
+    -- container teks overlay, nempel kiri bawah
+    self.logoTextFrame = self:Create("Frame", {
+        AnchorPoint = Vector2.new(0, 1),
+        Position = UDim2.new(0, 14, 1, -12),
+        Size = UDim2.new(1, -28, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundTransparency = 1,
+        ZIndex = 2,
+        Parent = self.logoFrame,
+    })
 
-            if self.logoTitle then
-                self.logoTitleLabel = self:Create("TextLabel", {
-                    Text = self.logoTitle,
-                    Size = UDim2.new(1, 0, 0, 20),
-                    BackgroundTransparency = 1,
-                    TextSize = 18,
-                    TextXAlignment = Enum.TextXAlignment.Center,
-                    TextTransparency = 1,
-                    LayoutOrder = 0,
-                    Parent = self.logoFrame,
-                }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
-            end
+    self:Create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+        VerticalAlignment = Enum.VerticalAlignment.Bottom,
+        Padding = UDim.new(0, 2),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = self.logoTextFrame,
+    })
 
-            self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
-            self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
-        end
+    if self.logoTitle then
+        self.logoTitleLabel = self:Create("TextLabel", {
+            Text = self.logoTitle,
+            Size = UDim2.new(1, 0, 0, 22),
+            BackgroundTransparency = 1,
+            TextSize = 20,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Bottom,
+            TextTransparency = 1,
+            LayoutOrder = 0,
+            ZIndex = 3,
+            Parent = self.logoTextFrame,
+        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+    end
+
+    if self.subheading then
+        self.logoSubtitleLabel = self:Create("TextLabel", {
+            Text = self.subheading,
+            Size = UDim2.new(1, 0, 0, 16),
+            BackgroundTransparency = 1,
+            TextSize = 15,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextTransparency = 1,
+            LayoutOrder = 1,
+            ZIndex = 3,
+            Parent = self.logoTextFrame,
+        }, { TextColor3 = "TitlingColor", FontFace = "Font" })
+    end
+
+    -- posisi tabList di bawah card
+    self.tabList.Position = UDim2.fromOffset(0, self.logoSize + 30)
+    self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoSize + 30))
+end
     else
         self.tabList = self:Create("ScrollingFrame", {
             Name = "Tabs",
