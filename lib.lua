@@ -15511,7 +15511,7 @@ function Window.new(properties)
             LayoutOrder = 0,
             ZIndex = 3,
             Parent = self.logoTextFrame,
-        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+        }, { TextColor3 = Color3.fromRGB(255, 255, 255), FontFace = "TitleFont" })
     end
 
     if self.logoSubtitle then
@@ -15525,7 +15525,7 @@ function Window.new(properties)
             LayoutOrder = 1,
             ZIndex = 3,
             Parent = self.logoTextFrame,
-        }, { TextColor3 = "TitlingColor", FontFace = "Font" })
+        }, { TextColor3 = Color3.fromRGB(255, 255, 255) FontFace = "Font" })
     end
 
     self.tabList.Position = UDim2.fromOffset(0, self.logoSize + 30)
