@@ -15464,7 +15464,7 @@ function Window.new(properties)
     self:Create("UIShadow", {
         BlurRadius = UDim.new(0, 12),
         Color = Color3.fromRGB(0, 0, 0),
-        Transparency = 0.5,
+        Transparency = 1,
         Offset = UDim2.new(0, 0, 0, 2),
         Spread = UDim2.new(0, 2, 0, 2),
         ZIndex = -1,
