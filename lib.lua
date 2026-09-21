@@ -15297,10 +15297,19 @@ function Window.new(properties)
                 FillDirection = Enum.FillDirection.Vertical,
                 HorizontalAlignment = Enum.HorizontalAlignment.Center,
                 VerticalAlignment = Enum.VerticalAlignment.Center,
-                Padding = UDim.new(0, 8),
+                Padding = UDim.new(0, -5),
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = self.logoFrame,
             })
+
+            self.logoLabel = self:Create("ImageLabel", {
+                Image = self.logo,
+                Size = UDim2.fromOffset(self.logoSize, self.logoSize),
+                BackgroundTransparency = 1,
+                ImageTransparency = 1,
+                LayoutOrder = 1,
+                Parent = self.logoFrame,
+            }, { ImageColor3 = "TitlingColor" })
 
             if self.logoTitle then
                 self.logoTitleLabel = self:Create("TextLabel", {
@@ -15314,15 +15323,6 @@ function Window.new(properties)
                     Parent = self.logoFrame,
                 }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
             end
-
-            self.logoLabel = self:Create("ImageLabel", {
-                Image = self.logo,
-                Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-                BackgroundTransparency = 1,
-                ImageTransparency = 1,
-                LayoutOrder = 1,
-                Parent = self.logoFrame,
-            }, { ImageColor3 = "TitlingColor" })
 
             self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
             self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
