@@ -15439,150 +15439,153 @@ function Window.new(properties)
         end]]
 
         if self.logo then
-    self.logoFrame = self:Create("Frame", {
-        Name = "LogoFrame",
-        Size = UDim2.new(1, -30, 0, 0),
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Position = UDim2.fromOffset(15, 15),
-        BackgroundTransparency = 1,
-        ClipsDescendants = true,
-        Parent = self.sidebar,
-    })
+    local ok, err = pcall(function()
 
-    self:Create("UICorner", {
-        CornerRadius = UDim.new(0, 12),
-        Parent = self.logoFrame,
-    })
-
-    -- gambar logo sebagai background card
-    self.logoLabel = self:Create("ImageLabel", {
-        Image = self.logo,
-        Size = UDim2.new(1, 0, 0, self.logoSize),
-        BackgroundTransparency = 1,
-        ImageTransparency = 1,
-        ScaleType = Enum.ScaleType.Crop,
-        LayoutOrder = 0,
-        ZIndex = 0,
-        Parent = self.logoFrame,
-    })
-
-    -- gradient gelap di bawah biar teks kebaca
-    self.logoShade = self:Create("Frame", {
-        Size = UDim2.fromScale(1, 1),
-        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-        BackgroundTransparency = 0.35,
-        BorderSizePixel = 0,
-        ZIndex = 1,
-        Parent = self.logoFrame,
-    })
-
-    self:Create("UICorner", {
-        CornerRadius = UDim.new(0, 12),
-        Parent = self.logoShade,
-    })
-
-    self:Create("UIGradient", {
-        Rotation = 90,
-        Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 1),
-            NumberSequenceKeypoint.new(0.5, 0.5),
-            NumberSequenceKeypoint.new(1, 0),
-        }),
-        Parent = self.logoShade,
-    })
-
-    -- container teks overlay di kiri bawah
-    self.logoTextFrame = self:Create("Frame", {
-        AnchorPoint = Vector2.new(0, 1),
-        Position = UDim2.new(0, 16, 1, -14),
-        Size = UDim2.new(1, -32, 0, 0),
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundTransparency = 1,
-        ZIndex = 2,
-        Parent = self.logoFrame,
-    })
-
-    self:Create("UIListLayout", {
-        FillDirection = Enum.FillDirection.Vertical,
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
-        VerticalAlignment = Enum.VerticalAlignment.Bottom,
-        Padding = UDim.new(0, 2),
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Parent = self.logoTextFrame,
-    })
-
-    if self.logoTitle then
-        self.logoTitleLabel = self:Create("TextLabel", {
-            Text = self.logoTitle,
-            Size = UDim2.new(1, 0, 0, 22),
+        self.logoFrame = self:Create("Frame", {
+            Name = "LogoFrame",
+            Size = UDim2.new(1, -30, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Position = UDim2.fromOffset(15, 15),
             BackgroundTransparency = 1,
-            TextSize = 20,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.TextYAlignment.Bottom,
-            TextTransparency = 1,
-            LayoutOrder = 0,
-            ZIndex = 2,
-            Parent = self.logoTextFrame,
-        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
-    end
+            ClipsDescendants = true,
+            Parent = self.sidebar,
+        })
 
-    if self.subheading then
-        self.logoSubtitleLabel = self:Create("TextLabel", {
-            Text = self.subheading,
-            Size = UDim2.new(1, 0, 0, 16),
+        self:Create("UICorner", {
+            CornerRadius = UDim.new(0, 12),
+            Parent = self.logoFrame,
+        })
+
+        self.logoLabel = self:Create("ImageLabel", {
+            Image = self.logo,
+            Size = UDim2.new(1, 0, 0, self.logoSize),
             BackgroundTransparency = 1,
-            TextSize = 15,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextTransparency = 1,
-            LayoutOrder = 1,
+            ImageTransparency = 1,
+            ScaleType = Enum.ScaleType.Crop,
+            ZIndex = 0,
+            Parent = self.logoFrame,
+        })
+
+        self.logoShade = self:Create("Frame", {
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+            BackgroundTransparency = 0.35,
+            BorderSizePixel = 0,
+            ZIndex = 1,
+            Parent = self.logoFrame,
+        })
+
+        self:Create("UICorner", {
+            CornerRadius = UDim.new(0, 12),
+            Parent = self.logoShade,
+        })
+
+        self:Create("UIGradient", {
+            Rotation = 90,
+            Transparency = NumberSequence.new({
+                { Time = 0,   Value = 1 },
+                { Time = 0.5, Value = 0.5 },
+                { Time = 1,   Value = 0 },
+            }),
+            Parent = self.logoShade,
+        })
+
+        self.logoTextFrame = self:Create("Frame", {
+            AnchorPoint = Vector2.new(0, 1),
+            Position = UDim2.new(0, 16, 1, -14),
+            Size = UDim2.new(1, -32, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
             ZIndex = 2,
+            Parent = self.logoFrame,
+        })
+
+        self:Create("UIListLayout", {
+            FillDirection = Enum.FillDirection.Vertical,
+            HorizontalAlignment = Enum.HorizontalAlignment.Left,
+            VerticalAlignment = Enum.VerticalAlignment.Bottom,
+            Padding = UDim.new(0, 2),
+            SortOrder = Enum.SortOrder.LayoutOrder,
             Parent = self.logoTextFrame,
-        }, { TextColor3 = "TitlingColor", FontFace = "Font" })
-    end
+        })
 
-    -- sesuaikan tinggi card sama aspect ratio gambar
-    local function applyLogoAspect(a: number?)
-        if not a or a <= 0 then return end
-        local logoH = math.floor((self.logoSize + 40) / a)
-        self.logoFrame.Size = UDim2.new(1, -30, 0, logoH)
-        self.logoLabel.Size = UDim2.new(1, 0, 0, logoH)
-    end
+        if self.logoTitle then
+            self.logoTitleLabel = self:Create("TextLabel", {
+                Text = self.logoTitle,
+                Size = UDim2.new(1, 0, 0, 22),
+                BackgroundTransparency = 1,
+                TextSize = 20,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom,
+                TextTransparency = 1,
+                LayoutOrder = 0,
+                ZIndex = 2,
+                Parent = self.logoTextFrame,
+            }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+        end
 
-    local cachedAspect = self.logoAspect or image.getAspect(self.logo)
-    if cachedAspect then
-        applyLogoAspect(cachedAspect)
-    else
-        -- fallback kalau aspect belum ke-load
-        self.logoFrame.Size = UDim2.new(1, -30, 0, 110)
-        self.logoLabel.Size = UDim2.new(1, 0, 0, 110)
-    end
+        if self.subheading then
+            self.logoSubtitleLabel = self:Create("TextLabel", {
+                Text = self.subheading,
+                Size = UDim2.new(1, 0, 0, 16),
+                BackgroundTransparency = 1,
+                TextSize = 15,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextTransparency = 1,
+                LayoutOrder = 1,
+                ZIndex = 2,
+                Parent = self.logoTextFrame,
+            }, { TextColor3 = "TitlingColor", FontFace = "Font" })
+        end
 
-    if type(self.logo) == "string" and string.match(self.logo, "^https?://") then
-        imageCache.resolveUrl(self.logo, function()
-            local a = image.getAspect(self.logo)
-            if a then applyLogoAspect(a) end
+        local function applyLogoAspect(a)
+            if not a or a <= 0 then return end
+            local logoH = math.floor((self.logoSize + 40) / a)
+            self.logoFrame.Size = UDim2.new(1, -30, 0, logoH)
+            self.logoLabel.Size = UDim2.new(1, 0, 0, logoH)
+        end
+
+        local cachedAspect = self.logoAspect or image.getAspect(self.logo)
+        if cachedAspect then
+            applyLogoAspect(cachedAspect)
+        else
+            self.logoFrame.Size = UDim2.new(1, -30, 0, 110)
+            self.logoLabel.Size = UDim2.new(1, 0, 0, 110)
+        end
+
+        if type(self.logo) == "string" and string.match(self.logo, "^https?://") then
+            imageCache.resolveUrl(self.logo, function()
+                local a = image.getAspect(self.logo)
+                if a then applyLogoAspect(a) end
+            end)
+        end
+
+        task.spawn(function()
+            if self.unloaded then return end
+            variables.tweenService:Create(self.logoLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { ImageTransparency = 0 }):Play()
+            if self.logoTitleLabel then
+                variables.tweenService:Create(self.logoTitleLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { TextTransparency = 0 }):Play()
+            end
+            if self.logoSubtitleLabel then
+                variables.tweenService:Create(self.logoSubtitleLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { TextTransparency = 0.25 }):Play()
+            end
         end)
+
+        task.defer(function()
+            if self.unloaded or not self.logoFrame then return end
+            local h = self.logoFrame.AbsoluteSize.Y
+            if h <= 0 then h = 110 end
+            if self.tabList then
+                self.tabList.Position = UDim2.fromOffset(0, h + 35)
+                self.tabList.Size = UDim2.new(1, 0, 1, -(h + 35))
+            end
+        end)
+
+    end)
+
+    if not ok then
+        warn("[Logo] error:", err)
     end
-
-    -- reveal animations
-    task.spawn(function()
-        if self.unloaded then return end
-        variables.tweenService:Create(self.logoLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { ImageTransparency = 0 }):Play()
-        if self.logoTitleLabel then
-            variables.tweenService:Create(self.logoTitleLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { TextTransparency = 0 }):Play()
-        end
-        if self.logoSubtitleLabel then
-            variables.tweenService:Create(self.logoSubtitleLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { TextTransparency = 0.25 }):Play()
-        end
-    end)
-
-    -- geser tabList setelah layout pass
-    task.defer(function()
-        local h = self.logoFrame.AbsoluteSize.Y
-        if h <= 0 then h = 110 end
-        self.tabList.Position = UDim2.fromOffset(0, h + 35)
-        self.tabList.Size = UDim2.new(1, 0, 1, -(h + 35))
-    end)
 end
     else
         self.tabList = self:Create("ScrollingFrame", {
