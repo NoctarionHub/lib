@@ -14774,30 +14774,10 @@ local function normalizeThemeName(value)
     return themeAliasMap[string.lower(value)]
 end
 
-local function themeOverrides(value)
-    if typeof(value) == "table" then
-        return value
-    elseif typeof(value) == "string" then
-        local key = normalizeThemeName(value)
-        local named = key and themes:FindFirstChild(key)
-        if named then
-            return required(named)
-        end
 
-        local custom = customThemes.resolve(value)
-        if custom then
-            return custom
-        end
-
-        log.warn("Rayfield: unknown theme '" .. value .. "', using default")
-    elseif value ~= nil then
-        log.warn("Rayfield: invalid theme (expected a built-in name or a theme table), using default")
-    end
-    return required(themes["dark"])
-end
 
 local function resolveTheme(value)
-    local resolved = table.clone(required(themes["dark"]))
+    local resolved = table.clone(themes["dark"])
     local overrides = themeOverrides(value)
     for key, override in overrides do
         resolved[key] = coerceThemeValue(key, override)
@@ -15218,56 +15198,54 @@ function Window.new(properties)
         Parent = self.elements,
     })
 
-    if self.layout.mode == "sidebar" then
+        if self.layout.mode == "sidebar" then
         sidebar.build(self, self.layout)
         sidebar.applyWidth(self, layouts.railWidthFor(self.layout, self.size.X.Offset))
-        if self.layout.mode == "sidebar" then
-    -- logo di atas tab list (sidebar)
-    if self.logo then
-        self.logoFrame = self:Create("Frame", {
-            Name = "LogoFrame",
-            Size = UDim2.new(1, -30, 0, self.logoSize + (if self.logoTitle then 28 else 16)),
-            Position = UDim2.fromOffset(15, 15),
-            BackgroundTransparency = 1,
-            Parent = self.sidebar,
-        })
 
-        self:Create("UIListLayout", {
-            FillDirection = Enum.FillDirection.Vertical,
-            HorizontalAlignment = Enum.HorizontalAlignment.Center,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            Padding = UDim.new(0, 8),
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Parent = self.logoFrame,
-        })
-
-        self.logoLabel = self:Create("ImageLabel", {
-            Image = self.logo,
-            Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-            BackgroundTransparency = 1,
-            ImageTransparency = 1,
-            LayoutOrder = 0,
-            Parent = self.logoFrame,
-        }, { ImageColor3 = "TitlingColor" })
-
-        if self.logoTitle then
-            self.logoTitleLabel = self:Create("TextLabel", {
-                Text = self.logoTitle,
-                Size = UDim2.new(1, 0, 0, 20),
+        -- logo di atas tab list (sidebar)
+        if self.logo then
+            self.logoFrame = self:Create("Frame", {
+                Name = "LogoFrame",
+                Size = UDim2.new(1, -30, 0, self.logoSize + (if self.logoTitle then 28 else 16)),
+                Position = UDim2.fromOffset(15, 15),
                 BackgroundTransparency = 1,
-                TextSize = 18,
-                TextXAlignment = Enum.TextXAlignment.Center,
-                TextTransparency = 1,
-                LayoutOrder = 1,
+                Parent = self.sidebar,
+            })
+
+            self:Create("UIListLayout", {
+                FillDirection = Enum.FillDirection.Vertical,
+                HorizontalAlignment = Enum.HorizontalAlignment.Center,
+                VerticalAlignment = Enum.VerticalAlignment.Center,
+                Padding = UDim.new(0, 8),
+                SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = self.logoFrame,
-            }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+            })
+
+            self.logoLabel = self:Create("ImageLabel", {
+                Image = self.logo,
+                Size = UDim2.fromOffset(self.logoSize, self.logoSize),
+                BackgroundTransparency = 1,
+                ImageTransparency = 1,
+                LayoutOrder = 0,
+                Parent = self.logoFrame,
+            }, { ImageColor3 = "TitlingColor" })
+
+            if self.logoTitle then
+                self.logoTitleLabel = self:Create("TextLabel", {
+                    Text = self.logoTitle,
+                    Size = UDim2.new(1, 0, 0, 20),
+                    BackgroundTransparency = 1,
+                    TextSize = 18,
+                    TextXAlignment = Enum.TextXAlignment.Center,
+                    TextTransparency = 1,
+                    LayoutOrder = 1,
+                    Parent = self.logoFrame,
+                }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+            end
+
+            self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
+            self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
         end
-
-        -- geser tabList turun biar nggak ketutupan logo
-        self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
-        self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
-    end
-
     else
         self.tabList = self:Create("ScrollingFrame", {
             Name = "Tabs",
