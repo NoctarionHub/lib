@@ -14774,7 +14774,27 @@ local function normalizeThemeName(value)
     return themeAliasMap[string.lower(value)]
 end
 
+local function themeOverrides(value)
+    if typeof(value) == "table" then
+        return value
+    elseif typeof(value) == "string" then
+        local key = normalizeThemeName(value)
+        local named = key and themes:FindFirstChild(key)
+        if named then
+            return required(named)
+        end
 
+        local custom = customThemes.resolve(value)
+        if custom then
+            return custom
+        end
+
+        log.warn("Rayfield: unknown theme '" .. value .. "', using default")
+    elseif value ~= nil then
+        log.warn("Rayfield: invalid theme (expected a built-in name or a theme table), using default")
+    end
+    return required(themes["dark"])
+end
 
 local function resolveTheme(value)
     local resolved = table.clone(themes["dark"])
