@@ -15449,6 +15449,7 @@ function Window.new(properties)
         Offset = UDim2.new(0, 0, 0, 2),
         Spread = UDim2.new(0, 2, 0, 2),
         ZIndex = -1,
+        ClipsDescendants = true,
         Parent = self.logoFrame,
     })
 
