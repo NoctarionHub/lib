@@ -15438,20 +15438,17 @@ function Window.new(properties)
             self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
         end]]
 
-        if self.layout.mode == "sidebar" then
-        sidebar.build(self, self.layout)
-        sidebar.applyWidth(self, layouts.railWidthFor(self.layout, self.size.X.Offset))
-
-        -- logo di atas tab list (sidebar)
         if self.logo then
-    -- container thumbnail, absolute
+    local defaultH = 160
+
     self.logoFrame = self:Create("Frame", {
         Name = "LogoFrame",
-        Size = UDim2.new(1, 0, 0, 160),
+        Size = UDim2.new(1, 0, 0, defaultH),
         Position = UDim2.new(0, 0, 0, 0),
         BackgroundTransparency = 1,
+        ClipsDescendants = true,
         ZIndex = 5,
-        Parent = self.sidebar,   -- parent sidebar
+        Parent = self.sidebar,
     })
 
     self.logoLabel = self:Create("ImageLabel", {
@@ -15464,55 +15461,69 @@ function Window.new(properties)
         Parent = self.logoFrame,
     })
 
-    -- gradasi gelap di bawah biar text tab kebaca
-    self:Create("Frame", {
+    -- gradasi gelap bawah
+    local fadeFrame = self:Create("Frame", {
         Size = UDim2.new(1, 0, 0, 60),
         Position = UDim2.new(0, 0, 1, -60),
         BackgroundColor3 = Color3.new(0, 0, 0),
-        BackgroundTransparency = 0.4,
+        BackgroundTransparency = 1,
         BorderSizePixel = 0,
         ZIndex = 6,
         Parent = self.logoFrame,
-    }, {
-        self:Create("UIGradient", {
-            Rotation = 90,
-            Transparency = NumberSequence.new({
-                NumberSequenceKeypoint.new(0, 1),
-                NumberSequenceKeypoint.new(1, 0.2),
-            }),
-        })
+    })
+    self:Create("UIGradient", {
+        Rotation = 90,
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(1, 0.5),
+        }),
+        Parent = fadeFrame,
     })
 
-    -- logoTitle (MZXHUB + gameName) di atas thumbnail bawah
+    -- title di bawah kiri thumbnail
     if self.logoTitle then
         self.logoTitleLabel = self:Create("TextLabel", {
             Text = self.logoTitle,
-            Size = UDim2.new(1, -20, 0, 20),
-            Position = UDim2.new(0, 10, 1, -46),
+            Size = UDim2.new(1, -20, 0, 22),
+            Position = UDim2.new(0, 10, 1, -30),
             BackgroundTransparency = 1,
             TextSize = 18,
-            FontFace = Font.new(..., Enum.FontWeight.Bold),
             TextXAlignment = Enum.TextXAlignment.Left,
-            TextColor3 = Color3.new(1,1,1),
             TextTransparency = 1,
             ZIndex = 7,
             Parent = self.logoFrame,
-        })
+        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
     end
 
-            -- coba langsung dari cache
-            local cachedAspect = self.logoAspect or image.getAspect(self.logo)
-            if cachedAspect then
-                applyLogoAspect(cachedAspect)
-            end
+    -- helper yang tadi hilang
+    local function applyLogoAspect(a)
+        if not a or a <= 0 then return end
+        local w = self.sidebar.AbsoluteSize.X
+        if w <= 0 then
+            w = layouts.railWidthFor(self.layout, self.size.X.Offset)
+        end
+        local h = math.floor(w / a)
+        self.logoFrame.Size = UDim2.new(1, 0, 0, h)
+        self.tabList.Position = UDim2.fromOffset(0, h)
+        self.tabList.Size = UDim2.new(1, 0, 1, -h)
+    end
 
-            -- kalau belum ke-load, dengerin resolveUrl selesai
-            if type(self.logo) == "string" and string.match(self.logo, "^https?://") then
-                imageCache.resolveUrl(self.logo, function()
-                    local a = image.getAspect(self.logo)
-                    if a then applyLogoAspect(a) end
-                end)
-            end
+    local cachedAspect = self.logoAspect or image.getAspect(self.logo)
+    if cachedAspect then
+        applyLogoAspect(cachedAspect)
+    else
+        -- fallback default sebelum aspect ke-load
+        self.tabList.Position = UDim2.fromOffset(0, defaultH)
+        self.tabList.Size = UDim2.new(1, 0, 1, -defaultH)
+    end
+
+    if type(self.logo) == "string" and string.match(self.logo, "^https?://") then
+        imageCache.resolveUrl(self.logo, function()
+            local a = image.getAspect(self.logo)
+            if a then applyLogoAspect(a) end
+        end)
+    end
+end
 
             if self.logoTitle then
                 self.logoTitleLabel = self:Create("TextLabel", {
