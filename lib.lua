@@ -15239,7 +15239,7 @@ function Window.new(properties)
             self.logoFrame = self:Create("Frame", {
                 Name = "LogoFrame",
                 Size = UDim2.new(1, -30, 0, self.logoSize + (if self.logoTitle then 28 else 16)),
-                Position = UDim2.fromOffset(15, 15),
+                Position = UDim2.fromOffset(15, 5),
                 BackgroundTransparency = 1,
                 Parent = self.sidebar,
             })
