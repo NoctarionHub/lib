@@ -15456,7 +15456,7 @@ function Window.new(properties)
         Image = self.logo,
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
-        ImageTransparency = 1,
+        ImageTransparency = 0,
         ScaleType = Enum.ScaleType.Crop,
         ZIndex = 0,
         Parent = self.logoFrame,
