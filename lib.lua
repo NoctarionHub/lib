@@ -15466,7 +15466,7 @@ function Window.new(properties)
                 Size = UDim2.fromOffset(self.logoSize, self.logoSize),
                 BackgroundTransparency = 1,
                 ImageTransparency = 1,
-                LayoutOrder = 0,
+                LayoutOrder = 1,
                 Parent = self.logoFrame,
             }, { ImageColor3 = "TitlingColor" })
 
