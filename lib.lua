@@ -4167,6 +4167,7 @@ function Action.new(window, properties)
         icon = assert(properties.icon or properties.Icon, "Missing argument (Icon expected)"),
         callback = assert(properties.callback or properties.Callback, "Missing argument (Function expected)"),
         linkedTab = properties.linkedTab or properties.LinkedTab,
+        iconSize = properties.iconSize or properties.IconSize or 20,
     }, Action)
 
     self.action = self.window:Create("Frame", {
@@ -4280,11 +4281,12 @@ local hapticEngine = require(utility.HapticEngine)
 function Button.new(tab, properties)
     properties = if typeof(properties) == "table" then properties else {}
 
-    local self = setmetatable({
+        local self = setmetatable({
         tab = assert(tab, "Missing argument #1 (Tab expected)"),
         window = tab.window,
         name = properties.name or properties.Name or properties.title or properties.Title or "Button",
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
         description = properties.description or properties.Description,
         compact = tab.compact or false,
 
@@ -4345,7 +4347,7 @@ function Button:_buildFull()
     if self.icon then
         self.iconLabel = self.window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
 
@@ -4448,7 +4450,7 @@ function Button:_buildCompact()
     if self.icon then
         self.iconLabel = window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
             LayoutOrder = 0,
@@ -4960,6 +4962,7 @@ function ColorPicker.new(tab, properties)
         window = tab.window,
         name = properties.name or properties.Name or properties.title or properties.Title or "Color Picker",
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
         description = properties.description or properties.Description,
         forgetState = properties.forgetState or properties.ForgetState or tab.forgetState,
 
@@ -5081,7 +5084,7 @@ function ColorPicker:_buildHeader()
     if self.icon then
         self.iconLabel = self.window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
             ZIndex = 5,
@@ -6841,6 +6844,7 @@ function Dropdown.new(tab, properties)
         window = tab.window,
         name = properties.name or properties.Name or properties.title or properties.Title or "Dropdown",
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
         description = properties.description or properties.Description,
         forgetState = properties.forgetState or properties.ForgetState or tab.forgetState,
 
@@ -6918,7 +6922,7 @@ function Dropdown.new(tab, properties)
     if self.icon then
         self.iconLabel = self.window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
 
@@ -8351,6 +8355,7 @@ function Input.new(tab, properties)
         window = tab.window,
         name = properties.name or properties.Name or properties.title or properties.Title or "Input",
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
         description = properties.description or properties.Description,
         forgetState = properties.forgetState or properties.ForgetState or tab.forgetState,
         placeholder = properties.placeholder or properties.Placeholder or "",
@@ -8404,7 +8409,7 @@ function Input.new(tab, properties)
     if self.icon then
         self.iconLabel = self.window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
             ZIndex = 5,
@@ -8653,6 +8658,7 @@ function Keybind.new(tab, properties)
         window = tab.window,
         name = properties.name or properties.Name or properties.title or properties.Title or "Keybind",
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
         description = properties.description or properties.Description,
         forgetState = properties.forgetState or properties.ForgetState or tab.forgetState,
 
@@ -8711,7 +8717,7 @@ function Keybind.new(tab, properties)
     if self.icon then
         self.iconLabel = self.window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
             ZIndex = 5,
@@ -10214,6 +10220,7 @@ function Progress.new(tab, properties)
         window = tab.window,
         name = properties.name or properties.Name or properties.title or properties.Title or "Progress",
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
         description = properties.description or properties.Description,
 
         min = min,
@@ -10309,7 +10316,7 @@ function Progress:_build()
     if self.icon then
         self.iconLabel = self.window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
 
@@ -10990,6 +10997,7 @@ function Section.new(tab, properties)
         window = tab.window,
         name = properties.name or properties.Name or properties.title or properties.Title or "Section",
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
     }, Section)
 
     local topSpace = if #self.tab.elements == 0 then 0 else 13
@@ -11020,7 +11028,7 @@ function Section.new(tab, properties)
     if self.icon then
         self.iconLabel = self.window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
 
@@ -11412,6 +11420,7 @@ function Slider.new(tab, properties)
         window = tab.window,
         name = properties.name or properties.Name or properties.title or properties.Title or "Slider",
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
         description = properties.description or properties.Description,
         forgetState = properties.forgetState or properties.ForgetState or tab.forgetState,
 
@@ -11689,7 +11698,7 @@ function Slider:_buildLabel()
     if self.icon then
         self.iconLabel = self.window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
             ZIndex = 5,
@@ -12030,6 +12039,7 @@ function Statistic.new(tab, properties)
         window = tab.window,
         name = properties.name or properties.Name or properties.title or properties.Title or "Statistic",
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
         description = properties.description or properties.Description,
 
         value = if (properties.value or properties.Value) ~= nil then (properties.value or properties.Value) else 0,
@@ -13026,7 +13036,7 @@ function TabSection.new(window, properties)
     if self.icon then
         self.iconLabel = window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             LayoutOrder = 0,
@@ -13427,6 +13437,7 @@ function Tag.new(window, properties)
         window = assert(window, "Missing argument #1 (Window expected)"),
         text = properties.text or properties.Text or properties.title or properties.Title or properties.name or properties.Name,
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
         color = properties.color or properties.Color or defaultColor,
     }, Tag)
 
@@ -13598,6 +13609,7 @@ function Text.new(tab, properties)
         name = tostring(properties.name or properties.Name or properties.title or properties.Title or ""),
         text = tostring(properties.text or properties.Text or ""),
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
     }, Text)
 
     self.main = self.window:Create("Frame", {
@@ -13653,7 +13665,7 @@ function Text.new(tab, properties)
     if self.icon then
         self.iconLabel = self.window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
 
@@ -14158,6 +14170,7 @@ function Toggle.new(tab, properties)
         window = tab.window,
         name = properties.name or properties.Name or properties.title or properties.Title or "Switch",
         icon = properties.icon or properties.Icon,
+        iconSize = properties.iconSize or properties.IconSize or 16,
         description = properties.description or properties.Description,
         forgetState = properties.forgetState or properties.ForgetState or tab.forgetState,
         compact = tab.compact or false,
@@ -14319,7 +14332,7 @@ function Toggle:_buildFull()
     if self.icon then
         self.iconLabel = window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
 
@@ -14449,7 +14462,7 @@ function Toggle:_buildCompact()
     if self.icon then
         self.iconLabel = window:Create("ImageLabel", {
             Image = self.icon,
-            Size = UDim2.fromOffset(16, 16),
+            Size = UDim2.fromOffset(self.iconSize, self.iconSize),
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
             LayoutOrder = 0,
@@ -17923,6 +17936,7 @@ export type TagProps = {
     text: string?,
     title: string?,
     icon: (string | number)?,
+    iconSize: number?,
     color: Color3?,
     order: number?,
 }
@@ -17930,12 +17944,14 @@ export type TagProps = {
 export type SectionProps = {
     name: string?,
     icon: (string | number)?,
+    iconSize: number?,
 }
 
 export type TextProps = {
     name: string?,
     text: string?,
     icon: (string | number)?,
+    iconSize: number?,
 }
 
 export type DividerProps = {
@@ -17952,6 +17968,7 @@ export type ButtonProps = {
     name: string?,
     description: string?,
     icon: (string | number)?,
+    iconSize: number?,
     callback: (() -> ())?,
 }
 
@@ -17959,6 +17976,7 @@ export type ToggleProps = {
     name: string?,
     description: string?,
     icon: (string | number)?,
+    iconSize: number?,
     flag: string?,
     value: boolean?,
     forgetState: boolean?,
@@ -17969,6 +17987,7 @@ export type SliderProps = {
     name: string?,
     description: string?,
     icon: (string | number)?,
+    iconSize: number?,
     flag: string?,
     range: { number }?,
     increment: number?,
@@ -17984,6 +18003,7 @@ export type DropdownProps = {
     name: string?,
     description: string?,
     icon: (string | number)?,
+    iconSize: number?,
     flag: string?,
     options: { string }?,
     value: (string | { string })?,
@@ -17997,6 +18017,7 @@ export type InputProps = {
     name: string?,
     description: string?,
     icon: (string | number)?,
+    iconSize: number?,
     flag: string?,
     value: string?,
     placeholder: string?,
@@ -18010,6 +18031,7 @@ export type KeybindProps = {
     name: string?,
     description: string?,
     icon: (string | number)?,
+    iconSize: number?,
     flag: string?,
     value: (EnumItem | string)?,
     forgetState: boolean?,
@@ -18024,6 +18046,7 @@ export type ColorPickerProps = {
     name: string?,
     description: string?,
     icon: (string | number)?,
+    iconSize: number?,
     flag: string?,
     color: Color3?,
     alpha: number?,
@@ -18035,6 +18058,7 @@ export type StatProps = {
     name: string?,
     description: string?,
     icon: (string | number)?,
+    iconSize: number?,
     prefix: string?,
     suffix: string?,
     value: number?,
@@ -18049,6 +18073,7 @@ export type ProgressProps = {
     name: string?,
     description: string?,
     icon: (string | number)?,
+    iconSize: number?,
     range: { number }?,
     value: number?,
     steps: number?,
