@@ -14848,7 +14848,9 @@ function Window.new(properties)
         instances = {},
         connections = {},
 
-        icon = properties.icon or properties.Icon,
+        logo = properties.logo or properties.Logo,
+        logoSize = properties.logoSize or properties.LogoSize or 72,
+        logoTitle = properties.logoTitle or properties.LogoTitle,
         showName = openButton.Title or openButton.title
             or properties.showName or properties.ShowName
             or "RayField",
@@ -15384,6 +15386,63 @@ function Window.new(properties)
     self:_watchViewport()
     self:_buildSettingsUI()
 
+    if self.logo then
+    task.defer(function()
+        local firstTab
+        for _, tab in self.tabs do
+            if not tab.neglectSelector then
+                firstTab = tab
+                break
+            end
+        end
+        if not firstTab then return end
+
+        local hasTitle = self.logoTitle ~= nil and self.logoTitle ~= ""
+        local frameHeight = self.logoSize + 16 + (if hasTitle then 28 else 0)
+
+        self.logoFrame = self:Create("Frame", {
+            Name = "LogoFrame",
+            Size = UDim2.new(1, -20, 0, frameHeight),
+            BackgroundTransparency = 1,
+            LayoutOrder = -1,
+            Parent = firstTab.tabPage,
+        })
+
+        self:Create("UIListLayout", {
+            FillDirection = Enum.FillDirection.Vertical,
+            HorizontalAlignment = Enum.HorizontalAlignment.Center,
+            VerticalAlignment = Enum.VerticalAlignment.Center,
+            Padding = UDim.new(0, 8),
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Parent = self.logoFrame,
+        })
+
+        self.logoLabel = self:Create("ImageLabel", {
+            Name = "Logo",
+            Image = self.logo,
+            Size = UDim2.fromOffset(self.logoSize, self.logoSize),
+            BackgroundTransparency = 1,
+            ImageTransparency = 1,
+            LayoutOrder = 0,
+            Parent = self.logoFrame,
+        }, { ImageColor3 = "TitlingColor" })
+
+        if hasTitle then
+            self.logoTitleLabel = self:Create("TextLabel", {
+                Name = "LogoTitle",
+                Text = self.logoTitle,
+                Size = UDim2.new(1, 0, 0, 20),
+                BackgroundTransparency = 1,
+                TextSize = 18,
+                TextXAlignment = Enum.TextXAlignment.Center,
+                TextTransparency = 1,
+                LayoutOrder = 1,
+                Parent = self.logoFrame,
+            }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+        end
+    end)
+end
+
     self:_syncLiveAnimation()
 
     if properties.discord and properties.discord.Enabled then
@@ -15856,6 +15915,13 @@ function Window:Hide()
     for _, tag in self.tags do
         tag:_setShown(false, fadeInfo)
     end
+
+    if self.logoLabel then
+    variables.tweenService:Create(self.logoLabel, fadeInfo, { ImageTransparency = 1 }):Play()
+end
+if self.logoTitleLabel then
+    variables.tweenService:Create(self.logoTitleLabel, fadeInfo, { TextTransparency = 1 }):Play()
+end
 
     for _, tab in pairs(self.tabs) do
         if not tab.neglectSelector and tab.topbarItem then
@@ -16859,6 +16925,9 @@ function Window:_fadeSurfaces(shown, fadeInfo)
 end
 
 function Window:_fadeSelectedElementsOut()
+    if self.logoFrame then
+        self.logoFrame.Visible = false
+    end
     if self.selectedTab then
         for _, element in ipairs(self.selectedTab.elements) do
             element:_setShown(false, true)
@@ -16867,6 +16936,9 @@ function Window:_fadeSelectedElementsOut()
 end
 
 function Window:_revealElements(perElementDelay, budget)
+    if self.logoFrame then
+        self.logoFrame.Visible = true
+    end
     for _, tab in pairs(self.tabs) do
         if tab ~= self.selectedTab then
             for _, element in ipairs(tab.elements) do
@@ -16996,6 +17068,13 @@ function Window:_quickRestore()
             tag:_setShown(true, fadeInfo)
         end
 
+        if self.logoLabel then
+    variables.tweenService:Create(self.logoLabel, fadeInfo, { ImageTransparency = 0 }):Play()
+end
+if self.logoTitleLabel then
+    variables.tweenService:Create(self.logoTitleLabel, fadeInfo, { TextTransparency = 0 }):Play()
+end
+
         for _, tab in pairs(self.tabs) do
             if not tab.neglectSelector and tab.topbarItem then
                 tab.topbarItem.Visible = true
@@ -17090,6 +17169,19 @@ function Window:_firstShow()
     for _, tag in self.tags do
         tag:_setShown(true, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out))
     end
+
+    if self.logoLabel then
+    variables.tweenService
+        :Create(self.logoLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out),
+            { ImageTransparency = 0 })
+        :Play()
+end
+if self.logoTitleLabel then
+    variables.tweenService
+        :Create(self.logoTitleLabel, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out),
+            { TextTransparency = 0 })
+        :Play()
+end
 
     task.wait(0.2)
 
@@ -17803,6 +17895,9 @@ export type WindowProps = {
     subtitle: string?,
     theme: Theme?,
     icon: (string | number)?,
+    logo: (string | number)?,
+    logoSize: number?,
+    logoTitle: string?,
     showName: string?,
     showIcon: (string | number)?,
     showSubtitle: string?,
