@@ -2411,6 +2411,13 @@ function image.resolve(value: unknown): string
     return blocked(value)
 end
 
+function image.getAspect(value: unknown): number?
+    if type(value) == "string" and string.match(value, "^https?://") then
+        return imageCache.getUrlAspect(value)
+    end
+    return nil
+end
+
 return image
 end
 
@@ -2460,6 +2467,59 @@ imageCache.rewrites = {} :: RewriteMap
 imageCache.onCached = nil :: OnCachedCallback?
 
 local pngMagic = "\137PNG\r\n\26\n"
+
+local urlAspect: { [string]: number } = {}
+
+local function pngDimensions(body: string): (number?, number?)
+    if string.sub(body, 1, 8) ~= pngMagic then return nil, nil end
+    if #body < 24 then return nil, nil end
+    local w = string.byte(body, 17) * 0x1000000
+            + string.byte(body, 18) * 0x10000
+            + string.byte(body, 19) * 0x100
+            + string.byte(body, 20)
+    local h = string.byte(body, 21) * 0x1000000
+            + string.byte(body, 22) * 0x10000
+            + string.byte(body, 23) * 0x100
+            + string.byte(body, 24)
+    return w, h
+end
+
+local function jpgDimensions(body: string): (number?, number?)
+    if #body < 4 then return nil, nil end
+    if string.byte(body, 1) ~= 0xFF or string.byte(body, 2) ~= 0xD8 then return nil, nil end
+    local i = 3
+    local len = #body
+    while i < len - 8 do
+        if string.byte(body, i) ~= 0xFF then
+            i += 1
+        else
+            local marker = string.byte(body, i + 1)
+            if marker >= 0xC0 and marker <= 0xCF
+               and marker ~= 0xC4 and marker ~= 0xC8 and marker ~= 0xCC then
+                local h = string.byte(body, i + 5) * 0x100 + string.byte(body, i + 6)
+                local w = string.byte(body, i + 7) * 0x100 + string.byte(body, i + 8)
+                return w, h
+            end
+            local segLen = string.byte(body, i + 2) * 0x100 + string.byte(body, i + 3)
+            i += 2 + segLen
+        end
+    end
+    return nil, nil
+end
+
+local function imageDimensions(body: string): (number?, number?)
+    local w, h = pngDimensions(body)
+    if w and h then return w, h end
+    return jpgDimensions(body)
+end
+
+local function rememberAspect(url: string, body: string)
+    if urlAspect[url] then return end
+    local w, h = imageDimensions(body)
+    if w and h and h > 0 then
+        urlAspect[url] = w / h
+    end
+end
 
 local function cacheFile(filePath: string, url: string): string?
 
@@ -2625,28 +2685,31 @@ local function urlToPath(url: string): string
 end
 
 function imageCache.resolveUrl(url: string, onReady): string
-    -- sudah ada di cache memori
     local hit = urlCache[url]
     if hit then return hit end
 
-    -- sudah ada di disk dari sesi sebelumnya
     local filePath = urlToPath(url)
     if typeof(filesystem.isfile) == "function" and filesystem.isfile(filePath) then
         local ok, uri = pcall(getfenv().getcustomasset, filePath)
         if ok and type(uri) == "string" then
             urlCache[url] = uri
+            -- BARU: baca bytes dari disk untuk hitung rasio
+            if not urlAspect[url] then
+                local readOk, body = pcall(filesystem.readfile, filePath)
+                if readOk and type(body) == "string" then
+                    rememberAspect(url, body)
+                end
+            end
             return uri
         end
     end
 
-    -- sedang didownload thread lain? tunggu
     local waiting = pendingUrls[url]
     if waiting then
         if onReady then table.insert(waiting, onReady) end
         return ""
     end
 
-    -- mulai download
     pendingUrls[url] = {}
     if onReady then table.insert(pendingUrls[url], onReady) end
 
@@ -2665,6 +2728,8 @@ function imageCache.resolveUrl(url: string, onReady): string
             pcall(filesystem.ensureFolder, cacheRoot)
             pcall(filesystem.ensureFolder, cacheFolder)
             if pcall(filesystem.writefile, filePath, body) then
+                -- BARU: hitung rasio dari bytes yang baru di-download
+                rememberAspect(url, body)
                 local ok, res = pcall(getfenv().getcustomasset, filePath)
                 if ok and type(res) == "string" then
                     uri = res
@@ -2734,6 +2799,10 @@ function imageCache.avatar(userId: unknown, onReady: AvatarCallback?): string
     end
 
     return ""
+end
+
+function imageCache.getUrlAspect(url: string): number?
+    return urlAspect[url]
 end
 
 return imageCache
@@ -14737,6 +14806,7 @@ Components.window.FindFirstChild = function(self, k) return self[k] end
 Components.window.__loader = function(script, require)
 local utility = script.Parent.Parent.utility
 local image = require(utility.image)
+local imageCache = require(utility.imageCache)
 local functions = require(utility.functions)
 local persistence = require(utility.persistence)
 local constants = require(utility.constants)
@@ -15399,6 +15469,31 @@ function Window.new(properties)
                 LayoutOrder = 1,
                 Parent = self.logoFrame,
             }, { ImageColor3 = "TitlingColor" })
+
+            local function applyLogoAspect(a: number?)
+                if not a or a <= 0 then return end
+                local logoH = math.floor(self.logoSize / a)
+                self.logoLabel.Size = UDim2.fromOffset(self.logoSize, logoH)
+
+                local titleH = if self.logoTitle then 28 else 16
+                self.logoFrame.Size = UDim2.new(1, -30, 0, logoH + titleH)
+                self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
+                self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
+            end
+
+            -- coba langsung dari cache
+            local cachedAspect = self.logoAspect or image.getAspect(self.logo)
+            if cachedAspect then
+                applyLogoAspect(cachedAspect)
+            end
+
+            -- kalau belum ke-load, dengerin resolveUrl selesai
+            if type(self.logo) == "string" and string.match(self.logo, "^https?://") then
+                imageCache.resolveUrl(self.logo, function()
+                    local a = image.getAspect(self.logo)
+                    if a then applyLogoAspect(a) end
+                end)
+            end
 
             if self.logoTitle then
                 self.logoTitleLabel = self:Create("TextLabel", {
