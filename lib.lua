@@ -15471,11 +15471,6 @@ function Window.new(properties)
         Parent = self.logoFrame,
     })
 
-    self:Create("UICorner", {
-        CornerRadius = UDim.new(0, 12),
-        Parent = self.logoFrame,
-    })
-
     -- gambar sebagai background card
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
