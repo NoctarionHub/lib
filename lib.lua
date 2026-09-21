@@ -15456,15 +15456,31 @@ function Window.new(properties)
         Image = self.logo,
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
-        ImageTransparency = 0,
+        ImageTransparency = 1,
         ScaleType = Enum.ScaleType.Crop,
         ZIndex = 0,
         Parent = self.logoFrame,
     })
 
+    -- shade gelap biar teks kebaca
+    self.logoShade = self:Create("Frame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ZIndex = 1,
+        Parent = self.logoFrame,
+    })
+
     self:Create("UICorner", {
         CornerRadius = UDim.new(0, 12),
-        Parent = self.logoFrame,
+        Parent = self.logoShade,
+    })
+
+    self:Create("UIGradient", {
+        Rotation = 90,
+        Transparency = NumberSequence.new(1),
+        Parent = self.logoShade,
     })
 
     -- container teks overlay, nempel kiri bawah
