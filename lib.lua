@@ -2317,14 +2317,6 @@ function image.assign(instance: Instance, property: string, value: unknown)
 
     target[property] = image.resolve(value)
 
-    if type(value) == "string" and string.match(value, "^https?://") and target[property] == "" then
-        imageCache.resolveUrl(value, function(uri)
-            if instance.Parent then
-                instance[property] = uri
-            end
-        end)
-    end
-
     if variables.secureMode and not settled then
         local id = idOf(value)
         if id and not image.rewrites[id] then
@@ -2373,10 +2365,6 @@ function image.resolve(value: unknown): string
     end
 
     if type(value) == "string" then
-        -- HTTPS / HTTP
-        if string.match(value, "^https?://") then
-            return imageCache.resolveUrl(value)
-        end
         if string.sub(value, 1, 11) == "rbxasset://" then
             return value
         end
@@ -2409,13 +2397,6 @@ function image.resolve(value: unknown): string
     end
 
     return blocked(value)
-end
-
-function image.getAspect(value: unknown): number?
-    if type(value) == "string" and string.match(value, "^https?://") then
-        return imageCache.getUrlAspect(value)
-    end
-    return nil
 end
 
 return image
@@ -15511,7 +15492,7 @@ function Window.new(properties)
             LayoutOrder = 0,
             ZIndex = 3,
             Parent = self.logoTextFrame,
-        }, { TextColor3 = Color3.fromRGB(255, 255, 255), FontFace = "TitleFont" })
+        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
     end
 
     if self.logoSubtitle then
@@ -15525,7 +15506,7 @@ function Window.new(properties)
             LayoutOrder = 1,
             ZIndex = 3,
             Parent = self.logoTextFrame,
-        }, { TextColor3 = Color3.fromRGB(255, 255, 255) FontFace = "Font" })
+        }, { TextColor3 = "TitlingColor", FontFace = "Font" })
     end
 
     self.tabList.Position = UDim2.fromOffset(0, self.logoSize + 30)
