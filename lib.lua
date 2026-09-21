@@ -2270,7 +2270,17 @@ end
 function image.assign(instance: Instance, property: string, value: unknown)
     local target = instance :: any
     if not imageProperties[property] then
-        target[property] = value
+        local resolved = image.resolve(value)
+target[property] = resolved
+
+-- kalau URL dan belum siap, tunggu callback
+if type(value) == "string" and string.match(value, "^https?://") and resolved == "" then
+    imageCache.resolveUrl(value, function(uri)
+        if instance.Parent then
+            instance[property] = uri
+        end
+    end)
+end
         return
     end
 
@@ -2365,6 +2375,10 @@ function image.resolve(value: unknown): string
     end
 
     if type(value) == "string" then
+        -- HTTPS / HTTP
+        if string.match(value, "^https?://") then
+            return imageCache.resolveUrl(value)
+        end
         if string.sub(value, 1, 11) == "rbxasset://" then
             return value
         end
@@ -2594,6 +2608,82 @@ function imageCache.preload(onSettled: PreloadCallback?): (boolean, number)
     end
 
     return missing == 0, missing
+end
+
+-- cache khusus URL HTTPS (bukan rbxassetid)
+local urlCache: { [string]: string } = {}
+local pendingUrls: { [string]: { thread } } = {}
+
+local function sanitizeName(url: string): string
+    local base = url:match("([^/]+)$") or "asset"
+    base = base:gsub("%?.*$", ""):gsub("[^%w%-_%.]", "_")
+    if #base > 48 then base = base:sub(1, 48) end
+    return base
+end
+
+local function urlToPath(url: string): string
+    return path.join(cacheFolder, "url_" .. sanitizeName(url))
+end
+
+function imageCache.resolveUrl(url: string, onReady): string
+    -- sudah ada di cache memori
+    local hit = urlCache[url]
+    if hit then return hit end
+
+    -- sudah ada di disk dari sesi sebelumnya
+    local filePath = urlToPath(url)
+    if typeof(filesystem.isfile) == "function" and filesystem.isfile(filePath) then
+        local ok, uri = pcall(getfenv().getcustomasset, filePath)
+        if ok and type(uri) == "string" then
+            urlCache[url] = uri
+            return uri
+        end
+    end
+
+    -- sedang didownload thread lain? tunggu
+    local waiting = pendingUrls[url]
+    if waiting then
+        if onReady then table.insert(waiting, onReady) end
+        return ""
+    end
+
+    -- mulai download
+    pendingUrls[url] = {}
+    if onReady then table.insert(pendingUrls[url], onReady) end
+
+    task.spawn(function()
+        local requestFn = network.getRequestFn()
+        local body, uri
+
+        if requestFn then
+            local ok, res = pcall(requestFn, { Url = url, Method = "GET" })
+            if ok and type(res) == "table" and type(res.Body) == "string" and #res.Body > 0 then
+                body = res.Body
+            end
+        end
+
+        if body and typeof(filesystem.writefile) == "function" then
+            pcall(filesystem.ensureFolder, cacheRoot)
+            pcall(filesystem.ensureFolder, cacheFolder)
+            if pcall(filesystem.writefile, filePath, body) then
+                local ok, res = pcall(getfenv().getcustomasset, filePath)
+                if ok and type(res) == "string" then
+                    uri = res
+                    urlCache[url] = uri
+                end
+            end
+        end
+
+        local waiters = pendingUrls[url]
+        pendingUrls[url] = nil
+        if waiters and uri then
+            for _, cb in waiters do
+                pcall(cb, uri)
+            end
+        end
+    end)
+
+    return ""
 end
 
 function imageCache.avatar(userId: unknown, onReady: AvatarCallback?): string
