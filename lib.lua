@@ -15248,7 +15248,7 @@ function Window.new(properties)
                 FillDirection = Enum.FillDirection.Vertical,
                 HorizontalAlignment = Enum.HorizontalAlignment.Center,
                 VerticalAlignment = Enum.VerticalAlignment.Center,
-                Padding = UDim.new(0, -3),
+                Padding = UDim.new(0, 0),
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = self.logoFrame,
             })
@@ -15270,7 +15270,7 @@ function Window.new(properties)
                     TextSize = 18,
                     TextXAlignment = Enum.TextXAlignment.Center,
                     TextTransparency = 1,
-                    LayoutOrder = 2,
+                    LayoutOrder = 1,
                     Parent = self.logoFrame,
                 }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
             end
