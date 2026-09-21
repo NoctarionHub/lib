@@ -15244,14 +15244,14 @@ function Window.new(properties)
                 Parent = self.sidebar,
             })
 
-            --[[self:Create("UIListLayout", {
+            self:Create("UIListLayout", {
                 FillDirection = Enum.FillDirection.Vertical,
                 HorizontalAlignment = Enum.HorizontalAlignment.Center,
                 VerticalAlignment = Enum.VerticalAlignment.Center,
                 Padding = UDim.new(0, 8),
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = self.logoFrame,
-            })]]
+            })
 
             self.logoLabel = self:Create("ImageLabel", {
                 Image = self.logo,
@@ -15262,10 +15262,18 @@ function Window.new(properties)
                 Parent = self.logoFrame,
             }, { ImageColor3 = "TitlingColor" })
 
+            -- SPACER
+            self:Create("Frame", {
+                Name = "Spacer",
+                Size = UDim2.new(1, 0, 0, 10),   -- <-- tinggi spacer = geser turun
+                BackgroundTransparency = 1,
+                LayoutOrder = 1,
+                Parent = self.logoFrame,
+            })
+
             if self.logoTitle then
                 self.logoTitleLabel = self:Create("TextLabel", {
                     Text = self.logoTitle,
-                    Position = UDim2.new(0.5, 0, 0, self.logoSize - 10),
                     Size = UDim2.new(1, 0, 0, 20),
                     BackgroundTransparency = 1,
                     TextSize = 18,
