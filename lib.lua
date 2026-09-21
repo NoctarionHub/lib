@@ -15265,7 +15265,7 @@ function Window.new(properties)
             -- SPACER
             self:Create("Frame", {
                 Name = "Spacer",
-                Size = UDim2.new(1, 0, 0, 10),   -- <-- tinggi spacer = geser turun
+                Size = UDim2.new(1, 0, 0, 1),   -- <-- tinggi spacer = geser turun
                 BackgroundTransparency = 1,
                 LayoutOrder = 1,
                 Parent = self.logoFrame,
