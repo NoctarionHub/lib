@@ -15438,79 +15438,76 @@ function Window.new(properties)
             self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
         end]]
 
-        if self.layout.mode == "sidebar" then
-        sidebar.build(self, self.layout)
-        sidebar.applyWidth(self, layouts.railWidthFor(self.layout, self.size.X.Offset))
-
-        -- logo di atas tab list (sidebar)
         if self.logo then
-            self.logoFrame = self:Create("Frame", {
-                Name = "LogoFrame",
-                Size = UDim2.new(1, -30, 0, self.logoSize + (if self.logoTitle then 28 else 16)),
-                Position = UDim2.fromOffset(15, 15),
-                BackgroundTransparency = 1,
-                Parent = self.sidebar,
-            })
+    self.logoFrame = self:Create("Frame", {
+        Name = "LogoFrame",
+        Size = UDim2.new(1, -30, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Position = UDim2.fromOffset(15, 15),
+        BackgroundTransparency = 1,
+        Parent = self.sidebar,
+    })
 
-            self:Create("UIListLayout", {
-                FillDirection = Enum.FillDirection.Vertical,
-                HorizontalAlignment = Enum.HorizontalAlignment.Center,
-                VerticalAlignment = Enum.VerticalAlignment.Center,
-                Padding = UDim.new(0, 8),
-                SortOrder = Enum.SortOrder.LayoutOrder,
-                Parent = self.logoFrame,
-            })
+    self:Create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        VerticalAlignment = Enum.VerticalAlignment.Top,
+        Padding = UDim.new(0, 6),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = self.logoFrame,
+    })
 
-            self.logoLabel = self:Create("ImageLabel", {
-                Image = self.logo,
-                Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-                BackgroundTransparency = 1,
-                ImageTransparency = 1,
-                LayoutOrder = 0,
-                Parent = self.logoFrame,
-            }, { ImageColor3 = "TitlingColor" })
+    self.logoLabel = self:Create("ImageLabel", {
+        Image = self.logo,
+        Size = UDim2.fromOffset(self.logoSize, self.logoSize),
+        BackgroundTransparency = 1,
+        ImageTransparency = 1,
+        LayoutOrder = 0,
+        Parent = self.logoFrame,
+    }, { ImageColor3 = "TitlingColor" })
 
-            local function applyLogoAspect(a: number?)
-                if not a or a <= 0 then return end
-                local logoH = math.floor(self.logoSize / a)
-                self.logoLabel.Size = UDim2.fromOffset(self.logoSize, logoH)
+    local function applyLogoAspect(a: number?)
+        if not a or a <= 0 then return end
+        local logoH = math.floor(self.logoSize / a)
+        self.logoLabel.Size = UDim2.fromOffset(self.logoSize, logoH)
+        -- frame-nya gak di-set manual; AutomaticSize.Y yang ngurus
+    end
 
-                local titleH = if self.logoTitle then 28 else 16
-                self.logoFrame.Size = UDim2.new(1, -30, 0, logoH + titleH)
-                self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
-                self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
-            end
+    local cachedAspect = self.logoAspect or image.getAspect(self.logo)
+    if cachedAspect then
+        applyLogoAspect(cachedAspect)
+    end
 
-            -- coba langsung dari cache
-            local cachedAspect = self.logoAspect or image.getAspect(self.logo)
-            if cachedAspect then
-                applyLogoAspect(cachedAspect)
-            end
+    if type(self.logo) == "string" and string.match(self.logo, "^https?://") then
+        imageCache.resolveUrl(self.logo, function()
+            local a = image.getAspect(self.logo)
+            if a then applyLogoAspect(a) end
+        end)
+    end
 
-            -- kalau belum ke-load, dengerin resolveUrl selesai
-            if type(self.logo) == "string" and string.match(self.logo, "^https?://") then
-                imageCache.resolveUrl(self.logo, function()
-                    local a = image.getAspect(self.logo)
-                    if a then applyLogoAspect(a) end
-                end)
-            end
+    if self.logoTitle then
+        self.logoTitleLabel = self:Create("TextLabel", {
+            Text = self.logoTitle,
+            Size = UDim2.new(1, 0, 0, 20),
+            BackgroundTransparency = 1,
+            TextSize = 18,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            TextTransparency = 1,
+            LayoutOrder = 1,
+            Parent = self.logoFrame,
+        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+    end
 
-            if self.logoTitle then
-                self.logoTitleLabel = self:Create("TextLabel", {
-                    Text = self.logoTitle,
-                    Size = UDim2.new(1, 0, 0, 20),
-                    BackgroundTransparency = 1,
-                    TextSize = 18,
-                    TextXAlignment = Enum.TextXAlignment.Center,
-                    TextTransparency = 1,
-                    LayoutOrder = 1,
-                    Parent = self.logoFrame,
-                }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
-            end
-
-            self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
-            self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
+    -- tunggu layout selesai baru geser tabList
+    task.defer(function()
+        local h = self.logoFrame.AbsoluteSize.Y
+        if h <= 0 then
+            h = self.logoSize + (if self.logoTitle then 28 else 16)
         end
+        self.tabList.Position = UDim2.fromOffset(0, h + 20)
+        self.tabList.Size = UDim2.new(1, 0, 1, -(h + 20))
+    end)
+end
     else
         self.tabList = self:Create("ScrollingFrame", {
             Name = "Tabs",
