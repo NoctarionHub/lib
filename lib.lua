@@ -15423,6 +15423,7 @@ function Window.new(properties)
     local gap = 4
     local textBlockH = titleH + (if hasSub then gap + subH else 0)
     local cardH = 120
+    local corner = UDim.new(0, 14)
 
     self.logoFrame = self:Create("Frame", {
         Name = "LogoFrame",
@@ -15436,7 +15437,7 @@ function Window.new(properties)
     })
 
     self:Create("UICorner", {
-        CornerRadius = UDim.new(0, 14),
+        CornerRadius = corner,
         Parent = self.logoFrame,
     })
 
@@ -15447,32 +15448,45 @@ function Window.new(properties)
         Parent = self.logoFrame,
     })
 
-    -- LOGO FULL CARD, tapi tetap elemen sendiri (bukan layer background)
+    -- WRAPPER: frame terpisah yang clips logo
+    local logoClip = self:Create("Frame", {
+        Name = "LogoClip",
+        Size = UDim2.fromScale(1, 1),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        ZIndex = 1,
+        Parent = self.logoFrame,
+    })
+
+    self:Create("UICorner", {
+        CornerRadius = corner,
+        Parent = logoClip,
+    })
+
+    -- logo di dalam wrapper
     self.logoLabel = self:Create("ImageLabel", {
-    Image = self.logo,
-    Size = UDim2.fromScale(1, 1),
-    Position = UDim2.fromScale(0.5, 0.5),
-    AnchorPoint = Vector2.new(0.5, 0.5),
-    BackgroundTransparency = 1,
-    ImageTransparency = 1,
-    ScaleType = Enum.ScaleType.Crop,   -- <-- ganti dari Fit
-    ZIndex = 2,
-    Parent = self.logoFrame,
-}, { ImageColor3 = "TitlingColor" })
+        Image = self.logo,
+        Size = UDim2.fromScale(1, 1),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        ImageTransparency = 0,
+        ScaleType = Enum.ScaleType.Crop,
+        ZIndex = 1,
+        Parent = logoClip,
+    }, { ImageColor3 = "TitlingColor" })
 
-self:Create("UICorner", {
-    CornerRadius = UDim.new(0, 14),   -- samain dengan corner card
-    Parent = self.logoLabel,
-})
-
-    -- TEXT block, di depan logo, ZIndex 2
+    -- TEXT block di atas logo
     local textColumn = self:Create("Frame", {
         Name = "TextColumn",
         Size = UDim2.new(1, -padX * 2, 0, textBlockH),
         Position = UDim2.fromScale(0.5, 0.5),
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1,
-        ZIndex = 3,
+        ZIndex = 2,
         Parent = self.logoFrame,
     })
 
@@ -15495,7 +15509,7 @@ self:Create("UICorner", {
             TextYAlignment = Enum.TextYAlignment.Center,
             TextTransparency = 1,
             LayoutOrder = 1,
-            ZIndex = 3,
+            ZIndex = 2,
             Parent = textColumn,
         }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
     end
