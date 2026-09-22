@@ -15425,7 +15425,6 @@ function Window.new(properties)
         Parent = self.sidebar,
     })
 
-
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
         Size = UDim2.fromOffset(self.logoSize, self.logoSize),
