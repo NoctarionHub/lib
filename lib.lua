@@ -15418,12 +15418,11 @@ function Window.new(properties)
     if self.logo then
     local hasSub = self.logoSubtitle ~= nil and self.logoSubtitle ~= ""
     local padX = 16
-    local padY = 14
     local titleH = if self.logoTitle then 22 else 0
     local subH = if hasSub then 18 else 0
     local gap = 4
     local textBlockH = titleH + (if hasSub then gap + subH else 0)
-    local cardH = padY * 2 + self.logoSize + 10 + textBlockH
+    local cardH = 120
 
     self.logoFrame = self:Create("Frame", {
         Name = "LogoFrame",
@@ -15448,50 +15447,66 @@ function Window.new(properties)
         Parent = self.logoFrame,
     })
 
-    -- LOGO di dalam card, atas
+    -- LOGO FULL CARD, tapi tetap elemen sendiri (bukan layer background)
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
-        Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-        Position = UDim2.new(0, padX, 0, padY),
-        AnchorPoint = Vector2.new(0, 0),
+        Size = UDim2.fromScale(1, 1),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1,
         ImageTransparency = 1,
         ScaleType = Enum.ScaleType.Fit,
-        ZIndex = 2,
+        ZIndex = 1,
         Parent = self.logoFrame,
     }, { ImageColor3 = "TitlingColor" })
 
-    -- TITLE di bawah logo, kiri
+    -- TEXT block, di depan logo, ZIndex 2
+    local textColumn = self:Create("Frame", {
+        Name = "TextColumn",
+        Size = UDim2.new(1, -padX * 2, 0, textBlockH),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        ZIndex = 2,
+        Parent = self.logoFrame,
+    })
+
+    self:Create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, gap),
+        Parent = textColumn,
+    })
+
     if self.logoTitle then
         self.logoTitleLabel = self:Create("TextLabel", {
             Text = self.logoTitle,
-            Size = UDim2.new(1, -padX * 2, 0, titleH),
-            Position = UDim2.new(0, padX, 0, padY + self.logoSize + 10),
-            AnchorPoint = Vector2.new(0, 0),
+            Size = UDim2.new(1, 0, 0, titleH),
             BackgroundTransparency = 1,
             TextSize = 18,
-            TextXAlignment = Enum.TextXAlignment.Left,
+            TextXAlignment = Enum.TextXAlignment.Center,
             TextYAlignment = Enum.TextYAlignment.Center,
             TextTransparency = 1,
+            LayoutOrder = 1,
             ZIndex = 2,
-            Parent = self.logoFrame,
+            Parent = textColumn,
         }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
     end
 
-    -- SUBTITLE di bawah title, kiri
     if hasSub then
         self.logoSubtitleLabel = self:Create("TextLabel", {
             Text = self.logoSubtitle,
-            Size = UDim2.new(1, -padX * 2, 0, subH),
-            Position = UDim2.new(0, padX, 0, padY + self.logoSize + 10 + titleH + gap),
-            AnchorPoint = Vector2.new(0, 0),
+            Size = UDim2.new(1, 0, 0, subH),
             BackgroundTransparency = 1,
             TextSize = 13,
-            TextXAlignment = Enum.TextXAlignment.Left,
+            TextXAlignment = Enum.TextXAlignment.Center,
             TextYAlignment = Enum.TextYAlignment.Center,
             TextTransparency = 1,
+            LayoutOrder = 2,
             ZIndex = 2,
-            Parent = self.logoFrame,
+            Parent = textColumn,
         }, { TextColor3 = "ContentColor", FontFace = "Font" })
     end
 
