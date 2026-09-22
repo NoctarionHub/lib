@@ -15453,7 +15453,8 @@ function Window.new(properties)
 
     self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
     self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                end
+end
+        
     else
         self.tabList = self:Create("ScrollingFrame", {
             Name = "Tabs",
