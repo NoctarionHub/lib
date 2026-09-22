@@ -2853,7 +2853,7 @@ layouts.sidebar = {
     topbarHeight = topbarHeight,
     chromeHeight = topbarHeight,
 
-    railWidth = 219,
+    railWidth = 200,
 
     railCollapsedWidth = 64,
     railCollapseBelow = 589,
@@ -15415,106 +15415,8 @@ function Window.new(properties)
     sidebar.build(self, self.layout)
     sidebar.applyWidth(self, layouts.railWidthFor(self.layout, self.size.X.Offset))
 
-    if self.logo then
-    local hasSub = self.logoSubtitle ~= nil and self.logoSubtitle ~= ""
-    local padX = 16
-    local padY = 14
-    local titleH = if self.logoTitle then 22 else 0
-    local subH = if hasSub then 18 else 0
-    local gap = 2
-    local textBlockH = titleH + (if hasSub then gap + subH else 0)
-    local cardH = 120
-    local corner = 14
-    local bgColor = Color3.fromRGB(13, 13, 26)
-    local bgTransparency = 0.15
-
-    self.logoFrame = self:Create("Frame", {
-        Name = "LogoFrame",
-        Size = UDim2.new(1, -30, 0, cardH),
-        Position = UDim2.fromOffset(15, 15),
-        BackgroundColor3 = bgColor,
-        BackgroundTransparency = bgTransparency,
-        BorderSizePixel = 0,
-        ClipsDescendants = true,
-        Parent = self.sidebar,
-    })
-
-    self:Create("UICorner", {
-        CornerRadius = UDim.new(0, corner),
-        Parent = self.logoFrame,
-    })
-
-    local cardStroke = self:Create("UIStroke", {
-        Color = Color3.fromRGB(60, 55, 95),
-        Transparency = 0.35,
-        Thickness = 1,
-        Parent = self.logoFrame,
-    })
-
-    -- LOGO full card, kotak, di belakang text
-    self.logoLabel = self:Create("ImageLabel", {
-        Image = self.logo,
-        Size = UDim2.fromScale(1, 1),
-        Position = UDim2.fromScale(0.5, 0.5),
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundTransparency = 1,
-        ImageTransparency = 1,
-        ScaleType = Enum.ScaleType.Crop,
-        ZIndex = 1,
-        Parent = self.logoFrame,
-    }, { ImageColor3 = "TitlingColor" })
-
-    -- TEXT di kiri bawah, ZIndex 5
-    local textColumn = self:Create("Frame", {
-        Name = "TextColumn",
-        Size = UDim2.new(1, -padX * 2, 0, textBlockH),
-        Position = UDim2.new(0, padX, 1, -padY),
-        AnchorPoint = Vector2.new(0, 1),
-        BackgroundTransparency = 1,
-        ZIndex = 5,
-        Parent = self.logoFrame,
-    })
-
-    self:Create("UIListLayout", {
-        FillDirection = Enum.FillDirection.Vertical,
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
-        VerticalAlignment = Enum.VerticalAlignment.Bottom,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, gap),
-        Parent = textColumn,
-    })
-
-    if self.logoTitle then
-        self.logoTitleLabel = self:Create("TextLabel", {
-            Text = self.logoTitle,
-            Size = UDim2.new(1, 0, 0, titleH),
-            BackgroundTransparency = 1,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextTransparency = 1,
-            LayoutOrder = 1,
-            ZIndex = 5,
-            Parent = textColumn,
-        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
-    end
-
-    if hasSub then
-        self.logoSubtitleLabel = self:Create("TextLabel", {
-            Text = self.logoSubtitle,
-            Size = UDim2.new(1, 0, 0, subH),
-            BackgroundTransparency = 1,
-            TextSize = 10,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextTransparency = 1,
-            LayoutOrder = 2,
-            ZIndex = 5,
-            Parent = textColumn,
-        }, { TextColor3 = "ContentColor", FontFace = "Font" })
-    end
-
-    self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
-    self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
-end
+    self.tabList.Position = UDim2.fromOffset(0, 0)
+    self.tabList.Size = UDim2.new(1, 0, 1, 0)
 else
     self.tabList = self:Create("ScrollingFrame", {
         Name = "Tabs",
