@@ -15425,6 +15425,23 @@ function Window.new(properties)
         Parent = self.sidebar,
     })
 
+    self.logoBg = self:Create("Frame", {
+    Name = "LogoBg",
+    Size = UDim2.fromOffset(self.logoSize + 16, self.logoSize + 16),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundColor3 = Color3.fromRGB(77, 77, 77),
+    BackgroundTransparency = 0.2,
+    BorderSizePixel = 0,
+    ZIndex = 0,
+    Parent = self.logoFrame,
+})
+
+local bgCorner = Instance.new("UICorner")
+bgCorner.CornerRadius = UDim.new(0, 12)
+bgCorner.Parent = self.logoBg
+table.insert(self.instances, bgCorner)
+
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
         Size = UDim2.fromOffset(self.logoSize, self.logoSize),
