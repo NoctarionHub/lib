@@ -15444,46 +15444,49 @@ function Window.new(properties)
             Parent = self.logoFrame,
         })
 
-        self.logoLabel = self:Create("ImageLabel", {
-            Image = self.logo,
-            Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-            Position = UDim2.new(0.5, 0, 0, cardPadY),
-            AnchorPoint = Vector2.new(0.5, 0),
-            BackgroundTransparency = 1,
-            ImageTransparency = 1,
-            ZIndex = 2,
-            Parent = self.logoFrame,
-        }, { ImageColor3 = "TitlingColor" })
+        -- logo di tengah
+self.logoLabel = self:Create("ImageLabel", {
+    Image = self.logo,
+    Size = UDim2.fromOffset(self.logoSize, self.logoSize),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundTransparency = 1,
+    ImageTransparency = 1,
+    ZIndex = 1,
+    Parent = self.logoFrame,
+}, { ImageColor3 = "TitlingColor" })
 
-        if self.logoTitle then
-            self.logoTitleLabel = self:Create("TextLabel", {
-                Text = self.logoTitle,
-                Size = UDim2.new(1, -20, 0, titleH),
-                Position = UDim2.new(0.5, 0, 0, cardPadY + self.logoSize + 4),
-                AnchorPoint = Vector2.new(0.5, 0),
-                BackgroundTransparency = 1,
-                TextSize = 18,
-                TextXAlignment = Enum.TextXAlignment.Center,
-                TextTransparency = 1,
-                ZIndex = 2,
-                Parent = self.logoFrame,
-            }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
-        end
+-- title numpuk di atas logo (offset negatif dari tengah)
+if self.logoTitle then
+    self.logoTitleLabel = self:Create("TextLabel", {
+        Text = self.logoTitle,
+        Size = UDim2.new(1, -20, 0, titleH),
+        Position = UDim2.new(0.5, 0, 0.5, -(self.logoSize / 2) - titleH - 4),
+        AnchorPoint = Vector2.new(0.5, 0),
+        BackgroundTransparency = 1,
+        TextSize = 18,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextTransparency = 1,
+        ZIndex = 2,
+        Parent = self.logoFrame,
+    }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+end
 
-        if hasSub then
-            self.logoSubtitleLabel = self:Create("TextLabel", {
-                Text = self.logoSubtitle,
-                Size = UDim2.new(1, -20, 0, subH),
-                Position = UDim2.new(0.5, 0, 0, cardPadY + self.logoSize + 4 + titleH + 2),
-                AnchorPoint = Vector2.new(0.5, 0),
-                BackgroundTransparency = 1,
-                TextSize = 14,
-                TextXAlignment = Enum.TextXAlignment.Center,
-                TextTransparency = 1,
-                ZIndex = 2,
-                Parent = self.logoFrame,
-            }, { TextColor3 = "ContentColor", FontFace = "Font" })
-        end
+-- subtitle numpuk tepat di bawah title
+if hasSub then
+    self.logoSubtitleLabel = self:Create("TextLabel", {
+        Text = self.logoSubtitle,
+        Size = UDim2.new(1, -20, 0, subH),
+        Position = UDim2.new(0.5, 0, 0.5, -(self.logoSize / 2) + titleH * 0 + 0),
+        AnchorPoint = Vector2.new(0.5, 0),
+        BackgroundTransparency = 1,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextTransparency = 1,
+        ZIndex = 2,
+        Parent = self.logoFrame,
+    }, { TextColor3 = "ContentColor", FontFace = "Font" })
+end
 
         self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
         self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
