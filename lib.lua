@@ -15415,76 +15415,155 @@ function Window.new(properties)
     sidebar.build(self, self.layout)
     sidebar.applyWidth(self, layouts.railWidthFor(self.layout, self.size.X.Offset))
 
-    -- sebelum textColumn, di dalam logoFrame
-local cornerSize = 14
-local bgColor = Color3.fromRGB(13, 13, 26)
-local bgTransparency = 0.15
+    if self.logo then
+    local hasSub = self.logoSubtitle ~= nil and self.logoSubtitle ~= ""
+    local padX = 16
+    local titleH = if self.logoTitle then 22 else 0
+    local subH = if hasSub then 18 else 0
+    local gap = 4
+    local textBlockH = titleH + (if hasSub then gap + subH else 0)
+    local cardH = 120
+    local corner = 14
+    local bgColor = Color3.fromRGB(13, 13, 26)
+    local bgTransparency = 0.15
 
-local corners = {
-    { pos = UDim2.fromScale(0, 0),       anchor = Vector2.new(0, 0),     corner = "TopLeftRadius" },
-    { pos = UDim2.fromScale(1, 0),       anchor = Vector2.new(1, 0),     corner = "TopRightRadius" },
-    { pos = UDim2.fromScale(0, 1),       anchor = Vector2.new(0, 1),     corner = "BottomLeftRadius" },
-    { pos = UDim2.fromScale(1, 1),       anchor = Vector2.new(1, 1),     corner = "BottomRightRadius" },
-}
-
-for _, c in corners do
-    local cornerCover = self:Create("Frame", {
-        Size = UDim2.fromOffset(cornerSize, cornerSize),
-        Position = c.pos,
-        AnchorPoint = c.anchor,
+    self.logoFrame = self:Create("Frame", {
+        Name = "LogoFrame",
+        Size = UDim2.new(1, -30, 0, cardH),
+        Position = UDim2.fromOffset(15, 15),
         BackgroundColor3 = bgColor,
         BackgroundTransparency = bgTransparency,
         BorderSizePixel = 0,
-        ZIndex = 3,
+        ClipsDescendants = true,
+        Parent = self.sidebar,
+    })
+
+    self:Create("UICorner", {
+        CornerRadius = UDim.new(0, corner),
         Parent = self.logoFrame,
     })
 
-    -- bikin inverted corner pake UICorner di Frame luar
-    local cutter = self:Create("Frame", {
-        Size = UDim2.fromOffset(cornerSize * 2, cornerSize * 2),
+    local cardStroke = self:Create("UIStroke", {
+        Color = Color3.fromRGB(60, 55, 95),
+        Transparency = 0.35,
+        Thickness = 1,
+        Parent = self.logoFrame,
+    })
+
+    -- LOGO full card, kotak (belum rounded)
+    self.logoLabel = self:Create("ImageLabel", {
+        Image = self.logo,
+        Size = UDim2.fromScale(1, 1),
         Position = UDim2.fromScale(0.5, 0.5),
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        ClipsDescendants = true,
-        Parent = cornerCover,
-    })
+        ImageTransparency = 0,
+        ScaleType = Enum.ScaleType.Crop,
+        ZIndex = 1,
+        Parent = self.logoFrame,
+    }, { ImageColor3 = "TitlingColor" })
 
-    -- pindahin cutter biar cuma sudut luar yang ketutup
-    if c.corner == "TopLeftRadius" then
-        cutter.Position = UDim2.fromScale(1, 1)
-    elseif c.corner == "TopRightRadius" then
-        cutter.Position = UDim2.fromScale(0, 1)
-    elseif c.corner == "BottomLeftRadius" then
-        cutter.Position = UDim2.fromScale(1, 0)
-    else
-        cutter.Position = UDim2.fromScale(0, 0)
+    -- 4 corner cover di atas logo, warnanya sama kayak card bg
+    -- trik: pake Frame luar (solid) + Frame dalam yang di-cover UICorner
+    local function makeCorner(pos, anchor, isRight, isBottom)
+        -- frame sudut, warna card bg, nutup sudut logo
+        local cornerFrame = self:Create("Frame", {
+            Name = "CornerCover",
+            Size = UDim2.fromOffset(corner + 1, corner + 1),
+            Position = pos,
+            AnchorPoint = anchor,
+            BackgroundColor3 = bgColor,
+            BackgroundTransparency = bgTransparency,
+            BorderSizePixel = 0,
+            ZIndex = 3,
+            Parent = self.logoFrame,
+        })
+
+        -- Frame kecil di dalam sudut yang di-"punch" (transparan) pake UICorner
+        -- posisinya di sisi dalam sudut, biar bentukan rounded-nya kebalik
+        local punchSize = corner * 2
+        local punchPos = Vector2.new(
+            if isRight then 0 else 1,   -- kalo sudut kanan, punch di kiri cover
+            if isBottom then 0 else 1   -- kalo sudut bawah, punch di atas cover
+        )
+
+        local punch = self:Create("Frame", {
+            Name = "Punch",
+            Size = UDim2.fromOffset(punchSize, punchSize),
+            Position = UDim2.fromScale(punchPos.X, punchPos.Y),
+            AnchorPoint = Vector2.new(punchPos.X, punchPos.Y),
+            BackgroundColor3 = bgColor,
+            BackgroundTransparency = bgTransparency,
+            BorderSizePixel = 0,
+            ZIndex = 4,
+            Parent = cornerFrame,
+        })
+
+        self:Create("UICorner", {
+            CornerRadius = UDim.new(0, corner),
+            Parent = punch,
+        })
+
+        return cornerFrame
     end
 
-    self:Create("UICorner", {
-        CornerRadius = UDim.new(0, cornerSize),
-        Parent = cutter,
+    makeCorner(UDim2.fromScale(0, 0), Vector2.new(0, 0), false, false)  -- TL
+    makeCorner(UDim2.fromScale(1, 0), Vector2.new(1, 0), true, false)   -- TR
+    makeCorner(UDim2.fromScale(0, 1), Vector2.new(0, 1), false, true)   -- BL
+    makeCorner(UDim2.fromScale(1, 1), Vector2.new(1, 1), true, true)    -- BR
+
+    -- TEXT block di atas logo
+    local textColumn = self:Create("Frame", {
+        Name = "TextColumn",
+        Size = UDim2.new(1, -padX * 2, 0, textBlockH),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        ZIndex = 5,
+        Parent = self.logoFrame,
     })
 
-    -- Frame di dalam cutter yang warnanya sama
-    local fill = self:Create("Frame", {
-        Size = UDim2.fromScale(1, 1),
-        BackgroundColor3 = bgColor,
-        BackgroundTransparency = bgTransparency,
-        BorderSizePixel = 0,
-        ZIndex = 4,
-        Parent = cutter,
+    self:Create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, gap),
+        Parent = textColumn,
     })
 
-    -- PENTING: cover area yang cutternya transparan
-    self:Create("Frame", {
-        Size = UDim2.fromScale(1, 1),
-        BackgroundColor3 = bgColor,
-        BackgroundTransparency = bgTransparency,
-        BorderSizePixel = 0,
-        ZIndex = 3,
-        Parent = cornerCover,
-    })
+    if self.logoTitle then
+        self.logoTitleLabel = self:Create("TextLabel", {
+            Text = self.logoTitle,
+            Size = UDim2.new(1, 0, 0, titleH),
+            BackgroundTransparency = 1,
+            TextSize = 18,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            TextYAlignment = Enum.TextYAlignment.Center,
+            TextTransparency = 1,
+            LayoutOrder = 1,
+            ZIndex = 5,
+            Parent = textColumn,
+        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+    end
+
+    if hasSub then
+        self.logoSubtitleLabel = self:Create("TextLabel", {
+            Text = self.logoSubtitle,
+            Size = UDim2.new(1, 0, 0, subH),
+            BackgroundTransparency = 1,
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            TextYAlignment = Enum.TextYAlignment.Center,
+            TextTransparency = 1,
+            LayoutOrder = 2,
+            ZIndex = 5,
+            Parent = textColumn,
+        }, { TextColor3 = "ContentColor", FontFace = "Font" })
+    end
+
+    self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
+    self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
 end
 else
     self.tabList = self:Create("ScrollingFrame", {
