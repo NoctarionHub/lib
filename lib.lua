@@ -15425,6 +15425,19 @@ function Window.new(properties)
         Parent = self.sidebar,
     })
 
+    -- background di belakang logo
+    self.logoBg = self:Create("Frame", {
+        Name = "LogoBg",
+        Size = UDim2.fromOffset(self.logoSize + 16, self.logoSize + 16),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = Color3.fromRGB(25, 25, 30),
+        BackgroundTransparency = 0.2,
+        BorderSizePixel = 0,
+        ZIndex = 0,
+        Parent = self.logoFrame,
+    }, { UICorner = { CornerRadius = UDim.new(0, 12) } })
+
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
         Size = UDim2.fromOffset(self.logoSize, self.logoSize),
@@ -15440,7 +15453,7 @@ function Window.new(properties)
         self.logoTitleLabel = self:Create("TextLabel", {
             Text = self.logoTitle,
             Size = UDim2.new(1, 0, 0, 20),
-            Position = UDim2.new(0.5, 0, 10, 0),
+            Position = UDim2.new(0.5, 0, 7, 0),
             AnchorPoint = Vector2.new(0.5, 0.5),
             BackgroundTransparency = 1,
             TextSize = 18,
