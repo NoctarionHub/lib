@@ -15460,6 +15460,11 @@ function Window.new(properties)
     Parent = self.logoFrame,
 }, { ImageColor3 = "TitlingColor" })
 
+self:Create("UICorner", {
+    CornerRadius = UDim.new(0, 14),   -- samain dengan corner card
+    Parent = self.logoLabel,
+})
+
     -- TEXT block, di depan logo, ZIndex 2
     local textColumn = self:Create("Frame", {
         Name = "TextColumn",
