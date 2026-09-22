@@ -15456,7 +15456,7 @@ function Window.new(properties)
     BackgroundTransparency = 1,
     ImageTransparency = 1,
     ScaleType = Enum.ScaleType.Crop,   -- <-- ganti dari Fit
-    ZIndex = 1,
+    ZIndex = 2,
     Parent = self.logoFrame,
 }, { ImageColor3 = "TitlingColor" })
 
@@ -15472,7 +15472,7 @@ self:Create("UICorner", {
         Position = UDim2.fromScale(0.5, 0.5),
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1,
-        ZIndex = 2,
+        ZIndex = 3,
         Parent = self.logoFrame,
     })
 
@@ -15495,7 +15495,7 @@ self:Create("UICorner", {
             TextYAlignment = Enum.TextYAlignment.Center,
             TextTransparency = 1,
             LayoutOrder = 1,
-            ZIndex = 2,
+            ZIndex = 3,
             Parent = textColumn,
         }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
     end
