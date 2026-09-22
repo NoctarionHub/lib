@@ -15449,16 +15449,16 @@ function Window.new(properties)
 
     -- LOGO FULL CARD, tapi tetap elemen sendiri (bukan layer background)
     self.logoLabel = self:Create("ImageLabel", {
-        Image = self.logo,
-        Size = UDim2.fromScale(1, 1),
-        Position = UDim2.fromScale(0.5, 0.5),
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundTransparency = 1,
-        ImageTransparency = 0,
-        ScaleType = Enum.ScaleType.Fit,
-        ZIndex = 1,
-        Parent = self.logoFrame,
-    }, { ImageColor3 = "TitlingColor" })
+    Image = self.logo,
+    Size = UDim2.fromScale(1, 1),
+    Position = UDim2.fromScale(0.5, 0.5),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundTransparency = 1,
+    ImageTransparency = 1,
+    ScaleType = Enum.ScaleType.Crop,   -- <-- ganti dari Fit
+    ZIndex = 1,
+    Parent = self.logoFrame,
+}, { ImageColor3 = "TitlingColor" })
 
     -- TEXT block, di depan logo, ZIndex 2
     local textColumn = self:Create("Frame", {
