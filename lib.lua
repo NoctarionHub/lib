@@ -15431,7 +15431,7 @@ function Window.new(properties)
         Size = UDim2.fromOffset(self.logoSize + 16, self.logoSize + 16),
         Position = UDim2.new(0.5, 0, 0.5, 0),
         AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = Color3.fromRGB(25, 25, 30),
+        BackgroundColor3 = Color3.fromRGB(77, 77, 77),
         BackgroundTransparency = 0.2,
         BorderSizePixel = 0,
         ZIndex = 0,
