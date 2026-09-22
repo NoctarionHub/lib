@@ -15411,54 +15411,53 @@ function Window.new(properties)
             self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
         end]]
 
-        if self.layout.mode == "sidebar" then
-        sidebar.build(self, self.layout)
-        sidebar.applyWidth(self, layouts.railWidthFor(self.layout, self.size.X.Offset))
-
-        -- logo di atas tab list (sidebar)
         if self.logo then
+    local hasSub = self.logoSubtitle ~= nil and self.logoSubtitle ~= ""
+    local cardPadY = 14
+    local titleH = if self.logoTitle then 22 else 0
+    local subH = if hasSub then 16 else 0
+    local cardH = self.logoSize + cardPadY * 2 + titleH + subH + (if hasSub then 2 else 0)
+
     self.logoFrame = self:Create("Frame", {
         Name = "LogoFrame",
-        Size = UDim2.new(1, -30, 0, self.logoSize + (if self.logoTitle then 28 else 16)),
+        Size = UDim2.new(1, -30, 0, cardH),
         Position = UDim2.fromOffset(15, 15),
-        BackgroundTransparency = 1,
+        BackgroundColor3 = Color3.fromRGB(13, 13, 26),
+        BackgroundTransparency = 0.15,
+        BorderSizePixel = 0,
         Parent = self.sidebar,
     })
 
-    self.logoBg = self:Create("Frame", {
-    Name = "LogoBg",
-    Size = UDim2.fromOffset(self.logoSize + 16, self.logoSize + 16),
-    Position = UDim2.new(0.5, 0, 0.5, 0),
-    AnchorPoint = Vector2.new(0.5, 0.5),
-    BackgroundColor3 = Color3.fromRGB(77, 77, 77),
-    BackgroundTransparency = 0.2,
-    BorderSizePixel = 0,
-    ZIndex = 0,
-    Parent = self.logoFrame,
-})
+    self:Create("UICorner", {
+        CornerRadius = UDim.new(0, 14),
+        Parent = self.logoFrame,
+    })
 
-local bgCorner = Instance.new("UICorner")
-bgCorner.CornerRadius = UDim.new(0, 12)
-bgCorner.Parent = self.logoBg
-table.insert(self.instances, bgCorner)
+    local cardStroke = self:Create("UIStroke", {
+        Color = Color3.fromRGB(60, 55, 95),
+        Transparency = 0.35,
+        Thickness = 1,
+        Parent = self.logoFrame,
+    })
+    table.insert(self.instances, cardStroke)
 
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
         Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0, cardPadY),
+        AnchorPoint = Vector2.new(0.5, 0),
         BackgroundTransparency = 1,
         ImageTransparency = 1,
-        ZIndex = 1,
+        ZIndex = 2,
         Parent = self.logoFrame,
     }, { ImageColor3 = "TitlingColor" })
 
     if self.logoTitle then
         self.logoTitleLabel = self:Create("TextLabel", {
             Text = self.logoTitle,
-            Size = UDim2.new(1, 0, 0, 20),
-            Position = UDim2.new(0.5, 0, 0.7, 0),
-            AnchorPoint = Vector2.new(0.5, 0.5),
+            Size = UDim2.new(1, -20, 0, titleH),
+            Position = UDim2.new(0.5, 0, 0, cardPadY + self.logoSize + 4),
+            AnchorPoint = Vector2.new(0.5, 0),
             BackgroundTransparency = 1,
             TextSize = 18,
             TextXAlignment = Enum.TextXAlignment.Center,
@@ -15466,6 +15465,21 @@ table.insert(self.instances, bgCorner)
             ZIndex = 2,
             Parent = self.logoFrame,
         }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+    end
+
+    if hasSub then
+        self.logoSubtitleLabel = self:Create("TextLabel", {
+            Text = self.logoSubtitle,
+            Size = UDim2.new(1, -20, 0, subH),
+            Position = UDim2.new(0.5, 0, 0, cardPadY + self.logoSize + 4 + titleH + 2),
+            AnchorPoint = Vector2.new(0.5, 0),
+            BackgroundTransparency = 1,
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            TextTransparency = 1,
+            ZIndex = 2,
+            Parent = self.logoFrame,
+        }, { TextColor3 = "ContentColor", FontFace = "Font" })
     end
 
     self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
