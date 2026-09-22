@@ -15362,6 +15362,55 @@ function Window.new(properties)
         Parent = self.elements,
     })
 
+    --[[if self.layout.mode == "sidebar" then
+        sidebar.build(self, self.layout)
+        sidebar.applyWidth(self, layouts.railWidthFor(self.layout, self.size.X.Offset))
+
+        -- logo di atas tab list (sidebar)
+        if self.logo then
+            self.logoFrame = self:Create("Frame", {
+                Name = "LogoFrame",
+                Size = UDim2.new(1, -30, 0, self.logoSize + (if self.logoTitle then 28 else 16)),
+                Position = UDim2.fromOffset(15, 15),
+                BackgroundTransparency = 1,
+                Parent = self.sidebar,
+            })
+
+            self:Create("UIListLayout", {
+                FillDirection = Enum.FillDirection.Vertical,
+                HorizontalAlignment = Enum.HorizontalAlignment.Center,
+                VerticalAlignment = Enum.VerticalAlignment.Center,
+                Padding = UDim.new(0, 8),
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Parent = self.logoFrame,
+            })
+
+            self.logoLabel = self:Create("ImageLabel", {
+                Image = self.logo,
+                Size = UDim2.fromOffset(self.logoSize, self.logoSize),
+                BackgroundTransparency = 1,
+                ImageTransparency = 1,
+                LayoutOrder = 0,
+                Parent = self.logoFrame,
+            }, { ImageColor3 = "TitlingColor" })
+
+            if self.logoTitle then
+                self.logoTitleLabel = self:Create("TextLabel", {
+                    Text = self.logoTitle,
+                    Size = UDim2.new(1, 0, 0, 20),
+                    BackgroundTransparency = 1,
+                    TextSize = 18,
+                    TextXAlignment = Enum.TextXAlignment.Center,
+                    TextTransparency = 1,
+                    LayoutOrder = 1,
+                    Parent = self.logoFrame,
+                }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+            end
+
+            self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
+            self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
+        end]]
+
         if self.layout.mode == "sidebar" then
         sidebar.build(self, self.layout)
         sidebar.applyWidth(self, layouts.railWidthFor(self.layout, self.size.X.Offset))
@@ -15388,6 +15437,12 @@ function Window.new(properties)
         ZIndex = 0,
         Parent = self.logoFrame,
     }, { UICorner = { CornerRadius = UDim.new(0, 12) } })
+
+    local bgCorner = Instance.new("UICorner")
+    bgCorner.CornerRadius = UDim.new(0, 12)
+    bgCorner.Parent = self.logoBg
+    table.insert(self.instances, bgCorner)
+    self.themeProperties[bgCorner] = nil
 
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
