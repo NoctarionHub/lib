@@ -15419,101 +15419,41 @@ function Window.new(properties)
         if self.logo then
     self.logoFrame = self:Create("Frame", {
         Name = "LogoFrame",
-        Size = UDim2.new(1, -30, 0, self.logoSize),
+        Size = UDim2.new(1, -30, 0, self.logoSize + (if self.logoTitle then 28 else 16)),
         Position = UDim2.fromOffset(15, 15),
-        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-        BackgroundTransparency = 0.2,
-        BorderSizePixel = 0,
-        ClipsDescendants = true,
+        BackgroundTransparency = 1,
         Parent = self.sidebar,
-    })
-
-    self:Create("UICorner", {
-        CornerRadius = UDim.new(0, 12),
-        Parent = self.logoFrame,
-    })
-
-    self:Create("UIStroke", {
-        Color = Color3.fromRGB(255, 255, 255),
-        Thickness = 1,
-        Transparency = 0.85,
-        Parent = self.logoFrame,
-    })
-
-    self:Create("UIShadow", {
-        BlurRadius = UDim.new(0, 12),
-        Color = Color3.fromRGB(0, 0, 0),
-        Transparency = 0.5,
-        Offset = UDim2.new(0, 0, 0, 2),
-        Spread = UDim2.new(0, 2, 0, 2),
-        ZIndex = -1,
-        Parent = self.logoFrame,
     })
 
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
-        Size = UDim2.new(1, 0, 1, 0),
+        Size = UDim2.fromOffset(self.logoSize, self.logoSize),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1,
-        ImageTransparency = 0,
-        ScaleType = Enum.ScaleType.Crop,
-        ZIndex = 0,
+        ImageTransparency = 1,
+        ZIndex = 1,
         Parent = self.logoFrame,
-    })
-
-    self.logoTextFrame = self:Create("Frame", {
-        Size = UDim2.fromScale(1, 1),
-        BackgroundTransparency = 1,
-        ZIndex = 2,
-        Parent = self.logoFrame,
-    })
-
-    self:Create("UIListLayout", {
-        FillDirection = Enum.FillDirection.Vertical,
-        HorizontalAlignment = Enum.HorizontalAlignment.Center,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 2),
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Parent = self.logoTextFrame,
-    })
+    }, { ImageColor3 = "TitlingColor" })
 
     if self.logoTitle then
         self.logoTitleLabel = self:Create("TextLabel", {
             Text = self.logoTitle,
-            Size = UDim2.new(1, -20, 0, 22),
+            Size = UDim2.new(1, 0, 0, 20),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            AnchorPoint = Vector2.new(0.5, 0.5),
             BackgroundTransparency = 1,
             TextSize = 18,
             TextXAlignment = Enum.TextXAlignment.Center,
-            TextYAlignment = Enum.TextYAlignment.Center,
             TextTransparency = 1,
-            LayoutOrder = 0,
-            ZIndex = 3,
-            Parent = self.logoTextFrame,
-        }, {
-            TextColor3 = Color3.fromRGB(255, 255, 255),
-           
-        })
+            ZIndex = 2,
+            Parent = self.logoFrame,
+        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
     end
 
-    if self.logoSubtitle then
-        self.logoSubtitleLabel = self:Create("TextLabel", {
-            Text = self.logoSubtitle,
-            Size = UDim2.new(1, -20, 0, 16),
-            BackgroundTransparency = 1,
-            TextSize = 13,
-            TextXAlignment = Enum.TextXAlignment.Center,
-            TextTransparency = 1,
-            LayoutOrder = 1,
-            ZIndex = 3,
-            Parent = self.logoTextFrame,
-        }, {
-            TextColor3 = Color3.fromRGB(220, 220, 220),
-            
-        })
-    end
-
-    self.tabList.Position = UDim2.fromOffset(0, self.logoSize + 30)
-    self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoSize + 30))
-end
+    self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
+    self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                end
     else
         self.tabList = self:Create("ScrollingFrame", {
             Name = "Tabs",
