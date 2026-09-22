@@ -2853,7 +2853,7 @@ layouts.sidebar = {
     topbarHeight = topbarHeight,
     chromeHeight = topbarHeight,
 
-    railWidth = 200,
+    railWidth = 189,
 
     railCollapsedWidth = 64,
     railCollapseBelow = 589,
