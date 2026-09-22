@@ -15418,63 +15418,67 @@ function Window.new(properties)
     if self.logo then
     local hasSub = self.logoSubtitle ~= nil and self.logoSubtitle ~= ""
     local padX = 16
+    local padY = 14
     local titleH = if self.logoTitle then 22 else 0
     local subH = if hasSub then 18 else 0
-    local gap = 4
+    local gap = 2
     local textBlockH = titleH + (if hasSub then gap + subH else 0)
     local cardH = 120
+    local corner = 14
+    local bgColor = Color3.fromRGB(13, 13, 26)
+    local bgTransparency = 0.15
 
     self.logoFrame = self:Create("Frame", {
         Name = "LogoFrame",
         Size = UDim2.new(1, -30, 0, cardH),
         Position = UDim2.fromOffset(15, 15),
-        BackgroundColor3 = Color3.fromRGB(13, 13, 26),
-        BackgroundTransparency = 0.15,
+        BackgroundColor3 = bgColor,
+        BackgroundTransparency = bgTransparency,
         BorderSizePixel = 0,
         ClipsDescendants = true,
         Parent = self.sidebar,
     })
 
     self:Create("UICorner", {
-        CornerRadius = UDim.new(0, 14),
+        CornerRadius = UDim.new(0, corner),
         Parent = self.logoFrame,
     })
 
     local cardStroke = self:Create("UIStroke", {
         Color = Color3.fromRGB(60, 55, 95),
-        Transparency = 1,
+        Transparency = 0.35,
         Thickness = 1,
         Parent = self.logoFrame,
     })
 
-    -- LOGO FULL CARD, tapi tetap elemen sendiri (bukan layer background)
+    -- LOGO full card, kotak, di belakang text
     self.logoLabel = self:Create("ImageLabel", {
-    Image = self.logo,
-    Size = UDim2.fromScale(1, 1),
-    Position = UDim2.fromScale(0.5, 0.5),
-    AnchorPoint = Vector2.new(0.5, 0.5),
-    BackgroundTransparency = 1,
-    ImageTransparency = 1,
-    ScaleType = Enum.ScaleType.Crop,   -- <-- ganti dari Fit
-    ZIndex = 1,
-    Parent = self.logoFrame,
-}, { ImageColor3 = "TitlingColor" })
-
-    -- TEXT block, di depan logo, ZIndex 2
-    local textColumn = self:Create("Frame", {
-        Name = "TextColumn",
-        Size = UDim2.new(1, -padX * 2, 0, textBlockH),
+        Image = self.logo,
+        Size = UDim2.fromScale(1, 1),
         Position = UDim2.fromScale(0.5, 0.5),
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1,
-        ZIndex = 2,
+        ImageTransparency = 1,
+        ScaleType = Enum.ScaleType.Crop,
+        ZIndex = 1,
+        Parent = self.logoFrame,
+    }, { ImageColor3 = "TitlingColor" })
+
+    -- TEXT di kiri bawah, ZIndex 5
+    local textColumn = self:Create("Frame", {
+        Name = "TextColumn",
+        Size = UDim2.new(1, -padX * 2, 0, textBlockH),
+        Position = UDim2.new(0, padX, 1, -padY),
+        AnchorPoint = Vector2.new(0, 1),
+        BackgroundTransparency = 1,
+        ZIndex = 5,
         Parent = self.logoFrame,
     })
 
     self:Create("UIListLayout", {
         FillDirection = Enum.FillDirection.Vertical,
-        HorizontalAlignment = Enum.HorizontalAlignment.Center,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
+        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+        VerticalAlignment = Enum.VerticalAlignment.Bottom,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, gap),
         Parent = textColumn,
@@ -15485,12 +15489,12 @@ function Window.new(properties)
             Text = self.logoTitle,
             Size = UDim2.new(1, 0, 0, titleH),
             BackgroundTransparency = 1,
-            TextSize = 18,
-            TextXAlignment = Enum.TextXAlignment.Center,
+            TextSize = 20,
+            TextXAlignment = Enum.TextXAlignment.Left,
             TextYAlignment = Enum.TextYAlignment.Center,
             TextTransparency = 1,
             LayoutOrder = 1,
-            ZIndex = 2,
+            ZIndex = 5,
             Parent = textColumn,
         }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
     end
@@ -15501,11 +15505,11 @@ function Window.new(properties)
             Size = UDim2.new(1, 0, 0, subH),
             BackgroundTransparency = 1,
             TextSize = 13,
-            TextXAlignment = Enum.TextXAlignment.Center,
+            TextXAlignment = Enum.TextXAlignment.Left,
             TextYAlignment = Enum.TextYAlignment.Center,
             TextTransparency = 1,
             LayoutOrder = 2,
-            ZIndex = 2,
+            ZIndex = 5,
             Parent = textColumn,
         }, { TextColor3 = "ContentColor", FontFace = "Font" })
     end
