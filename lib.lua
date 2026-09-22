@@ -15457,7 +15457,7 @@ table.insert(self.instances, bgCorner)
         self.logoTitleLabel = self:Create("TextLabel", {
             Text = self.logoTitle,
             Size = UDim2.new(1, 0, 0, 20),
-            Position = UDim2.new(0.5, 0, 1, 0),
+            Position = UDim2.new(0.5, 0, 0.7, 0),
             AnchorPoint = Vector2.new(0.5, 0.5),
             BackgroundTransparency = 1,
             TextSize = 18,
