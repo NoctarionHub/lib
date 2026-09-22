@@ -15411,115 +15411,118 @@ function Window.new(properties)
             self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
         end]]
 
-        if self.logo then
-    local hasSub = self.logoSubtitle ~= nil and self.logoSubtitle ~= ""
-    local cardPadY = 14
-    local titleH = if self.logoTitle then 22 else 0
-    local subH = if hasSub then 16 else 0
-    local cardH = self.logoSize + cardPadY * 2 + titleH + subH + (if hasSub then 2 else 0)
+        if self.layout.mode == "sidebar" then
+    sidebar.build(self, self.layout)
+    sidebar.applyWidth(self, layouts.railWidthFor(self.layout, self.size.X.Offset))
 
-    self.logoFrame = self:Create("Frame", {
-        Name = "LogoFrame",
-        Size = UDim2.new(1, -30, 0, cardH),
-        Position = UDim2.fromOffset(15, 15),
-        BackgroundColor3 = Color3.fromRGB(13, 13, 26),
-        BackgroundTransparency = 0.15,
-        BorderSizePixel = 0,
-        Parent = self.sidebar,
-    })
+    if self.logo then
+        local hasSub = self.logoSubtitle ~= nil and self.logoSubtitle ~= ""
+        local cardPadY = 14
+        local titleH = if self.logoTitle then 22 else 0
+        local subH = if hasSub then 16 else 0
+        local cardH = self.logoSize + cardPadY * 2 + titleH + subH + (if hasSub then 2 else 0)
 
-    self:Create("UICorner", {
-        CornerRadius = UDim.new(0, 14),
-        Parent = self.logoFrame,
-    })
+        self.logoFrame = self:Create("Frame", {
+            Name = "LogoFrame",
+            Size = UDim2.new(1, -30, 0, cardH),
+            Position = UDim2.fromOffset(15, 15),
+            BackgroundColor3 = Color3.fromRGB(13, 13, 26),
+            BackgroundTransparency = 0.15,
+            BorderSizePixel = 0,
+            Parent = self.sidebar,
+        })
 
-    local cardStroke = self:Create("UIStroke", {
-        Color = Color3.fromRGB(60, 55, 95),
-        Transparency = 0.35,
-        Thickness = 1,
-        Parent = self.logoFrame,
-    })
-    table.insert(self.instances, cardStroke)
+        self:Create("UICorner", {
+            CornerRadius = UDim.new(0, 14),
+            Parent = self.logoFrame,
+        })
 
-    self.logoLabel = self:Create("ImageLabel", {
-        Image = self.logo,
-        Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-        Position = UDim2.new(0.5, 0, 0, cardPadY),
+        local cardStroke = self:Create("UIStroke", {
+            Color = Color3.fromRGB(60, 55, 95),
+            Transparency = 0.35,
+            Thickness = 1,
+            Parent = self.logoFrame,
+        })
+
+        self.logoLabel = self:Create("ImageLabel", {
+            Image = self.logo,
+            Size = UDim2.fromOffset(self.logoSize, self.logoSize),
+            Position = UDim2.new(0.5, 0, 0, cardPadY),
+            AnchorPoint = Vector2.new(0.5, 0),
+            BackgroundTransparency = 1,
+            ImageTransparency = 1,
+            ZIndex = 2,
+            Parent = self.logoFrame,
+        }, { ImageColor3 = "TitlingColor" })
+
+        if self.logoTitle then
+            self.logoTitleLabel = self:Create("TextLabel", {
+                Text = self.logoTitle,
+                Size = UDim2.new(1, -20, 0, titleH),
+                Position = UDim2.new(0.5, 0, 0, cardPadY + self.logoSize + 4),
+                AnchorPoint = Vector2.new(0.5, 0),
+                BackgroundTransparency = 1,
+                TextSize = 18,
+                TextXAlignment = Enum.TextXAlignment.Center,
+                TextTransparency = 1,
+                ZIndex = 2,
+                Parent = self.logoFrame,
+            }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
+        end
+
+        if hasSub then
+            self.logoSubtitleLabel = self:Create("TextLabel", {
+                Text = self.logoSubtitle,
+                Size = UDim2.new(1, -20, 0, subH),
+                Position = UDim2.new(0.5, 0, 0, cardPadY + self.logoSize + 4 + titleH + 2),
+                AnchorPoint = Vector2.new(0.5, 0),
+                BackgroundTransparency = 1,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Center,
+                TextTransparency = 1,
+                ZIndex = 2,
+                Parent = self.logoFrame,
+            }, { TextColor3 = "ContentColor", FontFace = "Font" })
+        end
+
+        self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
+        self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
+    end
+else
+    self.tabList = self:Create("ScrollingFrame", {
+        Name = "Tabs",
+        Active = true,
+        Size = UDim2.new(1, 0, 0, self.layout.tabStripHeight),
+        Position = UDim2.new(0.5, 0, 0, self.layout.tabStripTop),
         AnchorPoint = Vector2.new(0.5, 0),
+
         BackgroundTransparency = 1,
-        ImageTransparency = 1,
-        ZIndex = 2,
-        Parent = self.logoFrame,
-    }, { ImageColor3 = "TitlingColor" })
+        AutomaticCanvasSize = Enum.AutomaticSize.X,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 0,
+        ScrollBarImageTransparency = 1,
+        ScrollingDirection = Enum.ScrollingDirection.X,
 
-    if self.logoTitle then
-        self.logoTitleLabel = self:Create("TextLabel", {
-            Text = self.logoTitle,
-            Size = UDim2.new(1, -20, 0, titleH),
-            Position = UDim2.new(0.5, 0, 0, cardPadY + self.logoSize + 4),
-            AnchorPoint = Vector2.new(0.5, 0),
-            BackgroundTransparency = 1,
-            TextSize = 18,
-            TextXAlignment = Enum.TextXAlignment.Center,
-            TextTransparency = 1,
-            ZIndex = 2,
-            Parent = self.logoFrame,
-        }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
-    end
+        Parent = self.main,
+    })
 
-    if hasSub then
-        self.logoSubtitleLabel = self:Create("TextLabel", {
-            Text = self.logoSubtitle,
-            Size = UDim2.new(1, -20, 0, subH),
-            Position = UDim2.new(0.5, 0, 0, cardPadY + self.logoSize + 4 + titleH + 2),
-            AnchorPoint = Vector2.new(0.5, 0),
-            BackgroundTransparency = 1,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Center,
-            TextTransparency = 1,
-            ZIndex = 2,
-            Parent = self.logoFrame,
-        }, { TextColor3 = "ContentColor", FontFace = "Font" })
-    end
+    self.tabListLayout = self:Create("UIListLayout", {
+        Padding = UDim.new(0, 7),
+        FillDirection = Enum.FillDirection.Horizontal,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+        SortOrder = Enum.SortOrder.LayoutOrder,
 
-    self.tabList.Position = UDim2.fromOffset(0, self.logoFrame.Size.Y.Offset + 20)
-    self.tabList.Size = UDim2.new(1, 0, 1, -(self.logoFrame.Size.Y.Offset + 20))
+        Parent = self.tabList,
+    })
+
+    self:Create("UIPadding", {
+        PaddingLeft = UDim.new(0, 22),
+        PaddingRight = UDim.new(0, 10),
+
+        Parent = self.tabList,
+    })
 end
-    else
-        self.tabList = self:Create("ScrollingFrame", {
-            Name = "Tabs",
-            Active = true,
-            Size = UDim2.new(1, 0, 0, self.layout.tabStripHeight),
-            Position = UDim2.new(0.5, 0, 0, self.layout.tabStripTop),
-            AnchorPoint = Vector2.new(0.5, 0),
-
-            BackgroundTransparency = 1,
-            AutomaticCanvasSize = Enum.AutomaticSize.X,
-            CanvasSize = UDim2.new(0, 0, 0, 0),
-            ScrollBarThickness = 0,
-            ScrollBarImageTransparency = 1,
-            ScrollingDirection = Enum.ScrollingDirection.X,
-
-            Parent = self.main,
-        })
-
-        self.tabListLayout = self:Create("UIListLayout", {
-            Padding = UDim.new(0, 7),
-            FillDirection = Enum.FillDirection.Horizontal,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            HorizontalAlignment = Enum.HorizontalAlignment.Left,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-
-            Parent = self.tabList,
-        })
-
-        self:Create("UIPadding", {
-            PaddingLeft = UDim.new(0, 22),
-            PaddingRight = UDim.new(0, 10),
-
-            Parent = self.tabList,
-        })
-    end
 
     self.actionContainer = self:Create("Frame", {
 
