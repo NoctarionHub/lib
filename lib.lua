@@ -15417,13 +15417,11 @@ function Window.new(properties)
 
     if self.logo then
     local hasSub = self.logoSubtitle ~= nil and self.logoSubtitle ~= ""
-    local padX = 18
-    local padY = 16
+    local cardPadY = 14
     local titleH = if self.logoTitle then 22 else 0
     local subH = if hasSub then 18 else 0
-    local gap = 4
-    local textBlockH = titleH + (if hasSub then gap + subH else 0)
-    local cardH = self.logoSize + padY * 2 + textBlockH + 8
+    local gap = 2
+    local cardH = 110
 
     self.logoFrame = self:Create("Frame", {
         Name = "LogoFrame",
@@ -15432,6 +15430,7 @@ function Window.new(properties)
         BackgroundColor3 = Color3.fromRGB(13, 13, 26),
         BackgroundTransparency = 0.15,
         BorderSizePixel = 0,
+        ClipsDescendants = true,
         Parent = self.sidebar,
     })
 
@@ -15447,47 +15446,66 @@ function Window.new(properties)
         Parent = self.logoFrame,
     })
 
-    -- LOGO di atas
+    -- LOGO jadi background, full card, transparency tinggi, ZIndex 1
     self.logoLabel = self:Create("ImageLabel", {
         Image = self.logo,
-        Size = UDim2.fromOffset(self.logoSize, self.logoSize),
-        Position = UDim2.new(0.5, 0, 0, padY),
-        AnchorPoint = Vector2.new(0.5, 0),
+        Size = UDim2.fromScale(1, 1),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1,
-        ImageTransparency = 1,
-        ZIndex = 2,
+        ImageTransparency = 0.75,
+        ScaleType = Enum.ScaleType.Fit,
+        ZIndex = 1,
         Parent = self.logoFrame,
     }, { ImageColor3 = "TitlingColor" })
 
-    -- TITLE di bawah logo, kiri-aligned
+    -- TEXT block, center, di depan logo
+    local textColumn = self:Create("Frame", {
+        Name = "TextColumn",
+        Size = UDim2.new(1, -20, 0, titleH + (if hasSub then gap + subH else 0)),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        ZIndex = 2,
+        Parent = self.logoFrame,
+    })
+
+    self:Create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, gap),
+        Parent = textColumn,
+    })
+
     if self.logoTitle then
         self.logoTitleLabel = self:Create("TextLabel", {
             Text = self.logoTitle,
-            Size = UDim2.new(1, -padX * 2, 0, titleH),
-            Position = UDim2.new(0, padX, 0, padY + self.logoSize + 8),
-            AnchorPoint = Vector2.new(0, 0),
+            Size = UDim2.new(1, 0, 0, titleH),
             BackgroundTransparency = 1,
-            TextSize = 16,
-            TextXAlignment = Enum.TextXAlignment.Left,
+            TextSize = 18,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            TextYAlignment = Enum.TextYAlignment.Center,
             TextTransparency = 1,
+            LayoutOrder = 1,
             ZIndex = 2,
-            Parent = self.logoFrame,
+            Parent = textColumn,
         }, { TextColor3 = "TitlingColor", FontFace = "TitleFont" })
     end
 
-    -- SUBTITLE di bawah title, kiri-aligned
     if hasSub then
         self.logoSubtitleLabel = self:Create("TextLabel", {
             Text = self.logoSubtitle,
-            Size = UDim2.new(1, -padX * 2, 0, subH),
-            Position = UDim2.new(0, padX, 0, padY + self.logoSize + 8 + titleH + gap),
-            AnchorPoint = Vector2.new(0, 0),
+            Size = UDim2.new(1, 0, 0, subH),
             BackgroundTransparency = 1,
             TextSize = 13,
-            TextXAlignment = Enum.TextXAlignment.Left,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            TextYAlignment = Enum.TextYAlignment.Center,
             TextTransparency = 1,
+            LayoutOrder = 2,
             ZIndex = 2,
-            Parent = self.logoFrame,
+            Parent = textColumn,
         }, { TextColor3 = "ContentColor", FontFace = "Font" })
     end
 
