@@ -471,7 +471,7 @@ local function LoadCustomFigtree()
 	local okFolder = EnsureAssetsFolder()
 	if not okFolder then return nil end
  
-	local base = "https://raw.githubusercontent.com/Skinny-yz/NHUI-Assets/main/fonts/"
+	local base = "https://raw.githubusercontent.com/NoctarionHub/lib/main/fonts/"
 	local semiPath = ASSETS_FOLDER .. "/Figtree-SemiBold.ttf"
 	local regPath  = ASSETS_FOLDER .. "/Figtree-Medium.ttf"
  
@@ -687,11 +687,11 @@ local function MeasureText(text, size, maxWidth)
 end
  
 local IconSources = {
-	Material = "https://raw.githubusercontent.com/Skinny-yz/NHUI-Assets/main/icons/MaterialIcons.luau",
-	Lucide   = "https://raw.githubusercontent.com/Skinny-yz/NHUI-Assets/main/icons/LucideIcons.luau",
-	Phosphor = "https://raw.githubusercontent.com/Skinny-yz/NHUI-Assets/main/icons/Phosphor.luau",
-	["Phosphor-Filled"] = "https://raw.githubusercontent.com/Skinny-yz/NHUI-Assets/main/icons/Phosphor%20Filled.luau",
-	SF       = "https://raw.githubusercontent.com/Skinny-yz/NHUI-Assets/main/icons/SFSymbols.luau",
+	Material = "https://raw.githubusercontent.com/NoctarionHub/lib/main/icons/MaterialIcons.luau",
+	Lucide   = "https://raw.githubusercontent.com/NoctarionHub/lib/main/icons/LucideIcons.luau",
+	Phosphor = "https://raw.githubusercontent.com/NoctarionHub/lib/main/icons/Phosphor.luau",
+	["Phosphor-Filled"] = "https://raw.githubusercontent.com/NoctarionHub/lib/main/icons/Phosphor%20Filled.luau",
+	SF       = "https://raw.githubusercontent.com/NoctarionHub/lib/main/icons/SFSymbols.luau",
 }
  
 local IconCache = {}
