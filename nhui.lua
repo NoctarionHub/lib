@@ -524,6 +524,58 @@ local function LoadFonts()
 end
  
 local Fonts = LoadFonts()
+
+local function SetupDiscordInvite(opts)
+	opts = opts or {}
+	if not opts.Invite or opts.Invite == "" then return end
+
+	local code = opts.Invite:match("discord%.gg/([%w%-]+)")
+		or opts.Invite:match("discord%.com/invite/([%w%-]+)")
+		or opts.Invite
+
+	if not code or code == "" then return end
+
+	local folder = "NHUI/Discord Invites"
+	local marker = folder .. "/" .. code .. ".nh"
+
+	if fn_isfolder and not fn_isfolder(folder) then
+		pcall(fn_makefolder, "NHUI")
+		pcall(fn_makefolder, folder)
+	end
+
+	if opts.RememberJoins and fn_isfile and fn_isfile(marker) then
+		return
+	end
+
+	local httpRequest = (syn and syn.request) or http_request or request
+	if not httpRequest then return end
+
+	local ok, err = pcall(httpRequest, {
+		Url = "http://127.0.0.1:6463/rpc?v=1",
+		Method = "POST",
+		Headers = {
+			["Content-Type"] = "application/json",
+			["Origin"] = "https://discord.com",
+		},
+		Body = HttpService:JSONEncode({
+			cmd = "INVITE_BROWSER",
+			nonce = HttpService:GenerateGUID(false),
+			args = { code = code },
+		}),
+	})
+
+	if not ok then
+		return
+	end
+
+	if opts.RememberJoins and fn_writefile then
+		pcall(fn_writefile, marker, "joined")
+	end
+end
+
+function NHUI:JoinDiscord(opts)
+	return SetupDiscordInvite(opts or self._discordOpts)
+end
  
 NHUI.Theme = {
 	Background     = Color3.fromRGB(8, 4, 16),
@@ -2479,7 +2531,7 @@ function NHUI:CreateWindow(opts)
 		end))
  
 		jan:Add(mobileToggle)
-	elseif toggleKey then
+		elseif toggleKey then
 		NHUI:Notify({
 			Title = "Minimize Keybind",
 			Text  = "Press " .. toggleKey.Name .. " to minimize or open this panel.",
@@ -2487,7 +2539,13 @@ function NHUI:CreateWindow(opts)
 			Duration = 15,
 		})
 	end
- 
+
+	self._discordOpts = opts.Discord
+
+	if opts.Discord and opts.Discord.Enabled then
+		task.spawn(SetupDiscordInvite, opts.Discord)
+	end
+
 	return self
 end
  
@@ -2871,6 +2929,9 @@ function Window:AddDefaultCreditsPanel()
 		Icon = "Lucide:heart-handshake",
 		OnToggle = function(isOpen)
 			if dockBtn then dockBtn:SetActive(isOpen) end
+            if isOpen and self._discordOpts and self._discordOpts.Enabled then
+				task.spawn(SetupDiscordInvite, self._discordOpts)
+			end
 		end,
 	})
  
@@ -9989,8 +10050,8 @@ function Tab:AddToggle(opts)
 	local switchGradient = Instance.new("UIGradient")
 	switchGradient.Rotation = 90
 	switchGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(210, 170, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 120, 255)),
+    ColorSequenceKeypoint.new(0, NHUI.Theme.AccentStroke),
+    ColorSequenceKeypoint.new(1, NHUI.Theme.Accent),
 })
 	switchGradient.Transparency = NumberSequence.new({
 		NumberSequenceKeypoint.new(0, state and 0 or 0.76),
@@ -10033,8 +10094,8 @@ function Tab:AddToggle(opts)
 			Transparency = state and 0.88 or 0.72,
 		}, anim, style, dir)
 		switchGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(210, 170, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 120, 255)),
+	ColorSequenceKeypoint.new(0, NHUI.Theme.AccentStroke),
+	ColorSequenceKeypoint.new(1, NHUI.Theme.Accent),
 })
 		Tween(knob, {
 	BackgroundColor3 = state and NHUI.Theme.Background or NHUI.Theme.Text,
