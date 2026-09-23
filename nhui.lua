@@ -1,24 +1,4 @@
-local Fluent = loadstring(game:HttpGet(
-    "https://github.com/StyearX/Fluent-Modded/releases/download/Fluent/FluentPro"
-))()
-
-local Window = Fluent:CreateWindow({
-    Title           = "My Hub",
-    SubTitle        = "by me",
-    TabWidth        = 160,
-    Size            = UDim2.fromOffset(580, 460),
-    Acrylic         = true,
-    Theme           = "AMOLED",
-    MinimizeKey     = Enum.KeyCode.LeftControl,
-    Search          = true,
-    UserInfoTop     = false,
-    UserInfo        = false,
-    UserInfoTitle   = "Welcome",
-    UserInfoColor   = Color3.fromRGB(96, 205, 255),
-    TitleIcon       = "halo",
-    Icons           = "solar/planet-bold",
-    Font            = "GothamSSm",
-})--!nonstrict
+--!nonstrict
 local TweenService      = game:GetService("TweenService")
 local Players           = game:GetService("Players")
 local UserInputService  = game:GetService("UserInputService")
