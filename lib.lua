@@ -15169,6 +15169,7 @@ end
 moveable(Changelog)
 
 return Changelog
+end
 
 Components.window = { Name = "window", Parent = Components }
 Components.window.FindFirstChild = function(self, k) return self[k] end
