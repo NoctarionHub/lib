@@ -526,18 +526,21 @@ end
 local Fonts = LoadFonts()
  
 NHUI.Theme = {
-	Background     = Color3.fromRGB(16, 16, 16),
-	Surface        = Color3.fromRGB(24, 24, 24),
-	Text           = Color3.fromRGB(240, 240, 240),
-	TextDim        = Color3.fromRGB(150, 150, 155),
-	Accent         = Color3.fromRGB(255, 255, 255),
-	Danger         = Color3.fromRGB(205, 205, 210),
- 
+	Background     = Color3.fromRGB(8, 4, 16),
+	Surface        = Color3.fromRGB(16, 10, 30),
+
+	Text           = Color3.fromRGB(240, 235, 255),
+	TextDim        = Color3.fromRGB(150, 140, 170),
+
+	Accent         = Color3.fromRGB(180, 120, 255),
+
+	Danger         = Color3.fromRGB(230, 70, 110),
+
 	Font           = Fonts.SemiBold,
 	FontRegular    = Fonts.Regular,
- 
+
 	MeasureFont    = Enum.Font.GothamSemibold,
- 
+
 	CornerRadius   = 16,
 	CornerRadiusSm = 8,
 	Margin         = 14,
@@ -950,7 +953,7 @@ local NotifyIcons = {
 }
  
 local NotifyColors = {
-	info    = Color3.fromRGB(120, 170, 255),
+	info    = Color3.fromRGB(180, 120, 255),
 	success = Color3.fromRGB(110, 220, 140),
 	warning = Color3.fromRGB(255, 190, 90),
 	error   = Color3.fromRGB(255, 105, 105),
@@ -1618,9 +1621,9 @@ function NHUI:Modal(opts)
 			Tween(fieldFrame, { BackgroundTransparency = 0.85 }, 0.15)
 		end))
 		jan:Add(box.FocusLost:Connect(function()
-			Tween(fieldStroke, { Color = Color3.new(1, 1, 1), Transparency = 0.88 }, 0.15)
-			Tween(fieldFrame, { BackgroundTransparency = 0.93 }, 0.15)
-		end))
+    Tween(fieldStroke, { Color = NHUI.Theme.TextDim, Transparency = 0.88 }, 0.15)
+    Tween(field, { BackgroundTransparency = 0.85 }, 0.15)
+end))
  
 		fieldBoxes[field.Key or i] = { Type = field.Type, Box = box }
 	end
@@ -1922,14 +1925,14 @@ local DRAG_THRESHOLD = 6
  
 local function BaseCard(parent, height)
 	local card = Instance.new("Frame")
-	card.BackgroundColor3 = Color3.new(1, 1, 1)
-	card.BackgroundTransparency = 0.96
+	card.BackgroundColor3 = NHUI.Theme.Surface
+card.BackgroundTransparency = 0.92
 	card.BorderSizePixel = 0
 	card.Size = UDim2.new(1, 0, 0, height or 44)
 	card.ZIndex = Z.Content
 	card.Parent = parent
 	Corner(card, NHUI.Theme.CornerRadiusSm)
-	Stroke(card, Color3.new(1, 1, 1), 1, 0.95)
+	Stroke(card, NHUI.Theme.Accent, 1, 0.95)
 	return card
 end
  
@@ -2265,7 +2268,7 @@ function NHUI:CreateWindow(opts)
  
 	local tabIndicator = Instance.new("Frame")
 	tabIndicator.Name = "Indicator"
-	tabIndicator.BackgroundColor3 = Color3.new(1, 1, 1)
+	tabIndicator.BackgroundColor3 = NHUI.Theme.Accent
 	tabIndicator.BackgroundTransparency = 1
 	tabIndicator.BorderSizePixel = 0
 	tabIndicator.ZIndex = Z.Window
@@ -3225,15 +3228,15 @@ function Window:AddSpotifyPanel(opts)
  
 	local function makeCard(height, order, parent)
 		local card = Instance.new("Frame")
-		card.BackgroundColor3 = Color3.new(1, 1, 1)
-		card.BackgroundTransparency = 0.96
+		card.BackgroundColor3 = NHUI.Theme.Surface
+    card.BackgroundTransparency = 0.85
 		card.BorderSizePixel = 0
 		card.Size = UDim2.new(1, 0, 0, height)
 		card.LayoutOrder = order
 		card.ZIndex = Z.Content + 2
 		card.Parent = parent or scroll
 		Corner(card, 10)
-		Stroke(card, Color3.new(1, 1, 1), 1, 0.94)
+		Stroke(card, NHUI.Theme.Accent, 1, 0.92)
 		return card
 	end
  
@@ -3486,8 +3489,8 @@ function Window:AddSpotifyPanel(opts)
 		button.Name = name
 		button.Text = ""
 		button.AutoButtonColor = false
-		button.BackgroundColor3 = primary and Color3.fromRGB(30, 215, 96) or Color3.new(1, 1, 1)
-		button.BackgroundTransparency = primary and 0.05 or 0.94
+		button.BackgroundColor3 = NHUI.Theme.Background
+button.BackgroundTransparency = 0.5
 		button.BorderSizePixel = 0
 		button.Size = UDim2.fromOffset(primary and 36 or 32, primary and 36 or 32)
 		button.LayoutOrder = order
@@ -3529,8 +3532,8 @@ function Window:AddSpotifyPanel(opts)
 		label.Parent = card
  
 		local pill = Instance.new("Frame")
-		pill.BackgroundColor3 = Color3.new(1, 1, 1)
-		pill.BackgroundTransparency = 0.94
+		pill.BackgroundColor3 = NHUI.Theme.Surface
+pill.BackgroundTransparency = 0.85
 		pill.BorderSizePixel = 0
 		pill.Position = UDim2.fromOffset(10, 27)
 		pill.Size = UDim2.new(1, -20, 0, 30)
@@ -3541,8 +3544,8 @@ function Window:AddSpotifyPanel(opts)
 		local button = Instance.new("TextButton")
 		button.Text = ""
 		button.AutoButtonColor = false
-		button.BackgroundColor3 = Color3.new(1, 1, 1)
-		button.BackgroundTransparency = 0.91
+		button.BackgroundColor3 = NHUI.Theme.Background
+button.BackgroundTransparency = 0.5
 		button.BorderSizePixel = 0
 		button.AnchorPoint = Vector2.new(1, 0)
 		button.Position = UDim2.new(1, -3, 0, 3)
@@ -3550,7 +3553,7 @@ function Window:AddSpotifyPanel(opts)
 		button.ZIndex = Z.Content + 5
 		button.Parent = pill
 		Corner(button, 7)
-		Stroke(button, Color3.new(1, 1, 1), 1, 0.94)
+		Stroke(button, NHUI.Theme.TextDim, 1, 0.94)
 		local buttonImage = Instance.new("ImageLabel")
 		buttonImage.BackgroundTransparency = 1
 		buttonImage.Image = ResolveIcon(buttonIcon)
@@ -4522,14 +4525,14 @@ function Window:AddChatPanel(opts)
 	inputRow.Parent = content
  
 	local pill = Instance.new("Frame")
-	pill.BackgroundColor3 = Color3.new(1, 1, 1)
-	pill.BackgroundTransparency = 0.95
+	pill.BackgroundColor3 = NHUI.Theme.Surface
+pill.BackgroundTransparency = 0.85
 	pill.BorderSizePixel = 0
 	pill.Size = UDim2.new(1, -(INPUT_H + 6), 1, 0)
 	pill.ZIndex = BASE_Z + 1
 	pill.Parent = inputRow
 	Corner(pill, 9)
-	local pillStroke = Stroke(pill, Color3.new(1, 1, 1), 1, 0.9)
+	local pillStroke = Stroke(pill, NHUI.Theme.TextDim, 1, 0.88)
  
 	local pillPad = Instance.new("UIPadding")
 	pillPad.PaddingLeft = UDim.new(0, 10)
@@ -5917,14 +5920,14 @@ function Window:AddGlobalChatPanel(opts)
 	inputRow.Parent = content
  
 	local pill = Instance.new("Frame")
-	pill.BackgroundColor3 = Color3.new(1, 1, 1)
-	pill.BackgroundTransparency = 0.95
+	pill.BackgroundColor3 = NHUI.Theme.Surface
+pill.BackgroundTransparency = 0.85
 	pill.BorderSizePixel = 0
 	pill.Size = UDim2.new(1, -(INPUT_H + 6), 1, 0)
 	pill.ZIndex = BASE_Z + 1
 	pill.Parent = inputRow
 	Corner(pill, 9)
-	local pillStroke = Stroke(pill, Color3.new(1, 1, 1), 1, 0.9)
+	local pillStroke = Stroke(pill, NHUI.Theme.TextDim, 1, 0.88)
  
 	local pillPad = Instance.new("UIPadding")
 	pillPad.PaddingLeft = UDim.new(0, 10)
@@ -6336,7 +6339,7 @@ function Window:AddGlobalChatPanel(opts)
 		popup.ZIndex = BASE_Z + 10
 		popup.Parent = panel
 		Corner(popup, 10)
-		local popupStroke = Stroke(popup, Color3.new(1, 1, 1), 1, 0.88)
+		local popupStroke = NHUI.Theme.Accent
  
 		local popupPad = Instance.new("UIPadding")
 		popupPad.PaddingTop = UDim.new(0, 10)
@@ -6973,7 +6976,7 @@ function Window:_PromptTabPassword(tabObj, callback)
 	rememberSwitch.AnchorPoint = Vector2.new(0, 0.5)
 	rememberSwitch.Position = UDim2.new(0, 0, 0.5, 0)
 	rememberSwitch.Size = UDim2.fromOffset(32, 18)
-	rememberSwitch.BackgroundColor3 = remember and Color3.new(1, 1, 1) or Color3.fromRGB(60, 60, 60)
+	rememberSwitch.BackgroundColor3 = remember and NHUI.Theme.Accent or NHUI.Theme.Surface
 	rememberSwitch.BorderSizePixel = 0
 	rememberSwitch.ZIndex = Z.ModalTop + 2
 	rememberSwitch.Parent = rememberRow
@@ -6996,7 +6999,7 @@ function Window:_PromptTabPassword(tabObj, callback)
 	rememberKnob.Size = UDim2.fromOffset(14, 14)
 	rememberKnob.AnchorPoint = Vector2.new(0, 0.5)
 	rememberKnob.Position = remember and UDim2.new(1, -16, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
-	rememberKnob.BackgroundColor3 = remember and Color3.fromRGB(18, 18, 18) or Color3.new(1, 1, 1)
+	rememberKnob.BackgroundColor3 = remember and NHUI.Theme.Background or NHUI.Theme.Text
 	rememberKnob.BorderSizePixel = 0
 	rememberKnob.ZIndex = Z.ModalTop + 3
 	rememberKnob.Parent = rememberSwitch
@@ -7011,15 +7014,15 @@ function Window:_PromptTabPassword(tabObj, callback)
 	rememberClick.Parent = rememberRow
  
 	jan:Add(rememberClick.MouseButton1Click:Connect(function()
-		remember = not remember
-		Tween(rememberSwitch, {
-			BackgroundColor3 = remember and Color3.new(1, 1, 1) or Color3.fromRGB(60, 60, 60),
-		}, 0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-		Tween(rememberKnob, {
-			BackgroundColor3 = remember and Color3.fromRGB(18, 18, 18) or Color3.new(1, 1, 1),
-			Position = remember and UDim2.new(1, -16, 0.5, 0) or UDim2.new(0, 2, 0.5, 0),
-		}, 0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-	end))
+    remember = not remember
+    Tween(rememberSwitch, {
+        BackgroundColor3 = remember and NHUI.Theme.Accent or NHUI.Theme.Surface,
+    }, 0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+    Tween(rememberKnob, {
+        BackgroundColor3 = remember and NHUI.Theme.Background or NHUI.Theme.Text,
+        Position = remember and UDim2.new(1, -16, 0.5, 0) or UDim2.new(0, 2, 0.5, 0),
+    }, 0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+end))
  
 	local buttonsRow = Instance.new("Frame")
 	buttonsRow.BackgroundTransparency = 1
@@ -7301,7 +7304,7 @@ function Window:_OpenSearch()
 	panel.ZIndex = Z.Modal
 	panel.Parent = root
 	Corner(panel, 14)
-	Stroke(panel, Color3.new(1, 1, 1), 1, 0.8)
+	Stroke(panel, NHUI.Theme.Accent)
 	GlassLayer(panel, 14, 0.985)
  
 	scale = Instance.new("UIScale")
@@ -8516,14 +8519,14 @@ local function BuildFeedbackRow(parent, layoutOrder, rowH, placeholder, buttonIc
  
 	local pill = Instance.new("Frame")
 	pill.Name = "Pill"
-	pill.BackgroundColor3 = Color3.new(1, 1, 1)
-	pill.BackgroundTransparency = 0.95
+	pill.BackgroundColor3 = NHUI.Theme.Surface
+pill.BackgroundTransparency = 0.85
 	pill.BorderSizePixel = 0
 	pill.Size = UDim2.new(1, -(rowH + 6), 1, 0)
 	pill.ZIndex = Z.Content + 1
 	pill.Parent = row
 	Corner(pill, 9)
-	local pillStroke = Stroke(pill, Color3.new(1, 1, 1), 1, 0.9)
+	local pillStroke = Stroke(pill, NHUI.Theme.TextDim, 1, 0.88)
  
 	local pillPad = Instance.new("UIPadding")
 	pillPad.PaddingLeft = UDim.new(0, 10)
@@ -9186,7 +9189,7 @@ function Tab:AddLoadoutGroup(opts)
 	for i, iconAsset in ipairs(icons) do
 		local slot = Instance.new("Frame")
 		slot.Name = "Slot" .. i
-		slot.BackgroundColor3 = Color3.new(1, 1, 1)
+		slot.BackgroundColor3 = NHUI.Theme.Surface
 		slot.BackgroundTransparency = 0.95
 		slot.BorderSizePixel = 0
 		slot.ClipsDescendants = true
@@ -9346,8 +9349,8 @@ function Tab:AddInfoGrid(opts)
 		for i, item in ipairs(items) do
 			local chip = Instance.new("Frame")
 			chip.Name = "Chip" .. i
-			chip.BackgroundColor3 = Color3.new(1, 1, 1)
-			chip.BackgroundTransparency = 0.95
+			chip.BackgroundColor3 = NHUI.Theme.Surface
+chip.BackgroundTransparency = 0.75
 			chip.BorderSizePixel = 0
 			chip.LayoutOrder = i
 			chip.ZIndex = Z.Content + 2
@@ -9966,7 +9969,7 @@ function Tab:AddToggle(opts)
 	switchBg.AnchorPoint = Vector2.new(1, 0.5)
 	switchBg.Position = UDim2.new(1, -14, 0.5, 0)
 	switchBg.Size = UDim2.fromOffset(40, 22)
-	switchBg.BackgroundColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(46, 50, 49)
+	switchBg.BackgroundColor3 = state and NHUI.Theme.Accent or NHUI.Theme.Surface
 	switchBg.BackgroundTransparency = state and 0 or 0.32
 	switchBg.BorderSizePixel = 0
 	switchBg.ZIndex = Z.Content + 1
@@ -9985,9 +9988,9 @@ function Tab:AddToggle(opts)
 	local switchGradient = Instance.new("UIGradient")
 	switchGradient.Rotation = 90
 	switchGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(190, 198, 194)),
-	})
+    ColorSequenceKeypoint.new(0, NHUI.Theme.AccentStroke),
+    ColorSequenceKeypoint.new(1, NHUI.Theme.Accent),
+})
 	switchGradient.Transparency = NumberSequence.new({
 		NumberSequenceKeypoint.new(0, state and 0 or 0.76),
 		NumberSequenceKeypoint.new(1, state and 0 or 0.94),
@@ -10002,7 +10005,7 @@ function Tab:AddToggle(opts)
 	knob.Size = UDim2.fromOffset(16, 16)
 	knob.Position = state and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
 	knob.AnchorPoint = Vector2.new(0, 0.5)
-	knob.BackgroundColor3 = state and Color3.fromRGB(18, 18, 18) or Color3.fromRGB(226, 230, 228)
+	knob.BackgroundColor3 = state and NHUI.Theme.Background or NHUI.Theme.TextDim
 	knob.BackgroundTransparency = state and 0 or 0.06
 	knob.BorderSizePixel = 0
 	knob.ZIndex = Z.Content + 2
@@ -10021,20 +10024,20 @@ function Tab:AddToggle(opts)
 		local anim = 0.28
 		local style, dir = Enum.EasingStyle.Quint, Enum.EasingDirection.InOut
 		Tween(switchBg, {
-			BackgroundColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(46, 50, 49),
-			BackgroundTransparency = state and 0 or 0.32,
-		}, anim, style, dir)
+	BackgroundColor3 = state and NHUI.Theme.Accent or NHUI.Theme.Surface,
+	BackgroundTransparency = state and 0 or 0.32,
+}, anim, style, dir)
 		Tween(switchStroke, {
-			Color = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(205, 212, 209),
+			Color = state and NHUI.Theme.AccentStroke or NHUI.Theme.TextDim,
 			Transparency = state and 0.88 or 0.72,
 		}, anim, style, dir)
-		switchGradient.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, state and 0 or 0.76),
-			NumberSequenceKeypoint.new(1, state and 0 or 0.94),
-		})
+		switchGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, NHUI.Theme.AccentStroke),
+	ColorSequenceKeypoint.new(1, NHUI.Theme.Accent),
+})
 		Tween(knob, {
-			BackgroundColor3 = state and Color3.fromRGB(18, 18, 18) or Color3.fromRGB(226, 230, 228),
-			BackgroundTransparency = state and 0 or 0.06,
+	BackgroundColor3 = state and NHUI.Theme.Background or NHUI.Theme.Text,
+	BackgroundTransparency = state and 0 or 0.06,
 			Position = state and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0),
 		}, anim, style, dir)
 	end
@@ -10172,7 +10175,7 @@ function Tab:AddSlider(opts)
 	Corner(track, 3)
  
 	local fill = Instance.new("Frame")
-	fill.BackgroundColor3 = Color3.new(1, 1, 1)
+	fill.BackgroundColor3 = NHUI.Theme.Accent
 	fill.BackgroundTransparency = 0
 	fill.BorderSizePixel = 0
 	fill.Size = UDim2.new(SafeAlpha(value, min, max), 0, 1, 0)
@@ -10190,7 +10193,7 @@ function Tab:AddSlider(opts)
 	knob.ZIndex = Z.Content + 3
 	knob.Parent = track
 	Corner(knob, 6)
-	Stroke(knob, Color3.fromRGB(16, 16, 16), 2, 0)
+	Stroke(knob, NHUI.Theme.Background, 2, 0)
  
 	if hasDesc then
 		local lastW = -1
@@ -10525,7 +10528,7 @@ function Tab:AddDropdown(opts)
 		popupFrame.Size = UDim2.new(0, popupW, 0, 0)
 		popupFrame.Parent = root
 		Corner(popupFrame, 10)
-		local popupStroke = Stroke(popupFrame, Color3.new(1, 1, 1), 1, 0.92)
+		local popupStroke = Stroke(popupFrame, NHUI.Theme.Accent, 1, 0.92)
 		GlassLayer(popupFrame, 10, 0.985)
  
 		local px, py = ComputePopupPosition(mainWindow, card, popupW, targetHeight)
@@ -10732,13 +10735,13 @@ function Tab:AddTextbox(opts)
 	pill.AnchorPoint = Vector2.new(1, 0.5)
 	pill.Position = UDim2.new(1, -14, 0.5, 0)
 	pill.Size = UDim2.fromOffset(pillMinW, 26)
-	pill.BackgroundColor3 = Color3.new(1, 1, 1)
-	pill.BackgroundTransparency = 0.9
+pill.BackgroundColor3 = NHUI.Theme.Surface
+pill.BackgroundTransparency = 0.85
 	pill.BorderSizePixel = 0
 	pill.ZIndex = Z.Content + 2
 	pill.Parent = card
 	Corner(pill, 8)
-	local pillStroke = Stroke(pill, Color3.new(1, 1, 1), 1, 0.88)
+	local pillStroke = Stroke(pill, NHUI.Theme.TextDim, 1, 0.88)
  
 	local penIcon = Instance.new("ImageLabel")
 	penIcon.BackgroundTransparency = 1
@@ -10809,10 +10812,10 @@ function Tab:AddTextbox(opts)
 	end
  
 	box.FocusLost:Connect(function(enterPressed)
-		Tween(pillStroke, { Color = Color3.new(1, 1, 1), Transparency = 0.88 }, 0.15)
-		Tween(pill, { BackgroundTransparency = 0.9 }, 0.15)
-		fireChanged(box.Text, enterPressed)
-	end)
+    Tween(pillStroke, { Color = NHUI.Theme.TextDim, Transparency = 0.88 }, 0.15)
+    Tween(pill, { BackgroundTransparency = 0.85 }, 0.15)
+    fireChanged(box.Text, enterPressed)
+end)
  
 	return RegisterFlag(opts, {
 		Instance = card,
@@ -10850,13 +10853,13 @@ local function MiniField(parent, label, width, zBase)
 	local field = Instance.new("Frame")
 	field.Position = UDim2.fromOffset(0, 12)
 	field.Size = UDim2.new(1, 0, 0, 24)
-	field.BackgroundColor3 = Color3.new(1, 1, 1)
-	field.BackgroundTransparency = 0.92
+	field.BackgroundColor3 = NHUI.Theme.Surface
+field.BackgroundTransparency = 0.85
 	field.BorderSizePixel = 0
 	field.ZIndex = zBase + 2
 	field.Parent = holder
 	Corner(field, 7)
-	local fieldStroke = Stroke(field, Color3.new(1, 1, 1), 1, 0.88)
+	local fieldStroke = NHUI.Theme.TextDim
  
 	local box = Instance.new("TextBox")
 	box.ClearTextOnFocus = false
@@ -10876,9 +10879,9 @@ local function MiniField(parent, label, width, zBase)
 		Tween(field, { BackgroundTransparency = 0.84 }, 0.15)
 	end)
 	box.FocusLost:Connect(function()
-		Tween(fieldStroke, { Color = Color3.new(1, 1, 1), Transparency = 0.88 }, 0.15)
-		Tween(field, { BackgroundTransparency = 0.92 }, 0.15)
-	end)
+    Tween(fieldStroke, { Color = NHUI.Theme.TextDim, Transparency = 0.88 }, 0.15)
+    Tween(field, { BackgroundTransparency = 0.85 }, 0.15)
+end)
  
 	return holder, box
 end
@@ -10901,7 +10904,7 @@ function Tab:AddColorPicker(opts)
 	swatchHolder.AnchorPoint = Vector2.new(1, 0.5)
 	swatchHolder.Position = UDim2.new(1, -14, 0.5, 0)
 	swatchHolder.Size = UDim2.fromOffset(24, 24)
-	swatchHolder.BackgroundColor3 = Color3.new(1, 1, 1)
+	swatchHolder.BackgroundColor3 = NHUI.Theme.Surface
 	swatchHolder.BackgroundTransparency = 0.9
 	swatchHolder.BorderSizePixel = 0
 	swatchHolder.ZIndex = Z.Content + 1
@@ -11079,7 +11082,7 @@ function Tab:AddColorPicker(opts)
 		popupFrame.Size = UDim2.new(0, popupW, 0, 0)
 		popupFrame.Parent = root
 		Corner(popupFrame, 10)
-		local popupStroke = Stroke(popupFrame, Color3.new(1, 1, 1), 1, 0.92)
+		local popupStroke = Stroke(popupFrame, NHUI.Theme.Accent, 1, 0.92)
 		GlassLayer(popupFrame, 10, 0.985)
  
 		local px, py = ComputePopupPosition(mainWindow, card, popupW, popupH)
@@ -11375,13 +11378,13 @@ function Tab:AddKeybind(opts)
 	pill.AnchorPoint = Vector2.new(1, 0.5)
 	pill.Position = UDim2.new(1, -14, 0.5, 0)
 	pill.Size = UDim2.fromOffset(104, 26)
-	pill.BackgroundColor3 = Color3.new(1, 1, 1)
-	pill.BackgroundTransparency = 0.9
+	pill.BackgroundColor3 = NHUI.Theme.Surface
+pill.BackgroundTransparency = 0.85
 	pill.BorderSizePixel = 0
 	pill.ZIndex = Z.Content + 2
 	pill.Parent = card
 	Corner(pill, 8)
-	local pillStroke = Stroke(pill, Color3.new(1, 1, 1), 1, 0.88)
+	local pillStroke = Stroke(pill, NHUI.Theme.TextDim, 1, 0.88)
  
 	local keyIcon = Instance.new("ImageLabel")
 	keyIcon.BackgroundTransparency = 1
@@ -11426,7 +11429,7 @@ function Tab:AddKeybind(opts)
 		listening = false
 		KeybindCapturing = false
 		if listenConn then listenConn:Disconnect(); listenConn = nil end
-		Tween(pillStroke, { Color = Color3.new(1, 1, 1), Transparency = 0.88 }, 0.15)
+		Tween(pillStroke, { Color = NHUI.Theme.TextDim, Transparency = 0.88 }, 0.15)
 		Tween(pill, { BackgroundTransparency = 0.9 }, 0.15)
 		keyLabel.Text = currentKey and currentKey.Name or "None"
 	end
@@ -12158,14 +12161,14 @@ function Tab:AddCardGrid(opts)
 	local searchBox
 	if showSearch then
 		local searchPill = Instance.new("Frame")
-		searchPill.BackgroundColor3 = Color3.new(1, 1, 1)
-		searchPill.BackgroundTransparency = 0.92
+		searchPill.BackgroundColor3 = NHUI.Theme.Surface
+searchPill.BackgroundTransparency = 0.85
 		searchPill.BorderSizePixel = 0
 		searchPill.Size = UDim2.new(1, 0, 0, TOP_H)
 		searchPill.ZIndex = Z.Content + 1
 		searchPill.Parent = content
 		Corner(searchPill, 9)
-		local searchStroke = Stroke(searchPill, Color3.new(1, 1, 1), 1, 0.88)
+		local searchStroke = NHUI.Theme.TextDim
  
 		local searchIcon = Instance.new("ImageLabel")
 		searchIcon.BackgroundTransparency = 1
@@ -12198,8 +12201,8 @@ function Tab:AddCardGrid(opts)
 			Tween(searchStroke, { Color = NHUI.Theme.Accent, Transparency = 0.3 }, 0.15)
 		end)
 		searchBox.FocusLost:Connect(function()
-			Tween(searchStroke, { Color = Color3.new(1, 1, 1), Transparency = 0.88 }, 0.15)
-		end)
+    Tween(searchStroke, { Color = NHUI.Theme.TextDim, Transparency = 0.88 }, 0.15)
+end)
 	end
  
 	local currentSort = opts.DefaultSort or sorts[1]
@@ -12424,7 +12427,7 @@ function Tab:AddCardGrid(opts)
 		popup.ZIndex = Z.Popup
 		popup.Parent = NHUI._Root
 		Corner(popup, 10)
-		Stroke(popup, Color3.new(1, 1, 1), 1, 0.9)
+		Stroke(popup, NHUI.Theme.Accent)
 		GlassLayer(popup, 10, 0.985)
  
 		local actionsHolder = Instance.new("Frame")
