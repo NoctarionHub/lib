@@ -533,6 +533,7 @@ NHUI.Theme = {
 	TextDim        = Color3.fromRGB(150, 140, 170),
 
 	Accent         = Color3.fromRGB(180, 120, 255),
+    AccentStroke   = Color3.fromRGB(210, 170, 255),
 
 	Danger         = Color3.fromRGB(230, 70, 110),
 
