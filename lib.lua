@@ -15024,16 +15024,17 @@ function Changelog:_buildRow(index, change)
         end
     end
 
-    row._align = alignRow
     body:GetPropertyChangedSignal("TextBounds"):Connect(alignRow)
-    task.defer(alignRow)
+task.defer(alignRow)
 
-    row._parts = {
-        pill = pill,
-        icon = pillIcon,
-        label = pillLabel,
-        body = body,
-    }
+self._rowParts = self._rowParts or {}
+self._rowParts[index] = {
+    pill = pill,
+    icon = pillIcon,
+    label = pillLabel,
+    body = body,
+    align = alignRow,
+}
 
     if index < #self.changes then
         window:Create("Frame", {
@@ -15072,12 +15073,12 @@ function Changelog:_setShown(shown, animate)
     end
 
     for index = 1, #self.changes do
-        local row = self["_row" .. index]
-        if row and row._parts then
-            local pill = row._parts.pill
-            local icon = row._parts.icon
-            local label = row._parts.label
-            local body = row._parts.body
+        local parts = self._rowParts and self._rowParts[index]
+if parts then
+    local pill = parts.pill
+    local icon = parts.icon
+    local label = parts.label
+    local body = parts.body
             local rowTargets = {
                 [icon] = { ImageTransparency = if shown then 0 else 1 },
                 [label] = { TextTransparency = if shown then 0 else 1 },
@@ -15125,11 +15126,7 @@ function Changelog:SetChanges(changes)
         end
     end
 
-    for key in pairs(self) do
-        if type(key) == "string" and key:sub(1, 4) == "_row" then
-            self[key] = nil
-        end
-    end
+    table.clear(self._rowParts or {})
 
     if not self.rowsHolder then
         self.rowsHolder = self.window:Create("Frame", {
