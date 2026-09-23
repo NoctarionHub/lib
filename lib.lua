@@ -13019,6 +13019,10 @@ function Tab:CreateGroup(properties)
     return self:_register(require(script.Parent.group).new(self, properties))
 end
 
+function Tab:CreateChangelog(properties)
+    return self:_register(require(script.Parent.changelog).new(self, properties))
+end
+
 function Tab:_moveElement(element, targetIndex)
     local idx = table.find(self.elements, element)
     if not idx then
@@ -14772,6 +14776,399 @@ end
 
 return Toggle
 end
+
+Components.changelog = { Name = "changelog", Parent = Components }
+Components.changelog.FindFirstChild = function(self, k) return self[k] end
+Components.changelog.__loader = function(script, require)
+    local Changelog = {}
+    Changelog.__index = Changelog
+    Changelog.__type = "Changelog"
+
+    local utility = script.Parent.Parent.utility
+
+    local variables    = require(utility.variables)
+    local functions    = require(utility.functions)
+    local image        = require(utility.image)
+    local moveable     = require(utility.moveable)
+    local locale       = require(utility.locale)
+    local hapticEngine = require(utility.HapticEngine)
+
+local CHANGELOG_TYPES = {
+    Added   = { Color = Color3.fromRGB(120, 210, 140), Icon = "lucide/plus" },
+    Fixed   = { Color = Color3.fromRGB(120, 170, 255), Icon = "lucide/wrench" },
+    Changed = { Color = Color3.fromRGB(255, 190, 90),  Icon = "lucide/refresh-cw" },
+    Removed = { Color = Color3.fromRGB(230, 120, 120), Icon = "lucide/minus" },
+}
+
+local PAD       = 12
+local HEADER_H  = 18
+local ROW_H     = 22
+local ROW_GAP   = 2
+local PILL_W    = 66
+local PILL_H    = 18
+local PILL_GAP  = 76
+local FADE_TIME = 0.35
+
+local fadeInfo = TweenInfo.new(FADE_TIME, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+local function normaliseChanges(changes)
+    local out = {}
+    if type(changes) ~= "table" then
+        return out
+    end
+    for _, entry in ipairs(changes) do
+        if type(entry) == "table" then
+            table.insert(out, {
+                Type = entry.Type or entry.type or "Changed",
+                Text = tostring(entry.Text or entry.text or ""),
+            })
+        elseif type(entry) == "string" then
+            table.insert(out, { Type = "Changed", Text = entry })
+        end
+    end
+    return out
+end
+
+function Changelog.new(tab, properties)
+    properties = if typeof(properties) == "table" then properties else {}
+
+    local self = setmetatable({
+        tab      = assert(tab, "Missing argument #1 (Tab expected)"),
+        window   = tab.window,
+        name     = properties.name or properties.Name
+            or properties.version or properties.Version
+            or "Changelog",
+        version  = tostring(properties.version or properties.Version or "Update"),
+        date     = properties.date or properties.Date,
+        changes  = normaliseChanges(properties.changes or properties.Changes),
+        forgetState = true,
+    }, Changelog)
+
+    self:_build()
+
+    if not self.window.hidden then
+        self:_setShown(true, true)
+    end
+
+    return self
+end
+
+function Changelog:_build()
+    local window = self.window
+
+    local total = PAD * 2 + HEADER_H + (#self.changes > 0 and 8 or 0)
+
+    self.main = window:Create("Frame", {
+        Name = self.name,
+        Size = UDim2.new(1, -20, 0, total),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BackgroundTransparency = 1,
+        Parent = self.tab.tabPage,
+    }, { BackgroundTransparency = "ElementTransparency" })
+
+    self.stroke = window:StyleElementBody(self.main)
+
+    window:Create("UIPadding", {
+        PaddingTop = UDim.new(0, PAD),
+        PaddingBottom = UDim.new(0, PAD),
+        PaddingLeft = UDim.new(0, PAD),
+        PaddingRight = UDim.new(0, PAD),
+        Parent = self.main,
+    })
+
+    self.versionLabel = window:Create("TextLabel", {
+        Name = "Version",
+        Text = self.version,
+        Size = UDim2.new(1, self.date and -90 or 0, 0, HEADER_H),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        TextTransparency = 1,
+        Parent = self.main,
+    }, { TextColor3 = "ContentColor", FontFace = "TitleFont" })
+
+    if self.date and self.date ~= "" then
+        self.dateLabel = window:Create("TextLabel", {
+            Name = "Date",
+            Text = tostring(self.date),
+            Size = UDim2.fromOffset(90, HEADER_H),
+            Position = UDim2.new(1, 0, 0, 2),
+            AnchorPoint = Vector2.new(1, 0),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            TextTransparency = 1,
+            Parent = self.main,
+        }, { TextColor3 = "ContentColor", FontFace = "Font" })
+    end
+
+    if #self.changes > 0 then
+        self.rowsHolder = window:Create("Frame", {
+            Name = "Rows",
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Position = UDim2.fromOffset(0, HEADER_H + 8),
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Parent = self.main,
+        })
+
+        window:Create("UIListLayout", {
+            FillDirection = Enum.FillDirection.Vertical,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, ROW_GAP),
+            Parent = self.rowsHolder,
+        })
+
+        for i, change in ipairs(self.changes) do
+            self:_buildRow(i, change)
+        end
+    end
+end
+
+function Changelog:_buildRow(index, change)
+    local window = self.window
+    local kind = CHANGELOG_TYPES[change.Type] and change.Type or "Changed"
+    local meta = CHANGELOG_TYPES[kind]
+
+    local row = window:Create("Frame", {
+        Name = "Row" .. index,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, ROW_H),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        LayoutOrder = index * 2 - 1,
+        Parent = self.rowsHolder,
+    })
+
+    local pill = window:Create("Frame", {
+        Name = "Pill",
+        BackgroundColor3 = meta.Color,
+        BackgroundTransparency = 0.85,
+        BorderSizePixel = 0,
+        AnchorPoint = Vector2.new(0, 0.5),
+        Position = UDim2.new(0, 0, 0.5, 0),
+        Size = UDim2.fromOffset(PILL_W, PILL_H),
+        Parent = row,
+    })
+
+    window:Create("UICorner", {
+        CornerRadius = UDim.new(0, 5),
+        Parent = pill,
+    })
+
+    window:Create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Horizontal,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 3),
+        Parent = pill,
+    })
+
+    local pillIcon = window:Create("ImageLabel", {
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Size = UDim2.fromOffset(9, 9),
+        LayoutOrder = 1,
+        ImageTransparency = 1,
+        Parent = pill,
+    })
+    image.assign(pillIcon, "Image", meta.Icon)
+    pillIcon.ImageColor3 = meta.Color
+
+    local pillLabel = window:Create("TextLabel", {
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Text = string.upper(kind),
+        TextColor3 = meta.Color,
+        TextSize = 9,
+        AutomaticSize = Enum.AutomaticSize.X,
+        Size = UDim2.fromOffset(0, 12),
+        LayoutOrder = 2,
+        TextTransparency = 1,
+        Parent = pill,
+    }, { FontFace = "Font" })
+
+    local body = window:Create("TextLabel", {
+        Name = "Body",
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Text = change.Text,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        TextWrapped = true,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Position = UDim2.fromOffset(PILL_GAP, 0),
+        Size = UDim2.new(1, -PILL_GAP, 0, ROW_H),
+        TextTransparency = 1,
+        Parent = row,
+    }, { TextColor3 = "ContentColor", FontFace = "Font" })
+
+    local function alignRow()
+        local multiline = body.TextBounds.Y > 18
+        if multiline then
+            pill.AnchorPoint = Vector2.zero
+            pill.Position = UDim2.fromOffset(0, 1)
+            body.TextYAlignment = Enum.TextYAlignment.Top
+        else
+            pill.AnchorPoint = Vector2.new(0, 0.5)
+            pill.Position = UDim2.new(0, 0, 0.5, 0)
+            body.TextYAlignment = Enum.TextYAlignment.Center
+        end
+    end
+
+    row._align = alignRow
+    body:GetPropertyChangedSignal("TextBounds"):Connect(alignRow)
+    task.defer(alignRow)
+
+    row._parts = {
+        pill = pill,
+        icon = pillIcon,
+        label = pillLabel,
+        body = body,
+    }
+
+    if index < #self.changes then
+        window:Create("Frame", {
+            Name = "Separator" .. index,
+            BackgroundColor3 = Color3.new(1, 1, 1),
+            BackgroundTransparency = 0.93,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 0, 1),
+            LayoutOrder = index * 2,
+            Parent = self.rowsHolder,
+        })
+    end
+
+    self["_row" .. index] = row
+end
+
+function Changelog:_setShown(shown, animate)
+    local window = self.window
+    local info = if animate == false then nil elseif animate == true then fadeInfo else animate
+
+    local targets = {
+        [self.versionLabel] = { TextTransparency = if shown then 0 else 1 },
+    }
+    if self.dateLabel then
+        targets[self.dateLabel] = { TextTransparency = if shown then 0.55 else 1 }
+    end
+
+    for instance, props in targets do
+        if info then
+            variables.tweenService:Create(instance, info, props):Play()
+        else
+            for prop, value in props do
+                instance[prop] = value
+            end
+        end
+    end
+
+    for index = 1, #self.changes do
+        local row = self["_row" .. index]
+        if row and row._parts then
+            local pill = row._parts.pill
+            local icon = row._parts.icon
+            local label = row._parts.label
+            local body = row._parts.body
+            local rowTargets = {
+                [icon] = { ImageTransparency = if shown then 0 else 1 },
+                [label] = { TextTransparency = if shown then 0 else 1 },
+                [body] = { TextTransparency = if shown then 0.15 else 1 },
+            }
+            for instance, props in rowTargets do
+                if info then
+                    variables.tweenService:Create(instance, info, props):Play()
+                else
+                    for prop, value in props do
+                        instance[prop] = value
+                    end
+                end
+            end
+        end
+    end
+
+    if shown then
+        window:_revealCommon(self, animate)
+    else
+        window:_hideCommon(self, animate)
+    end
+end
+
+function Changelog:SetVersion(version, date)
+    self.version = tostring(version or self.version)
+    self.versionLabel.Text = self.version
+    if date ~= nil then
+        self.date = tostring(date)
+        if self.dateLabel then
+            self.dateLabel.Text = self.date
+            self.dateLabel.Visible = self.date ~= ""
+        end
+    end
+end
+
+function Changelog:SetChanges(changes)
+    self.changes = normaliseChanges(changes)
+
+    if self.rowsHolder then
+        for _, child in ipairs(self.rowsHolder:GetChildren()) do
+            if child:IsA("Frame") then
+                self.window:DestroySubtree(child)
+            end
+        end
+    end
+
+    for key in pairs(self) do
+        if type(key) == "string" and key:sub(1, 4) == "_row" then
+            self[key] = nil
+        end
+    end
+
+    if not self.rowsHolder then
+        self.rowsHolder = self.window:Create("Frame", {
+            Name = "Rows",
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Position = UDim2.fromOffset(0, HEADER_H + 8),
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Parent = self.main,
+        })
+        self.window:Create("UIListLayout", {
+            FillDirection = Enum.FillDirection.Vertical,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, ROW_GAP),
+            Parent = self.rowsHolder,
+        })
+    end
+
+    for i, change in ipairs(self.changes) do
+        self:_buildRow(i, change)
+    end
+
+    if not self.window.hidden then
+        self:_setShown(true, true)
+    end
+end
+
+function Changelog:Remove()
+    self.window:DestroySubtree(self.main)
+    local idx = table.find(self.tab.elements, self)
+    if idx then
+        table.remove(self.tab.elements, idx)
+    end
+end
+
+moveable(Changelog)
+
+return Changelog
 
 Components.window = { Name = "window", Parent = Components }
 Components.window.FindFirstChild = function(self, k) return self[k] end
