@@ -525,15 +525,22 @@ end
  
 local Fonts = LoadFonts()
 
+local _discordInFlight = false
+
 local function SetupDiscordInvite(opts)
 	opts = opts or {}
 	if not opts.Invite or opts.Invite == "" then return end
+	if _discordInFlight then return end
+	_discordInFlight = true
 
 	local code = opts.Invite:match("discord%.gg/([%w%-]+)")
 		or opts.Invite:match("discord%.com/invite/([%w%-]+)")
 		or opts.Invite
 
-	if not code or code == "" then return end
+	if not code or code == "" then
+		_discordInFlight = false
+		return
+	end
 
 	local folder = "NHUI/Discord Invites"
 	local marker = folder .. "/" .. code .. ".nh"
@@ -548,7 +555,10 @@ local function SetupDiscordInvite(opts)
 	end
 
 	local httpRequest = (syn and syn.request) or http_request or request
-	if not httpRequest then return end
+	if not httpRequest then
+		_discordInFlight = false
+		return
+	end
 
 	local ok, err = pcall(httpRequest, {
 		Url = "http://127.0.0.1:6463/rpc?v=1",
@@ -564,9 +574,9 @@ local function SetupDiscordInvite(opts)
 		}),
 	})
 
-	if not ok then
-		return
-	end
+	_discordInFlight = false
+
+	if not ok then return end
 
 	if opts.RememberJoins and fn_writefile then
 		pcall(fn_writefile, marker, "joined")
