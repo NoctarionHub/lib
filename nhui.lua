@@ -9989,8 +9989,8 @@ function Tab:AddToggle(opts)
 	local switchGradient = Instance.new("UIGradient")
 	switchGradient.Rotation = 90
 	switchGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, NHUI.Theme.Accent),
-    ColorSequenceKeypoint.new(1, NHUI.Theme.Accent),
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(210, 170, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 120, 255)),
 })
 	switchGradient.Transparency = NumberSequence.new({
 		NumberSequenceKeypoint.new(0, state and 0 or 0.76),
@@ -10033,8 +10033,8 @@ function Tab:AddToggle(opts)
 			Transparency = state and 0.88 or 0.72,
 		}, anim, style, dir)
 		switchGradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, NHUI.Theme.Accent),
-	ColorSequenceKeypoint.new(1, NHUI.Theme.Accent),
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(210, 170, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 120, 255)),
 })
 		Tween(knob, {
 	BackgroundColor3 = state and NHUI.Theme.Background or NHUI.Theme.Text,
