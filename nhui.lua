@@ -9481,9 +9481,8 @@ function Tab:AddInfoGrid(opts)
 			local valueLabel = Instance.new("TextLabel")
 			valueLabel.Name = "Value"
 			valueLabel.BackgroundTransparency = 1
-			valueLabel.FontFace = NHUI.Theme.FontRegular
+			valueLabel.FontFace = item.Bold and NHUI.Theme.Font or NHUI.Theme.FontRegular
 			valueLabel.Text = tostring(item.Value or "")
-			valueLabel.RichText = true
 			valueLabel.TextColor3 = NHUI.Theme.TextDim
 			valueLabel.TextSize = 11
 			valueLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -9492,6 +9491,7 @@ function Tab:AddInfoGrid(opts)
 			valueLabel.Size = UDim2.new(1, 0, 0, 12)
 			valueLabel.ZIndex = Z.Content + 3
 			valueLabel.Parent = chip
+			
 
 			if item.Label then chipValues[item.Label] = valueLabel end
 		end
