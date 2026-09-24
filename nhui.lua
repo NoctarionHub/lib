@@ -9505,6 +9505,17 @@ function Tab:AddInfoGrid(opts)
 		btnRow.ZIndex = Z.Content + 3
 		btnRow.Parent = card
 
+		-- tempel sementara di dalam if hasFooter, setelah btnRow.Parent = card
+task.defer(function()
+    print("DEBUG InfoGrid:")
+    print("  height      =", height)
+    print("  card.AbsSize =", card.AbsoluteSize.Y / GetUIScale())
+    print("  btnRow.Y    =", btnRow.Position.Y.Offset)
+    print("  btnRow.AbsY =", (btnRow.AbsolutePosition.Y - card.AbsolutePosition.Y) / GetUIScale())
+    print("  btnRow.AbsH =", btnRow.AbsoluteSize.Y / GetUIScale())
+    print("  btn bottom  =", (btnRow.AbsolutePosition.Y - card.AbsolutePosition.Y + btnRow.AbsoluteSize.Y) / GetUIScale())
+end)
+
 		local btnLayout = Instance.new("UIListLayout")
 		btnLayout.FillDirection = Enum.FillDirection.Horizontal
 		btnLayout.Padding = UDim.new(0, 8)
