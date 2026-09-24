@@ -9483,6 +9483,7 @@ function Tab:AddInfoGrid(opts)
 			valueLabel.BackgroundTransparency = 1
 			valueLabel.FontFace = NHUI.Theme.FontRegular
 			valueLabel.Text = tostring(item.Value or "")
+			valueLabel.RichText = true
 			valueLabel.TextColor3 = NHUI.Theme.TextDim
 			valueLabel.TextSize = 11
 			valueLabel.TextXAlignment = Enum.TextXAlignment.Left
