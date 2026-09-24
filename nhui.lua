@@ -9427,6 +9427,31 @@ chip.BackgroundTransparency = 0.95
 			chip.ZIndex = Z.Content + 2
 			chip.Parent = grid
 			Corner(chip, 6)
+
+			if item.Callback then
+    local click = Instance.new("TextButton")
+    click.Name = "ChipButton"
+    click.Text = ""
+    click.AutoButtonColor = false
+    click.BackgroundColor3 = Color3.new(1, 1, 1)
+    click.BackgroundTransparency = 1
+    click.BorderSizePixel = 0
+    click.Size = UDim2.fromScale(1, 1)
+    click.ZIndex = Z.Content + 5
+    click.Parent = chip
+
+    local baseTransparency = chip.BackgroundTransparency
+
+    click.MouseEnter:Connect(function()
+        Tween(chip, { BackgroundTransparency = math.max(baseTransparency - 0.05, 0) }, 0.12)
+    end)
+    click.MouseLeave:Connect(function()
+        Tween(chip, { BackgroundTransparency = baseTransparency }, 0.12)
+    end)
+    click.MouseButton1Click:Connect(function()
+        task.spawn(item.Callback)
+    end)
+end
  
 			local chipPad = Instance.new("UIPadding")
 			chipPad.PaddingTop = UDim.new(0, 6)
