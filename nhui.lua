@@ -9341,7 +9341,7 @@ function Tab:AddInfoGrid(opts)
 	local BUTTON_GAP_TOP = 12      -- jarak grid -> tombol
 	local BUTTON_GAP_BOTTOM = 12   -- jarak tombol -> tepi bawah card
 	local hasFooter = (opts.ButtonText and opts.ButtonText ~= "") or (opts.Button2Text and opts.Button2Text ~= "")
-	local buttonBlockH = hasFooter and (BUTTON_GAP_TOP + BUTTON_H + BUTTON_GAP_BOTTOM - PAD) or 0
+	local buttonBlockH = hasFooter and (BUTTON_GAP_TOP + BUTTON_H + BUTTON_GAP_BOTTOM) or 0
 	local height = PAD * 2 + HEADER_H + (rows > 0 and (10 + gridH) or 0) + buttonBlockH
 
 	local card = BaseCard(self._page, height)
@@ -9463,6 +9463,7 @@ function Tab:AddInfoGrid(opts)
 			chipPad.PaddingTop = UDim.new(0, 6)
 			chipPad.PaddingLeft = UDim.new(0, 8)
 			chipPad.PaddingRight = UDim.new(0, 8)
+			chipPad.PaddingBottom = UDim.new(0, 6)
 			chipPad.Parent = chip
 
 			local labelLabel = Instance.new("TextLabel")
@@ -9499,7 +9500,7 @@ function Tab:AddInfoGrid(opts)
 		local btnRow = Instance.new("Frame")
 		btnRow.Name = "FooterButtons"
 		btnRow.BackgroundTransparency = 1
-		btnRow.Position = UDim2.fromOffset(0, height - PAD - BUTTON_GAP_BOTTOM)
+		btnRow.Position = UDim2.fromOffset(0, height - BUTTON_GAP_BOTTOM - BUTTON_H)
 		btnRow.Size = UDim2.new(1, 0, 0, BUTTON_H)
 		btnRow.ZIndex = Z.Content + 3
 		btnRow.Parent = card
