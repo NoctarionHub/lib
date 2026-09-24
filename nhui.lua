@@ -9339,7 +9339,7 @@ function Tab:AddInfoGrid(opts)
 		local BUTTON_H, BUTTON_GAP = 32, 8
 	local hasFooter = (opts.ButtonText and opts.ButtonText ~= "") or (opts.Button2Text and opts.Button2Text ~= "")
 	local buttonBlockH = hasFooter and (BUTTON_GAP + BUTTON_H) or 0
-	local height = PAD * 2 + HEADER_H + (rows > 0 and (10 + gridH) or 0) + buttonBlockH
+		local height = PAD * 2 + HEADER_H + (rows > 0 and (10 + gridH) or 0) + buttonBlockH + (hasFooter and 6 or 0)
  
 	local card = BaseCard(self._page, height)
 	self._window:_RegisterSearchable(self, title, card)
