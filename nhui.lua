@@ -9336,7 +9336,10 @@ function Tab:AddInfoGrid(opts)
 	local GRID_GAP = 8
 	local rows = math.ceil(#items / columns)
 	local gridH = rows > 0 and (rows * CHIP_H + (rows - 1) * GRID_GAP) or 0
-	local height = PAD * 2 + HEADER_H + (rows > 0 and (10 + gridH) or 0)
+		local BUTTON_H, BUTTON_GAP = 32, 8
+	local hasFooter = (opts.ButtonText and opts.ButtonText ~= "") or (opts.Button2Text and opts.Button2Text ~= "")
+	local buttonBlockH = hasFooter and (BUTTON_GAP + BUTTON_H) or 0
+	local height = PAD * 2 + HEADER_H + (rows > 0 and (10 + gridH) or 0) + buttonBlockH
  
 	local card = BaseCard(self._page, height)
 	self._window:_RegisterSearchable(self, title, card)
@@ -9389,47 +9392,6 @@ function Tab:AddInfoGrid(opts)
 		descLabel.Size = UDim2.new(1, 0, 0, 14)
 		descLabel.ZIndex = Z.Content + 1
 		descLabel.Parent = card
-	end
-
-		-- tombol opsional di bawah grid
-	local footerButton
-	if opts.ButtonText and opts.ButtonText ~= "" then
-		local btn = Instance.new("TextButton")
-		btn.Name = "FooterButton"
-		btn.Text = ""
-		btn.AutoButtonColor = false
-		btn.BackgroundColor3 = Color3.new(1, 1, 1)
-		btn.BackgroundTransparency = 0.85
-		btn.BorderSizePixel = 0
-		btn.Size = UDim2.new(1, 0, 0, 32)
-		btn.ZIndex = Z.Content + 3
-		btn.Parent = card
-		Corner(btn, 8)
-		local btnStroke = Stroke(btn, Color3.new(1, 1, 1), 1, 0.85)
-
-		local btnLabel = Instance.new("TextLabel")
-		btnLabel.BackgroundTransparency = 1
-		btnLabel.FontFace = NHUI.Theme.Font
-		btnLabel.Text = opts.ButtonText
-		btnLabel.TextColor3 = NHUI.Theme.Text
-		btnLabel.TextSize = 13
-		btnLabel.Size = UDim2.fromScale(1, 1)
-		btnLabel.ZIndex = Z.Content + 4
-		btnLabel.Parent = btn
-
-		btn.MouseEnter:Connect(function()
-			Tween(btn, { BackgroundTransparency = 0.7 }, 0.12)
-			Tween(btnStroke, { Transparency = 0.7 }, 0.12)
-		end)
-		btn.MouseLeave:Connect(function()
-			Tween(btn, { BackgroundTransparency = 0.85 }, 0.12)
-			Tween(btnStroke, { Transparency = 0.85 }, 0.12)
-		end)
-		btn.MouseButton1Click:Connect(function()
-			if opts.ButtonCallback then task.spawn(opts.ButtonCallback) end
-		end)
-
-		footerButton = btn
 	end
  
 	local chipValues = {}
@@ -9527,6 +9489,79 @@ end
 			valueLabel.Parent = chip
  
 			if item.Label then chipValues[item.Label] = valueLabel end
+		end
+	end
+
+		if hasFooter then
+		local btnRow = Instance.new("Frame")
+		btnRow.Name = "FooterButtons"
+		btnRow.BackgroundTransparency = 1
+		btnRow.Position = UDim2.fromOffset(0, height - PAD - BUTTON_H)
+		btnRow.Size = UDim2.new(1, 0, 0, BUTTON_H)
+		btnRow.ZIndex = Z.Content + 3
+		btnRow.Parent = card
+
+		local btnLayout = Instance.new("UIListLayout")
+		btnLayout.FillDirection = Enum.FillDirection.Horizontal
+		btnLayout.Padding = UDim.new(0, 8)
+		btnLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		btnLayout.Parent = btnRow
+
+		local function makeFooterButton(text, order, filled, danger, callback)
+			local tint = (filled and danger) and NHUI.Theme.Danger or Color3.new(1, 1, 1)
+
+			local btn = Instance.new("TextButton")
+			btn.Name = "FooterBtn" .. order
+			btn.Text = ""
+			btn.AutoButtonColor = false
+			btn.BackgroundColor3 = tint
+			btn.BackgroundTransparency = filled and (danger and 0.55 or 0.82) or 0.85
+			btn.BorderSizePixel = 0
+			btn.LayoutOrder = order
+			btn.ZIndex = Z.Content + 3
+			btn.Parent = btnRow
+			Corner(btn, 8)
+			local btnStroke = Stroke(btn, tint, 1, filled and 0.7 or 0.85)
+
+			local lbl = Instance.new("TextLabel")
+			lbl.BackgroundTransparency = 1
+			lbl.FontFace = NHUI.Theme.Font
+			lbl.Text = text
+			lbl.TextColor3 = (filled and danger) and NHUI.Theme.Danger or NHUI.Theme.Text
+			lbl.TextSize = 13
+			lbl.Size = UDim2.fromScale(1, 1)
+			lbl.ZIndex = Z.Content + 4
+			lbl.Parent = btn
+
+			btn.MouseEnter:Connect(function()
+				Tween(btn, { BackgroundTransparency = math.max(btn.BackgroundTransparency - 0.12, 0) }, 0.12)
+				Tween(btnStroke, { Transparency = math.max(btnStroke.Transparency - 0.15, 0) }, 0.12)
+			end)
+			btn.MouseLeave:Connect(function()
+				Tween(btn, { BackgroundTransparency = filled and (danger and 0.55 or 0.82) or 0.85 }, 0.12)
+				Tween(btnStroke, { Transparency = filled and 0.7 or 0.85 }, 0.12)
+			end)
+			btn.MouseButton1Click:Connect(function()
+				if callback then task.spawn(callback) end
+			end)
+
+			return btn
+		end
+
+		-- kiri: secondary (netral)
+		-- kanan: primary (highlight)
+		local hasBoth = (opts.ButtonText and opts.ButtonText ~= "") and (opts.Button2Text and opts.Button2Text ~= "")
+
+		if hasBoth then
+			local b1 = makeFooterButton(opts.ButtonText, 1, false, false, opts.ButtonCallback)
+			local b2 = makeFooterButton(opts.Button2Text, 2, true, opts.Button2Danger == true, opts.Button2Callback)
+			b1.Size = UDim2.new(0.5, -4, 1, 0)
+			b2.Size = UDim2.new(0.5, -4, 1, 0)
+		else
+			local singleText = opts.ButtonText or opts.Button2Text
+			local singleCb = opts.ButtonCallback or opts.Button2Callback
+			local singleDanger = opts.Button2Danger == true
+			makeFooterButton(singleText, 1, true, singleDanger, singleCb).Size = UDim2.new(1, 0, 1, 0)
 		end
 	end
  
