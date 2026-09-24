@@ -9390,6 +9390,47 @@ function Tab:AddInfoGrid(opts)
 		descLabel.ZIndex = Z.Content + 1
 		descLabel.Parent = card
 	end
+
+		-- tombol opsional di bawah grid
+	local footerButton
+	if opts.ButtonText and opts.ButtonText ~= "" then
+		local btn = Instance.new("TextButton")
+		btn.Name = "FooterButton"
+		btn.Text = ""
+		btn.AutoButtonColor = false
+		btn.BackgroundColor3 = Color3.new(1, 1, 1)
+		btn.BackgroundTransparency = 0.85
+		btn.BorderSizePixel = 0
+		btn.Size = UDim2.new(1, 0, 0, 32)
+		btn.ZIndex = Z.Content + 3
+		btn.Parent = card
+		Corner(btn, 8)
+		local btnStroke = Stroke(btn, Color3.new(1, 1, 1), 1, 0.85)
+
+		local btnLabel = Instance.new("TextLabel")
+		btnLabel.BackgroundTransparency = 1
+		btnLabel.FontFace = NHUI.Theme.Font
+		btnLabel.Text = opts.ButtonText
+		btnLabel.TextColor3 = NHUI.Theme.Text
+		btnLabel.TextSize = 13
+		btnLabel.Size = UDim2.fromScale(1, 1)
+		btnLabel.ZIndex = Z.Content + 4
+		btnLabel.Parent = btn
+
+		btn.MouseEnter:Connect(function()
+			Tween(btn, { BackgroundTransparency = 0.7 }, 0.12)
+			Tween(btnStroke, { Transparency = 0.7 }, 0.12)
+		end)
+		btn.MouseLeave:Connect(function()
+			Tween(btn, { BackgroundTransparency = 0.85 }, 0.12)
+			Tween(btnStroke, { Transparency = 0.85 }, 0.12)
+		end)
+		btn.MouseButton1Click:Connect(function()
+			if opts.ButtonCallback then task.spawn(opts.ButtonCallback) end
+		end)
+
+		footerButton = btn
+	end
  
 	local chipValues = {}
  
