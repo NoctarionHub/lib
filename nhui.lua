@@ -9500,7 +9500,7 @@ function Tab:AddInfoGrid(opts)
 		local btnRow = Instance.new("Frame")
 		btnRow.Name = "FooterButtons"
 		btnRow.BackgroundTransparency = 1
-		btnRow.Position = UDim2.fromOffset(0, height - BUTTON_GAP_BOTTOM - BUTTON_H)
+		btnRow.Position = UDim2.fromOffset(0, height - PAD - BUTTON_GAP_BOTTOM - BUTTON_H)
 		btnRow.Size = UDim2.new(1, 0, 0, BUTTON_H)
 		btnRow.ZIndex = Z.Content + 3
 		btnRow.Parent = card
