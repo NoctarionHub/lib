@@ -9329,20 +9329,24 @@ function Tab:AddInfoGrid(opts)
 	local items = opts.Items or {}
 	local color = opts.Color
 	local columns = opts.Columns or 2
- 
+
 	local PAD = 12
 	local HEADER_H = hasDesc and 32 or 16
 	local CHIP_H = 38
 	local GRID_GAP = 8
 	local rows = math.ceil(#items / columns)
 	local gridH = rows > 0 and (rows * CHIP_H + (rows - 1) * GRID_GAP) or 0
-	local BUTTON_H, BUTTON_GAP = 32, 8
+
+	local BUTTON_H = 32
+	local BUTTON_GAP_TOP = 12      -- jarak grid -> tombol
+	local BUTTON_GAP_BOTTOM = 12   -- jarak tombol -> tepi bawah card
 	local hasFooter = (opts.ButtonText and opts.ButtonText ~= "") or (opts.Button2Text and opts.Button2Text ~= "")
-	local buttonBlockH = hasFooter and (BUTTON_GAP + BUTTON_H) or 0
-	local height = PAD * 2 + HEADER_H + (rows > 0 and (10 + gridH) or 0) + buttonBlockH + (hasFooter and 6 or 0) 
+	local buttonBlockH = hasFooter and (BUTTON_GAP_TOP + BUTTON_H + BUTTON_GAP_BOTTOM - PAD) or 0
+	local height = PAD * 2 + HEADER_H + (rows > 0 and (10 + gridH) or 0) + buttonBlockH
+
 	local card = BaseCard(self._page, height)
 	self._window:_RegisterSearchable(self, title, card)
- 
+
 	local leftInset = 0
 	if color then
 		local accent = Instance.new("Frame")
@@ -9356,14 +9360,14 @@ function Tab:AddInfoGrid(opts)
 		Corner(accent, 1.5)
 		leftInset = 6
 	end
- 
+
 	local pad = Instance.new("UIPadding")
 	pad.PaddingTop = UDim.new(0, PAD)
 	pad.PaddingBottom = UDim.new(0, PAD)
 	pad.PaddingLeft = UDim.new(0, PAD + leftInset)
 	pad.PaddingRight = UDim.new(0, PAD)
 	pad.Parent = card
- 
+
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.FontFace = NHUI.Theme.Font
@@ -9376,7 +9380,7 @@ function Tab:AddInfoGrid(opts)
 	titleLabel.Size = UDim2.new(1, 0, 0, 16)
 	titleLabel.ZIndex = Z.Content + 1
 	titleLabel.Parent = card
- 
+
 	if hasDesc then
 		local descLabel = Instance.new("TextLabel")
 		descLabel.BackgroundTransparency = 1
@@ -9392,9 +9396,9 @@ function Tab:AddInfoGrid(opts)
 		descLabel.ZIndex = Z.Content + 1
 		descLabel.Parent = card
 	end
- 
+
 	local chipValues = {}
- 
+
 	if rows > 0 then
 		local grid = Instance.new("Frame")
 		grid.Name = "Grid"
@@ -9403,13 +9407,13 @@ function Tab:AddInfoGrid(opts)
 		grid.Size = UDim2.new(1, 0, 0, gridH)
 		grid.ZIndex = Z.Content + 1
 		grid.Parent = card
- 
+
 		local gridLayout = Instance.new("UIGridLayout")
 		gridLayout.CellPadding = UDim2.fromOffset(GRID_GAP, GRID_GAP)
 		gridLayout.FillDirectionMaxCells = columns
 		gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
 		gridLayout.Parent = grid
- 
+
 		local function relayout()
 			local w = grid.AbsoluteSize.X / GetUIScale()
 			if w <= 0 then return end
@@ -9418,12 +9422,12 @@ function Tab:AddInfoGrid(opts)
 		end
 		grid:GetPropertyChangedSignal("AbsoluteSize"):Connect(relayout)
 		task.defer(relayout)
- 
+
 		for i, item in ipairs(items) do
 			local chip = Instance.new("Frame")
 			chip.Name = "Chip" .. i
 			chip.BackgroundColor3 = Color3.new(1, 1, 1)
-chip.BackgroundTransparency = 0.95
+			chip.BackgroundTransparency = 0.95
 			chip.BorderSizePixel = 0
 			chip.LayoutOrder = i
 			chip.ZIndex = Z.Content + 2
@@ -9431,36 +9435,36 @@ chip.BackgroundTransparency = 0.95
 			Corner(chip, 6)
 
 			if item.Callback then
-    local click = Instance.new("TextButton")
-    click.Name = "ChipButton"
-    click.Text = ""
-    click.AutoButtonColor = false
-    click.BackgroundColor3 = Color3.new(1, 1, 1)
-    click.BackgroundTransparency = 1
-    click.BorderSizePixel = 0
-    click.Size = UDim2.fromScale(1, 1)
-    click.ZIndex = Z.Content + 5
-    click.Parent = chip
+				local click = Instance.new("TextButton")
+				click.Name = "ChipButton"
+				click.Text = ""
+				click.AutoButtonColor = false
+				click.BackgroundColor3 = Color3.new(1, 1, 1)
+				click.BackgroundTransparency = 1
+				click.BorderSizePixel = 0
+				click.Size = UDim2.fromScale(1, 1)
+				click.ZIndex = Z.Content + 5
+				click.Parent = chip
 
-    local baseTransparency = chip.BackgroundTransparency
+				local baseTransparency = chip.BackgroundTransparency
 
-    click.MouseEnter:Connect(function()
-        Tween(chip, { BackgroundTransparency = math.max(baseTransparency - 0.05, 0) }, 0.12)
-    end)
-    click.MouseLeave:Connect(function()
-        Tween(chip, { BackgroundTransparency = baseTransparency }, 0.12)
-    end)
-    click.MouseButton1Click:Connect(function()
-        task.spawn(item.Callback)
-    end)
-end
- 
+				click.MouseEnter:Connect(function()
+					Tween(chip, { BackgroundTransparency = math.max(baseTransparency - 0.05, 0) }, 0.12)
+				end)
+				click.MouseLeave:Connect(function()
+					Tween(chip, { BackgroundTransparency = baseTransparency }, 0.12)
+				end)
+				click.MouseButton1Click:Connect(function()
+					task.spawn(item.Callback)
+				end)
+			end
+
 			local chipPad = Instance.new("UIPadding")
 			chipPad.PaddingTop = UDim.new(0, 6)
 			chipPad.PaddingLeft = UDim.new(0, 8)
 			chipPad.PaddingRight = UDim.new(0, 8)
 			chipPad.Parent = chip
- 
+
 			local labelLabel = Instance.new("TextLabel")
 			labelLabel.BackgroundTransparency = 1
 			labelLabel.FontFace = NHUI.Theme.Font
@@ -9472,7 +9476,7 @@ end
 			labelLabel.Size = UDim2.new(1, 0, 0, 15)
 			labelLabel.ZIndex = Z.Content + 3
 			labelLabel.Parent = chip
- 
+
 			local valueLabel = Instance.new("TextLabel")
 			valueLabel.Name = "Value"
 			valueLabel.BackgroundTransparency = 1
@@ -9486,16 +9490,16 @@ end
 			valueLabel.Size = UDim2.new(1, 0, 0, 12)
 			valueLabel.ZIndex = Z.Content + 3
 			valueLabel.Parent = chip
- 
+
 			if item.Label then chipValues[item.Label] = valueLabel end
 		end
 	end
 
-		if hasFooter then
+	if hasFooter then
 		local btnRow = Instance.new("Frame")
 		btnRow.Name = "FooterButtons"
 		btnRow.BackgroundTransparency = 1
-		btnRow.Position = UDim2.fromOffset(0, height - PAD - BUTTON_H)
+		btnRow.Position = UDim2.fromOffset(0, height - PAD - BUTTON_GAP_BOTTOM + 6)
 		btnRow.Size = UDim2.new(1, 0, 0, BUTTON_H)
 		btnRow.ZIndex = Z.Content + 3
 		btnRow.Parent = card
@@ -9547,8 +9551,6 @@ end
 			return btn
 		end
 
-		-- kiri: secondary (netral)
-		-- kanan: primary (highlight)
 		local hasBoth = (opts.ButtonText and opts.ButtonText ~= "") and (opts.Button2Text and opts.Button2Text ~= "")
 
 		if hasBoth then
@@ -9563,7 +9565,7 @@ end
 			makeFooterButton(singleText, 1, true, singleDanger, singleCb).Size = UDim2.new(1, 0, 1, 0)
 		end
 	end
- 
+
 	return {
 		Instance = card,
 		SetValue = function(_, label, value)
