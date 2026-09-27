@@ -10580,6 +10580,16 @@ function Tab:AddDropdown(opts)
 	local twHint   = TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	local twOpt    = TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
+	-- Helper: aman untuk TweenInfo atau number
+	local function tw(instance, props, info)
+		if typeof(info) == "TweenInfo" then
+			local t = TweenService:Create(instance, info, props)
+			t:Play()
+			return t
+		end
+		return Tween(instance, props, info)
+	end
+
 	-- ===== state =====
 	local selected
 	if isMulti then
@@ -10682,8 +10692,7 @@ function Tab:AddDropdown(opts)
 	local ddClick = Instance.new("TextButton")
 	ddClick.Text = ""
 	ddClick.AutoButtonColor = false
-	ddClick.BackgroundColor3 = Color3.new(1, 1, 1)
-	ddClick.BackgroundTransparency = 0.99
+	ddClick.BackgroundTransparency = 1
 	ddClick.BorderSizePixel = 0
 	ddClick.Size = UDim2.new(1, 0, 0, headerH)
 	ddClick.Position = UDim2.fromOffset(0, 0)
@@ -10845,8 +10854,8 @@ function Tab:AddDropdown(opts)
 		if data.checkBg and data.checkBgIc then
 			local on = ddOpen and sel
 			if animate then
-				Tween(data.checkBg, { BackgroundTransparency = on and 0.05 or 0.9 }, twOpt)
-				Tween(data.checkBgIc, { ImageTransparency = on and 0 or 1 }, twOpt)
+				tw(data.checkBg, { BackgroundTransparency = on and 0.05 or 0.9 }, twOpt)
+				tw(data.checkBgIc, { ImageTransparency = on and 0 or 1 }, twOpt)
 			else
 				data.checkBg.BackgroundTransparency = on and 0.05 or 0.9
 				data.checkBgIc.ImageTransparency = on and 0 or 1
@@ -10858,11 +10867,11 @@ function Tab:AddDropdown(opts)
 		end
 
 		if animate then
-			Tween(data.frame, { BackgroundTransparency = bgT }, twOpt)
-			Tween(data.title, { TextTransparency = titleT }, twOpt)
-			Tween(data.stroke, { Transparency = strT }, twOpt)
+			tw(data.frame, { BackgroundTransparency = bgT }, twOpt)
+			tw(data.title, { TextTransparency = titleT }, twOpt)
+			tw(data.stroke, { Transparency = strT }, twOpt)
 			if data.checkIcon then
-				Tween(data.checkIcon, { ImageTransparency = iconT }, twOpt)
+				tw(data.checkIcon, { ImageTransparency = iconT }, twOpt)
 			end
 		else
 			data.frame.BackgroundTransparency = bgT
@@ -10906,7 +10915,7 @@ function Tab:AddDropdown(opts)
 		local winY = list.AbsoluteWindowSize.Y
 		local atY = list.CanvasPosition.Y
 		local more = ddOpen and winY > 0 and (canvasY - (atY + winY) > 1)
-		Tween(list, { ScrollBarImageTransparency = more and 0.4 or 1 }, twHint)
+		tw(list, { ScrollBarImageTransparency = more and 0.4 or 1 }, twHint)
 	end
 
 	local function openHeight()
@@ -10934,7 +10943,7 @@ function Tab:AddDropdown(opts)
 	local function resizeToList()
 		if not ddOpen then return end
 		if cardTween then cardTween:Cancel() end
-		cardTween = Tween(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
+		cardTween = tw(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
 		list.Size = UDim2.new(1, 0, 0, listSize())
 	end
 
@@ -10957,10 +10966,10 @@ function Tab:AddDropdown(opts)
 		searchOpen = true
 		searchInput.TextEditable = true
 		searchInput.Interactable = true
-		Tween(searchFrame, { Size = UDim2.new(1, 0, 0, SRCH_HX) }, twSearch)
-		Tween(searchStroke, { Transparency = 0.86 }, twSearch)
-		Tween(searchIcon, { ImageTransparency = 0.5 }, twSearch)
-		Tween(searchInput, { TextTransparency = 0.3 }, twSearch)
+		tw(searchFrame, { Size = UDim2.new(1, 0, 0, SRCH_HX) }, twSearch)
+		tw(searchStroke, { Transparency = 0.86 }, twSearch)
+		tw(searchIcon, { ImageTransparency = 0.5 }, twSearch)
+		tw(searchInput, { TextTransparency = 0.3 }, twSearch)
 		resizeToList()
 		searchInput:CaptureFocus()
 	end
@@ -10972,10 +10981,10 @@ function Tab:AddDropdown(opts)
 		searchInput.Interactable = false
 		searchInput:ReleaseFocus()
 		searchInput.Text = ""
-		Tween(searchFrame, { Size = UDim2.new(1, 0, 0, SRCH_H) }, twSearch)
-		Tween(searchStroke, { Transparency = 1 }, twSearch)
-		Tween(searchIcon, { ImageTransparency = 1 }, twSearch)
-		Tween(searchInput, { TextTransparency = 1 }, twSearch)
+		tw(searchFrame, { Size = UDim2.new(1, 0, 0, SRCH_H) }, twSearch)
+		tw(searchStroke, { Transparency = 1 }, twSearch)
+		tw(searchIcon, { ImageTransparency = 1 }, twSearch)
+		tw(searchInput, { TextTransparency = 1 }, twSearch)
 		resizeToList()
 	end
 
@@ -11061,14 +11070,14 @@ function Tab:AddDropdown(opts)
 		interact.MouseEnter:Connect(function()
 			if not ddOpen then return end
 			if isSelected(name) then return end
-			Tween(frame, { BackgroundTransparency = 0.9 }, twHint)
-			Tween(title, { TextTransparency = 0.15 }, twHint)
+			tw(frame, { BackgroundTransparency = 0.9 }, twHint)
+			tw(title, { TextTransparency = 0.15 }, twHint)
 		end)
 		interact.MouseLeave:Connect(function()
 			if not ddOpen then return end
 			if isSelected(name) then return end
-			Tween(frame, { BackgroundTransparency = 0.95 }, twHint)
-			Tween(title, { TextTransparency = 0.3 }, twHint)
+			tw(frame, { BackgroundTransparency = 0.95 }, twHint)
+			tw(title, { TextTransparency = 0.3 }, twHint)
 		end)
 		interact.MouseButton1Click:Connect(function()
 			if not ddOpen then return end
@@ -11113,10 +11122,10 @@ function Tab:AddDropdown(opts)
 			b.Parent = actions
 
 			b.MouseEnter:Connect(function()
-				Tween(b, { TextTransparency = 0.15 }, twHint)
+				tw(b, { TextTransparency = 0.15 }, twHint)
 			end)
 			b.MouseLeave:Connect(function()
-				Tween(b, { TextTransparency = 0.45 }, twHint)
+				tw(b, { TextTransparency = 0.45 }, twHint)
 			end)
 			b.MouseButton1Click:Connect(function()
 				apply()
@@ -11154,8 +11163,7 @@ function Tab:AddDropdown(opts)
 		local over = bottom - (at.Y + view.Y)
 		if over <= 0 then return end
 		local target = math.min(at.Y + over + 8, top)
-		Tween(page, { CanvasPosition = Vector2.new(at.X, target) },
-			TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out))
+		tw(page, { CanvasPosition = Vector2.new(at.X, target) }, twOpen)
 	end
 
 	closeDropdown_ = function()
@@ -11163,18 +11171,18 @@ function Tab:AddDropdown(opts)
 		ddOpen = false
 		collapseSearch()
 		syncScrollHint()
-		Tween(chevron, { Rotation = 180 }, twChev)
+		tw(chevron, { Rotation = 180 }, twChev)
 		if cardTween then cardTween:Cancel() end
-		cardTween = Tween(card, { Size = UDim2.new(1, 0, 0, headerH) }, twOpen)
+		cardTween = tw(card, { Size = UDim2.new(1, 0, 0, headerH) }, twOpen)
 		for _, d in ipairs(optionFrames) do renderOption(d, true) end
 	end
 
 	openDropdown_ = function()
 		if ddOpen then return end
 		ddOpen = true
-		Tween(chevron, { Rotation = 0 }, twChev)
+		tw(chevron, { Rotation = 0 }, twChev)
 		if cardTween then cardTween:Cancel() end
-		cardTween = Tween(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
+		cardTween = tw(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
 		list.Size = UDim2.new(1, 0, 0, listSize())
 		for _, d in ipairs(optionFrames) do renderOption(d, true) end
 		syncScrollHint()
