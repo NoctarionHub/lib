@@ -10682,7 +10682,8 @@ function Tab:AddDropdown(opts)
 	local ddClick = Instance.new("TextButton")
 	ddClick.Text = ""
 	ddClick.AutoButtonColor = false
-	ddClick.BackgroundTransparency = 1
+	ddClick.BackgroundColor3 = Color3.new(1, 1, 1)
+	ddClick.BackgroundTransparency = 0.99
 	ddClick.BorderSizePixel = 0
 	ddClick.Size = UDim2.new(1, 0, 0, headerH)
 	ddClick.Position = UDim2.fromOffset(0, 0)
