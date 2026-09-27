@@ -10680,17 +10680,17 @@ function Tab:AddDropdown(opts)
 	chevron.ZIndex = Z.Content + 1
 	chevron.Parent = card
 
-	local click = Instance.new("TextButton")
-	click.Text = ""
-	click.AutoButtonColor = false
-	click.BackgroundTransparency = 1
-	click.BorderSizePixel = 0
-	click.Size = UDim2.new(1, 0, 0, headerH)
-	click.Position = UDim2.fromOffset(0, 0)
-	click.ZIndex = Z.Content + 3
-	click.Parent = card
+	local ddClick = Instance.new("TextButton")
+	ddClick.Text = ""
+	ddClick.AutoButtonColor = false
+	ddClick.BackgroundTransparency = 1
+	ddClick.BorderSizePixel = 0
+	ddClick.Size = UDim2.new(1, 0, 0, headerH)
+	ddClick.Position = UDim2.fromOffset(0, 0)
+	ddClick.ZIndex = Z.Content + 3
+	ddClick.Parent = card
 
-	-- ===== panel (inline) =====
+	-- ===== panel =====
 	local panel = Instance.new("Frame")
 	panel.Name = "Panel"
 	panel.BackgroundTransparency = 1
@@ -10828,16 +10828,16 @@ function Tab:AddDropdown(opts)
 	emptyLabel.Parent = list
 
 	local optionFrames = {}
-	local popupOpen = false
+	local ddOpen = false
 	local searchOpen = false
 	local cardTween = nil
 
 	local function renderOption(data, animate)
 		local sel = isSelected(data.name)
-		local bgT    = popupOpen and (sel and 0.9  or 0.95) or 1
-		local titleT = popupOpen and (sel and 0    or 0.3)  or 1
-		local iconT  = popupOpen and (sel and 0    or 0.7)  or 1
-		local strT   = popupOpen and (sel and 0.85 or 0.93) or 1
+		local bgT    = ddOpen and (sel and 0.9  or 0.95) or 1
+		local titleT = ddOpen and (sel and 0    or 0.3)  or 1
+		local iconT  = ddOpen and (sel and 0    or 0.7)  or 1
+		local strT   = ddOpen and (sel and 0.85 or 0.93) or 1
 
 		if data.checkIcon then
 			data.checkIcon.Image = ResolveIcon(sel and "check" or (isMulti and "check" or "dot"))
@@ -10860,7 +10860,7 @@ function Tab:AddDropdown(opts)
 		end
 
 		if data.checkBg and data.checkBgIc then
-			local on = popupOpen and sel
+			local on = ddOpen and sel
 			if animate then
 				DropdownTween(data.checkBg, { BackgroundTransparency = on and 0.05 or 0.9 }, twOpt)
 				DropdownTween(data.checkBgIc, { ImageTransparency = on and 0 or 1 }, twOpt)
@@ -10902,7 +10902,7 @@ function Tab:AddDropdown(opts)
 		local canvasY = list.AbsoluteCanvasSize.Y
 		local winY = list.AbsoluteWindowSize.Y
 		local atY = list.CanvasPosition.Y
-		local more = popupOpen and winY > 0 and (canvasY - (atY + winY) > 1)
+		local more = ddOpen and winY > 0 and (canvasY - (atY + winY) > 1)
 		DropdownTween(list, { ScrollBarImageTransparency = more and 0.4 or 1 }, twHint)
 	end
 
@@ -10919,12 +10919,20 @@ function Tab:AddDropdown(opts)
 		return overhead + listHeight(rows)
 	end
 
+	local function listSize()
+		local n = 0
+		for _, d in ipairs(optionFrames) do
+			if d.frame.Visible then n += 1 end
+		end
+		local rows = math.min(math.max(n, 1), MAX_VIS)
+		return listHeight(rows)
+	end
+
 	local function resizeToList()
-		if not popupOpen then return end
+		if not ddOpen then return end
 		if cardTween then cardTween:Cancel() end
 		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
-		local h = openHeight() - (PAD_TOP + PAD_BOT + (searchOpen and SRCH_HX or SRCH_H) + OPT_GAP + (actions and (ACT_H + OPT_GAP) or 0))
-		list.Size = UDim2.new(1, 0, 0, math.max(h, OPT_H))
+		list.Size = UDim2.new(1, 0, 0, listSize())
 	end
 
 	local function applyFilter(q)
@@ -10968,7 +10976,6 @@ function Tab:AddDropdown(opts)
 		resizeToList()
 	end
 
-	-- ===== build option =====
 	local function buildOption(name, order)
 		local frame = Instance.new("Frame")
 		frame.Name = name
@@ -10979,7 +10986,7 @@ function Tab:AddDropdown(opts)
 		frame.LayoutOrder = order
 		frame.ZIndex = Z.Content + 3
 		frame.Parent = list
-		Corner(frame, FLAT_R)
+		Corner(frame, 7)
 
 		local corner = frame:FindFirstChildOfClass("UICorner")
 		local str = Stroke(frame, Color3.new(1, 1, 1), 1, 1)
@@ -11049,19 +11056,19 @@ function Tab:AddDropdown(opts)
 		end
 
 		interact.MouseEnter:Connect(function()
-			if not popupOpen then return end
+			if not ddOpen then return end
 			if isSelected(name) then return end
 			DropdownTween(frame, { BackgroundTransparency = 0.9 }, twHint)
 			DropdownTween(title, { TextTransparency = 0.15 }, twHint)
 		end)
 		interact.MouseLeave:Connect(function()
-			if not popupOpen then return end
+			if not ddOpen then return end
 			if isSelected(name) then return end
 			DropdownTween(frame, { BackgroundTransparency = 0.95 }, twHint)
 			DropdownTween(title, { TextTransparency = 0.3 }, twHint)
 		end)
 		interact.MouseButton1Click:Connect(function()
-			if not popupOpen then return end
+			if not ddOpen then return end
 			if not isMulti then
 				if isSelected(name) then return end
 				selected = name
@@ -11069,7 +11076,7 @@ function Tab:AddDropdown(opts)
 				for _, d in ipairs(optionFrames) do renderOption(d, true) end
 				fireChanged(selected)
 				task.delay(0.1, function()
-					if popupOpen then close_() end
+					if ddOpen then closeDropdown_() end
 				end)
 			else
 				selected[name] = (not selected[name]) or nil
@@ -11083,7 +11090,6 @@ function Tab:AddDropdown(opts)
 		return data
 	end
 
-	-- ===== actions =====
 	if actions then
 		local function actionBtn(label, order, apply)
 			local b = Instance.new("TextButton")
@@ -11122,7 +11128,6 @@ function Tab:AddDropdown(opts)
 		end)
 	end
 
-	-- ===== build all =====
 	options = dedup(options)
 	for i, opt in ipairs(options) do
 		buildOption(opt, i)
@@ -11130,7 +11135,6 @@ function Tab:AddDropdown(opts)
 	updateLabel()
 	updateCorners()
 
-	-- ===== open/close =====
 	local function bringIntoView()
 		local page = self._page
 		if not page then return end
@@ -11148,9 +11152,9 @@ function Tab:AddDropdown(opts)
 			TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out))
 	end
 
-	function close_()
-		if not popupOpen then return end
-		popupOpen = false
+	function closeDropdown_()
+		if not ddOpen then return end
+		ddOpen = false
 		collapseSearch()
 		syncScrollHint()
 		DropdownTween(chevron, { Rotation = 180 }, twChev)
@@ -11159,21 +11163,20 @@ function Tab:AddDropdown(opts)
 		for _, d in ipairs(optionFrames) do renderOption(d, true) end
 	end
 
-	function open_()
-		if popupOpen then return end
-		popupOpen = true
+	function openDropdown_()
+		if ddOpen then return end
+		ddOpen = true
 		DropdownTween(chevron, { Rotation = 0 }, twChev)
 		if cardTween then cardTween:Cancel() end
 		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
-		local h = openHeight() - (PAD_TOP + PAD_BOT + (searchOpen and SRCH_HX or SRCH_H) + OPT_GAP + (actions and (ACT_H + OPT_GAP) or 0))
-		list.Size = UDim2.new(1, 0, 0, math.max(h, OPT_H))
+		list.Size = UDim2.new(1, 0, 0, listSize())
 		for _, d in ipairs(optionFrames) do renderOption(d, true) end
 		syncScrollHint()
 		task.defer(bringIntoView)
 	end
 
-	click.MouseButton1Click:Connect(function()
-		if popupOpen then close_() else open_() end
+	ddClick.MouseButton1Click:Connect(function()
+		if ddOpen then closeDropdown_() else openDropdown_() end
 	end)
 
 	card.MouseEnter:Connect(function()
@@ -11197,20 +11200,20 @@ function Tab:AddDropdown(opts)
 	end)
 
 	jan:Add(UserInputService.InputBegan:Connect(function(input)
-		if not popupOpen then return end
+		if not ddOpen then return end
 		if input.UserInputType ~= Enum.UserInputType.MouseButton1
 			and input.UserInputType ~= Enum.UserInputType.Touch then return end
 		local pos = input.Position
 		local mp, ms = card.AbsolutePosition, card.AbsoluteSize
 		if pos.X < mp.X or pos.X > mp.X + ms.X
 			or pos.Y < mp.Y or pos.Y > mp.Y + ms.Y then
-			close_()
+			closeDropdown_()
 		end
 	end))
 
 	jan:Add(function()
 		if cardTween then cardTween:Cancel() end
-		if popupOpen then close_() end
+		if ddOpen then closeDropdown_() end
 	end)
 
 	return RegisterFlag(opts, {
@@ -11266,7 +11269,7 @@ function Tab:AddDropdown(opts)
 		OnChanged = function(_, fn) return signal.Connect(fn) end,
 		Destroy = function()
 			if cardTween then cardTween:Cancel() end
-			if popupOpen then close_() end
+			if ddOpen then closeDropdown_() end
 			signal.Clear()
 			card:Destroy()
 		end,
@@ -11448,12 +11451,40 @@ function Tab:AddColorPicker(opts)
 	local headerH = hasDesc and 56 or 44
 	local jan = self._janitor
 
-	local GAP = 6
-	local ROUND_R = 8
+	local GAP        = 6
+	local PAD_TOP    = 8
+	local PAD_BOT    = 8
+	local MAP_H      = 120
+	local BAR_W      = 14
+	local BAR_GAP    = 6
+	local FIELD_H    = 32
+	local ROW_GAP    = 8
+	local ROUND_R    = UDim.new(0, 8)
 
-	local twOpen = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-	local twHint = TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	local twOpen   = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	local twHint   = TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	local twFade   = TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
+	-- ===== state =====
+	local color = opts.Default or Color3.fromRGB(255, 255, 255)
+	local hue, sat, val = Color3.toHSV(color)
+	local alphaValue = opts.Alpha or 1
+
+	local signal = MakeSignal()
+	local lastFired = nil
+
+	local function currentColor()
+		return Color3.fromHSV(hue, sat, val)
+	end
+
+	local function ColorsClose(a, b)
+		if a == nil or b == nil then return false end
+		return math.abs(a.R - b.R) < 0.001
+			and math.abs(a.G - b.G) < 0.001
+			and math.abs(a.B - b.B) < 0.001
+	end
+
+	-- ===== card =====
 	local card = BaseCard(self._page, headerH)
 	card.AutomaticSize = Enum.AutomaticSize.None
 	card.ClipsDescendants = true
@@ -11463,11 +11494,6 @@ function Tab:AddColorPicker(opts)
 	AddTitleDesc(card, textX, 52, opts.Text or "Color", opts.Description, headerH)
 	self._window:_RegisterSearchable(self, opts.Text or "Color", card)
 
-	local color = opts.Default or Color3.fromRGB(255, 255, 255)
-	local hue, sat, val = Color3.toHSV(color)
-	local alphaValue = opts.Alpha or 1
-
-	-- swatch
 	local swatchHolder = Instance.new("Frame")
 	swatchHolder.AnchorPoint = Vector2.new(1, 0.5)
 	swatchHolder.Position = UDim2.new(1, -14, 0, headerH / 2)
@@ -11500,7 +11526,7 @@ function Tab:AddColorPicker(opts)
 	cpClick.ZIndex = Z.Content + 3
 	cpClick.Parent = card
 
-	-- ===== panel inline =====
+	-- ===== panel =====
 	local panel = Instance.new("Frame")
 	panel.Name = "Panel"
 	panel.BackgroundTransparency = 1
@@ -11508,11 +11534,12 @@ function Tab:AddColorPicker(opts)
 	panel.Position = UDim2.fromOffset(0, headerH + GAP)
 	panel.Size = UDim2.new(1, 0, 1, -(headerH + GAP))
 	panel.ZIndex = Z.Content
+	panel.ClipsDescendants = true
 	panel.Parent = card
 
 	local panelPad = Instance.new("UIPadding")
-	panelPad.PaddingTop = UDim.new(0, 8)
-	panelPad.PaddingBottom = UDim.new(0, 8)
+	panelPad.PaddingTop = UDim.new(0, PAD_TOP)
+	panelPad.PaddingBottom = UDim.new(0, PAD_BOT)
 	panelPad.PaddingLeft = UDim.new(0, 14)
 	panelPad.PaddingRight = UDim.new(0, 14)
 	panelPad.Parent = panel
@@ -11520,24 +11547,84 @@ function Tab:AddColorPicker(opts)
 	local panelLayout = Instance.new("UIListLayout")
 	panelLayout.FillDirection = Enum.FillDirection.Vertical
 	panelLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	panelLayout.Padding = UDim.new(0, 8)
+	panelLayout.Padding = UDim.new(0, ROW_GAP)
 	panelLayout.Parent = panel
 
-	-- baris SV + hue + alpha (horizontal)
+	-- ===== top row: SV + hue + alpha (horizontal) =====
 	local topRow = Instance.new("Frame")
+	topRow.Name = "TopRow"
 	topRow.BackgroundTransparency = 1
 	topRow.BorderSizePixel = 0
-	topRow.Size = UDim2.new(1, 0, 0, 120)
+	topRow.Size = UDim2.new(1, 0, 0, MAP_H)
 	topRow.LayoutOrder = 1
 	topRow.ZIndex = Z.Content + 1
 	topRow.Parent = panel
 
-	-- hue bar (kanan, vertikal)
+	-- SV box (fills left)
+	local svBox = Instance.new("Frame")
+	svBox.Active = true
+	svBox.Position = UDim2.fromOffset(0, 0)
+	svBox.Size = UDim2.new(1, -(BAR_W * 2 + BAR_GAP * 2), 0, MAP_H)
+	svBox.BackgroundColor3 = Color3.new(1, 1, 1)
+	svBox.BorderSizePixel = 0
+	svBox.ClipsDescendants = true
+	svBox.ZIndex = Z.Content + 2
+	svBox.Parent = topRow
+	Corner(svBox, ROUND_R)
+
+	local satGradient = Instance.new("UIGradient")
+	satGradient.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromHSV(hue, 1, 1))
+	satGradient.Parent = svBox
+
+	local valOverlay = Instance.new("Frame")
+	valOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
+	valOverlay.BorderSizePixel = 0
+	valOverlay.Size = UDim2.fromScale(1, 1)
+	valOverlay.ZIndex = Z.Content + 3
+	valOverlay.Parent = svBox
+
+	local valGradient = Instance.new("UIGradient")
+	valGradient.Rotation = 90
+	valGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	valGradient.Parent = valOverlay
+
+	local svCursor = Instance.new("Frame")
+	svCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+	svCursor.Position = UDim2.new(sat, 0, 1 - val, 0)
+	svCursor.Size = UDim2.fromOffset(16, 16)
+	svCursor.BackgroundTransparency = 1
+	svCursor.ZIndex = Z.Content + 4
+	svCursor.Parent = svBox
+	Corner(svCursor, 8)
+	Stroke(svCursor, Color3.new(0, 0, 0), 2, 0.15)
+
+	local svCursorInner = Instance.new("Frame")
+	svCursorInner.AnchorPoint = Vector2.new(0.5, 0.5)
+	svCursorInner.Position = UDim2.fromScale(0.5, 0.5)
+	svCursorInner.Size = UDim2.fromOffset(11, 11)
+	svCursorInner.BackgroundTransparency = 1
+	svCursorInner.ZIndex = Z.Content + 5
+	svCursorInner.Parent = svCursor
+	Corner(svCursorInner, 6)
+	Stroke(svCursorInner, Color3.new(1, 1, 1), 2, 0)
+
+	local svHit = Instance.new("TextButton")
+	svHit.Text = ""
+	svHit.AutoButtonColor = false
+	svHit.BackgroundTransparency = 1
+	svHit.Size = UDim2.fromScale(1, 1)
+	svHit.ZIndex = Z.Content + 6
+	svHit.Parent = svBox
+
+	-- hue bar (right of SV)
 	local hueBar = Instance.new("Frame")
 	hueBar.Active = true
 	hueBar.AnchorPoint = Vector2.new(1, 0)
-	hueBar.Position = UDim2.new(1, 0, 0, 0)
-	hueBar.Size = UDim2.fromOffset(14, 120)
+	hueBar.Position = UDim2.new(1, -(BAR_W + BAR_GAP), 0, 0)
+	hueBar.Size = UDim2.fromOffset(BAR_W, MAP_H)
 	hueBar.BackgroundColor3 = Color3.new(1, 1, 1)
 	hueBar.BorderSizePixel = 0
 	hueBar.ClipsDescendants = true
@@ -11577,12 +11664,12 @@ function Tab:AddColorPicker(opts)
 	hueHit.ZIndex = Z.Content + 6
 	hueHit.Parent = hueBar
 
-	-- alpha bar (kiri hue)
+	-- alpha bar (right of hue)
 	local alphaBar = Instance.new("Frame")
 	alphaBar.Active = true
 	alphaBar.AnchorPoint = Vector2.new(1, 0)
-	alphaBar.Position = UDim2.new(1, -20, 0, 0)
-	alphaBar.Size = UDim2.fromOffset(14, 120)
+	alphaBar.Position = UDim2.new(1, 0, 0, 0)
+	alphaBar.Size = UDim2.fromOffset(BAR_W, MAP_H)
 	alphaBar.BackgroundColor3 = color
 	alphaBar.BorderSizePixel = 0
 	alphaBar.ClipsDescendants = true
@@ -11617,76 +11704,17 @@ function Tab:AddColorPicker(opts)
 	alphaHit.ZIndex = Z.Content + 6
 	alphaHit.Parent = alphaBar
 
-	-- SV map (sisa lebar)
-	local svBox = Instance.new("Frame")
-	svBox.Active = true
-	svBox.AnchorPoint = Vector2.new(0, 0)
-	svBox.Position = UDim2.new(0, 0, 0, 0)
-	svBox.Size = UDim2.new(1, -44, 0, 120)
-	svBox.BackgroundColor3 = Color3.new(1, 1, 1)
-	svBox.BorderSizePixel = 0
-	svBox.ClipsDescendants = true
-	svBox.ZIndex = Z.Content + 1
-	svBox.Parent = topRow
-	Corner(svBox, ROUND_R)
-
-	local satGradient = Instance.new("UIGradient")
-	satGradient.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromHSV(hue, 1, 1))
-	satGradient.Parent = svBox
-
-	local valOverlay = Instance.new("Frame")
-	valOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
-	valOverlay.BorderSizePixel = 0
-	valOverlay.Size = UDim2.fromScale(1, 1)
-	valOverlay.ZIndex = Z.Content + 2
-	valOverlay.Parent = svBox
-
-	local valGradient = Instance.new("UIGradient")
-	valGradient.Rotation = 90
-	valGradient.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 1),
-		NumberSequenceKeypoint.new(1, 0),
-	})
-	valGradient.Parent = valOverlay
-
-	local svCursor = Instance.new("Frame")
-	svCursor.AnchorPoint = Vector2.new(0.5, 0.5)
-	svCursor.Position = UDim2.new(sat, 0, 1 - val, 0)
-	svCursor.Size = UDim2.fromOffset(16, 16)
-	svCursor.BackgroundTransparency = 1
-	svCursor.ZIndex = Z.Content + 4
-	svCursor.Parent = svBox
-	Corner(svCursor, 8)
-	Stroke(svCursor, Color3.new(0, 0, 0), 2, 0.15)
-
-	local svCursorInner = Instance.new("Frame")
-	svCursorInner.AnchorPoint = Vector2.new(0.5, 0.5)
-	svCursorInner.Position = UDim2.fromScale(0.5, 0.5)
-	svCursorInner.Size = UDim2.fromOffset(11, 11)
-	svCursorInner.BackgroundTransparency = 1
-	svCursorInner.ZIndex = Z.Content + 5
-	svCursorInner.Parent = svCursor
-	Corner(svCursorInner, 6)
-	Stroke(svCursorInner, Color3.new(1, 1, 1), 2, 0)
-
-	local svHit = Instance.new("TextButton")
-	svHit.Text = ""
-	svHit.AutoButtonColor = false
-	svHit.BackgroundTransparency = 1
-	svHit.Size = UDim2.fromScale(1, 1)
-	svHit.ZIndex = Z.Content + 6
-	svHit.Parent = svBox
-
-	-- baris HEX + RGB
+	-- ===== bottom row: HEX + RGB =====
 	local fieldRow = Instance.new("Frame")
+	fieldRow.Name = "FieldRow"
 	fieldRow.BackgroundTransparency = 1
 	fieldRow.BorderSizePixel = 0
-	fieldRow.Size = UDim2.new(1, 0, 0, 32)
+	fieldRow.Size = UDim2.new(1, 0, 0, FIELD_H)
 	fieldRow.LayoutOrder = 2
 	fieldRow.ZIndex = Z.Content + 1
 	fieldRow.Parent = panel
 
-	local function makeField(x, w, text)
+	local function makeField(x, w, text, insetRight)
 		local b = Instance.new("TextBox")
 		b.BackgroundColor3 = Color3.new(1, 1, 1)
 		b.BackgroundTransparency = 0.9
@@ -11697,7 +11725,7 @@ function Tab:AddColorPicker(opts)
 		b.TextSize = 13
 		b.ClearTextOnFocus = false
 		b.Position = UDim2.new(x, 0, 0, 0)
-		b.Size = UDim2.new(w, x == 0 and 0 or -4, 1, 0)
+		b.Size = UDim2.new(w, insetRight or 0, 1, 0)
 		b.ZIndex = Z.Content + 2
 		b.Parent = fieldRow
 		Corner(b, 7)
@@ -11705,26 +11733,42 @@ function Tab:AddColorPicker(opts)
 		return b
 	end
 
-	local hexBox = makeField(0,   0.4, "#" .. color:ToHex():upper())
-	local rBox   = makeField(0.4, 0.2, tostring(math.floor(color.R * 255 + 0.5)))
-	local gBox   = makeField(0.6, 0.2, tostring(math.floor(color.G * 255 + 0.5)))
-	local bBox   = makeField(0.8, 0.2, tostring(math.floor(color.B * 255 + 0.5)))
+	local hexBox = makeField(0,    0.4, "#" .. color:ToHex():upper(), -4)
+	local rBox   = makeField(0.4,  0.2, tostring(math.floor(color.R * 255 + 0.5)), -4)
+	local gBox   = makeField(0.6,  0.2, tostring(math.floor(color.G * 255 + 0.5)), -4)
+	local bBox   = makeField(0.8,  0.2, tostring(math.floor(color.B * 255 + 0.5)), 0)
 
-	-- ===== state & handlers =====
-	local signal = MakeSignal()
-	local lastFired = nil
+	-- ===== visibility control =====
+	local function setControlsVisible(visible)
+		topRow.Visible = visible
+		fieldRow.Visible = visible
+	end
+	setControlsVisible(false)
 
-	local function currentColor()
-		return Color3.fromHSV(hue, sat, val)
+	local function applyPickerVisibility(open, animate)
+		local targets = {
+			[svBox]          = { BackgroundTransparency = open and 0 or 1 },
+			[valOverlay]     = { BackgroundTransparency = open and 0 or 1 },
+			[svCursor]       = { BackgroundTransparency = open and 0 or 1 },
+			[hueBar]         = { BackgroundTransparency = open and 0 or 1 },
+			[hueCursor]      = { BackgroundTransparency = open and 0 or 1 },
+			[alphaBar]       = { BackgroundTransparency = open and 0 or 1 },
+			[alphaCursor]    = { BackgroundTransparency = open and 0 or 1 },
+			[hexBox]         = { BackgroundTransparency = open and 0.9 or 1, TextTransparency = open and 0 or 1 },
+			[rBox]           = { BackgroundTransparency = open and 0.9 or 1, TextTransparency = open and 0 or 1 },
+			[gBox]           = { BackgroundTransparency = open and 0.9 or 1, TextTransparency = open and 0 or 1 },
+			[bBox]           = { BackgroundTransparency = open and 0.9 or 1, TextTransparency = open and 0 or 1 },
+		}
+		for obj, props in pairs(targets) do
+			if animate then
+				DropdownTween(obj, props, twFade)
+			else
+				for k, v in pairs(props) do obj[k] = v end
+			end
+		end
 	end
 
-	local function ColorsClose(a, b)
-		if a == nil or b == nil then return false end
-		return math.abs(a.R - b.R) < 0.001
-			and math.abs(a.G - b.G) < 0.001
-			and math.abs(a.B - b.B) < 0.001
-	end
-
+	-- ===== handlers =====
 	local function syncFields()
 		svCursor.Position = UDim2.new(sat, 0, 1 - val, 0)
 		hueCursor.Position = UDim2.new(0.5, 0, hue, 0)
@@ -11847,31 +11891,37 @@ function Tab:AddColorPicker(opts)
 
 	syncFields()
 
-	-- ===== open/close =====
-	local popupOpen = false
+	-- ===== open / close =====
+	local cpOpen = false
 	local cardTween = nil
-	-- tinggi total panel: padding 8+8, topRow 120, fieldRow 32, layout gap 8 = 176
-	local PANEL_H = 176
+	local PANEL_H = PAD_TOP + PAD_BOT + MAP_H + ROW_GAP + FIELD_H
 
-	function close_()
-		if not popupOpen then return end
-		popupOpen = false
+	local function openPicker_()
+		if cpOpen then return end
+		cpOpen = true
+		setControlsVisible(true)
+		applyPickerVisibility(true, false)
+		DropdownTween(swatchStroke, { Color = NHUI.Theme.Accent, Transparency = 0.3 }, twHint)
+		if cardTween then cardTween:Cancel() end
+		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + PANEL_H) }, twOpen)
+		applyPickerVisibility(true, true)
+	end
+
+	local function closePicker_()
+		if not cpOpen then return end
+		cpOpen = false
 		dragTarget, dragInput = nil, nil
 		DropdownTween(swatchStroke, { Color = Color3.new(1, 1, 1), Transparency = 0.85 }, twHint)
 		if cardTween then cardTween:Cancel() end
 		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH) }, twOpen)
-	end
-
-	function open_()
-		if popupOpen then return end
-		popupOpen = true
-		DropdownTween(swatchStroke, { Color = NHUI.Theme.Accent, Transparency = 0.3 }, twHint)
-		if cardTween then cardTween:Cancel() end
-		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + PANEL_H) }, twOpen)
+		applyPickerVisibility(false, true)
+		task.delay(0.4, function()
+			if not cpOpen then setControlsVisible(false) end
+		end)
 	end
 
 	cpClick.MouseButton1Click:Connect(function()
-		if popupOpen then close_() else open_() end
+		if cpOpen then closePicker_() else openPicker_() end
 	end)
 
 	card.MouseEnter:Connect(function()
@@ -11882,20 +11932,20 @@ function Tab:AddColorPicker(opts)
 	end)
 
 	jan:Add(UserInputService.InputBegan:Connect(function(input)
-		if not popupOpen then return end
+		if not cpOpen then return end
 		if input.UserInputType ~= Enum.UserInputType.MouseButton1
 			and input.UserInputType ~= Enum.UserInputType.Touch then return end
 		local pos = input.Position
 		local mp, ms = card.AbsolutePosition, card.AbsoluteSize
 		if pos.X < mp.X or pos.X > mp.X + ms.X
 			or pos.Y < mp.Y or pos.Y > mp.Y + ms.Y then
-			close_()
+			closePicker_()
 		end
 	end))
 
 	jan:Add(function()
 		if cardTween then cardTween:Cancel() end
-		if popupOpen then close_() end
+		if cpOpen then closePicker_() end
 	end)
 
 	return RegisterFlag(opts, {
@@ -11909,7 +11959,7 @@ function Tab:AddColorPicker(opts)
 		OnChanged = function(_, fn) return signal.Connect(fn) end,
 		Destroy = function()
 			if cardTween then cardTween:Cancel() end
-			if popupOpen then close_() end
+			if cpOpen then closePicker_() end
 			signal.Clear()
 			card:Destroy()
 		end,
