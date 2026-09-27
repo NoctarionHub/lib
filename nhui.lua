@@ -10543,6 +10543,15 @@ local function ComputePopupPosition(window, card, w, h)
  
 	return math.round(px / s), math.round(py / s)
 end
+
+local function DropdownTween(instance, props, info)
+	if typeof(info) == "TweenInfo" then
+		local t = TweenService:Create(instance, info, props)
+		t:Play()
+		return t
+	end
+	return Tween(instance, props, info)
+end
  
 function Tab:AddDropdown(opts)
 	opts = opts or {}
@@ -10553,24 +10562,24 @@ function Tab:AddDropdown(opts)
 	local jan = self._janitor
 
 	-- ===== constants =====
+	local GAP       = 6
+	local PAD_TOP   = 7
+	local PAD_BOT   = 6
 	local OPT_H     = 38
 	local OPT_GAP   = 5
 	local LIST_PAD  = 2
 	local MAX_VIS   = 5
-	local PAD_TOP   = 7
-	local PAD_BOT   = 6
 	local ACT_H     = 22
 	local SRCH_H    = 30
 	local SRCH_HX   = 38
-	local POPUP_W   = 200
 	local ROUND_R   = UDim.new(0, 12)
 	local FLAT_R    = UDim.new(0, 7)
 
-	local twOpen    = TweenInfo.new(0.35, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-	local twSearch  = TweenInfo.new(0.3,  Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-	local twChev    = TweenInfo.new(0.4,  Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-	local twHint    = TweenInfo.new(0.18, Enum.EasingStyle.Quint,       Enum.EasingDirection.Out)
-	local twOpt     = TweenInfo.new(0.22, Enum.EasingStyle.Quint,       Enum.EasingDirection.Out)
+	local twOpen    = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	local twSearch  = TweenInfo.new(0.3, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	local twChev    = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	local twHint    = TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	local twOpt     = TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
 	-- ===== state =====
 	local selected
@@ -10612,7 +10621,6 @@ function Tab:AddDropdown(opts)
 		return tostring(selected or "None")
 	end
 
-	-- ===== helpers =====
 	local function dedup(arr)
 		local seen, out = {}, {}
 		for _, v in ipairs(arr) do
@@ -10624,11 +10632,25 @@ function Tab:AddDropdown(opts)
 		return out
 	end
 
-	-- ===== card (tetap tinggi, gak berubah) =====
+	local function listHeight(n)
+		return n * OPT_H + math.max(0, n - 1) * OPT_GAP + LIST_PAD * 2
+	end
+
+	local function rowsFit(space)
+		return math.max(math.floor((space - LIST_PAD * 2 + OPT_GAP) / (OPT_H + OPT_GAP)), 1)
+	end
+
+	local function pageHeight()
+		local s = GetUIScale()
+		local view = ViewportSize()
+		return math.max(view.Y / s - 120, 200)
+	end
+
+	-- ===== card =====
 	local card = BaseCard(self._page, headerH)
 	card.AutomaticSize = Enum.AutomaticSize.None
+	card.ClipsDescendants = true
 	card.Size = UDim2.new(1, 0, 0, headerH)
-	card.ClipsDescendants = false
 
 	local textX = AddLeadingIcon(card, opts.Icon, headerH)
 	AddTitleDesc(card, textX, 166, opts.Text or "Dropdown", opts.Description, headerH)
@@ -10642,10 +10664,10 @@ function Tab:AddDropdown(opts)
 	valueLabel.TextSize = 13
 	valueLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-	valueLabel.AnchorPoint = Vector2.new(1, 0.5)
-	valueLabel.Position = UDim2.new(1, -34, 0, headerH / 2)
-	valueLabel.Size = UDim2.fromOffset(120, headerH)
-	valueLabel.ZIndex = Z.Content + 2
+	valueLabel.AnchorPoint = Vector2.new(1, 0)
+	valueLabel.Position = UDim2.new(1, -34, 0, (headerH - 15) / 2)
+	valueLabel.Size = UDim2.fromOffset(120, 15)
+	valueLabel.ZIndex = Z.Content + 1
 	valueLabel.Parent = card
 
 	local chevron = Instance.new("ImageLabel")
@@ -10655,7 +10677,7 @@ function Tab:AddDropdown(opts)
 	chevron.Size = UDim2.fromOffset(14, 14)
 	chevron.AnchorPoint = Vector2.new(1, 0.5)
 	chevron.Position = UDim2.new(1, -14, 0, headerH / 2)
-	chevron.ZIndex = Z.Content + 2
+	chevron.ZIndex = Z.Content + 1
 	chevron.Parent = card
 
 	local click = Instance.new("TextButton")
@@ -10663,27 +10685,153 @@ function Tab:AddDropdown(opts)
 	click.AutoButtonColor = false
 	click.BackgroundTransparency = 1
 	click.BorderSizePixel = 0
-	click.Size = UDim2.fromScale(1, 1)
-	click.ZIndex = Z.Content + 5
+	click.Size = UDim2.new(1, 0, 0, headerH)
+	click.Position = UDim2.fromOffset(0, 0)
+	click.ZIndex = Z.Content + 3
 	click.Parent = card
 
-	-- ===== popup state =====
-	local popup = nil         -- CanvasGroup root popup
-	local backdrop = nil      -- TextButton full-screen
-	local list = nil
-	local searchFrame = nil
-	local searchInput = nil
-	local searchIcon = nil
-	local searchStroke = nil
-	local searchHit = nil
-	local actions = nil
-	local emptyLabel = nil
-	local followConn = nil
+	-- ===== panel (inline) =====
+	local panel = Instance.new("Frame")
+	panel.Name = "Panel"
+	panel.BackgroundTransparency = 1
+	panel.BorderSizePixel = 0
+	panel.Position = UDim2.fromOffset(0, headerH + GAP)
+	panel.Size = UDim2.new(1, 0, 1, -(headerH + GAP))
+	panel.ZIndex = Z.Content
+	panel.ClipsDescendants = true
+	panel.Parent = card
+
+	local panelPad = Instance.new("UIPadding")
+	panelPad.PaddingTop = UDim.new(0, PAD_TOP)
+	panelPad.PaddingBottom = UDim.new(0, PAD_BOT)
+	panelPad.PaddingLeft = UDim.new(0, 6)
+	panelPad.PaddingRight = UDim.new(0, 6)
+	panelPad.Parent = panel
+
+	local panelLayout = Instance.new("UIListLayout")
+	panelLayout.FillDirection = Enum.FillDirection.Vertical
+	panelLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	panelLayout.Padding = UDim.new(0, OPT_GAP)
+	panelLayout.Parent = panel
+
+	-- search
+	local searchFrame = Instance.new("Frame")
+	searchFrame.Name = "Search"
+	searchFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+	searchFrame.BackgroundTransparency = 1
+	searchFrame.BorderSizePixel = 0
+	searchFrame.Size = UDim2.new(1, 0, 0, SRCH_H)
+	searchFrame.LayoutOrder = 1
+	searchFrame.ClipsDescendants = true
+	searchFrame.ZIndex = Z.Content + 1
+	searchFrame.Parent = panel
+	Corner(searchFrame, 10)
+
+	local searchStroke = Stroke(searchFrame, Color3.new(1, 1, 1), 1, 1)
+
+	local searchIcon = Instance.new("ImageButton")
+	searchIcon.BackgroundTransparency = 1
+	searchIcon.Image = ResolveIcon("search")
+	searchIcon.ImageColor3 = NHUI.Theme.TextDim
+	searchIcon.Size = UDim2.fromOffset(16, 16)
+	searchIcon.AnchorPoint = Vector2.new(0, 0.5)
+	searchIcon.Position = UDim2.new(0, 12, 0.5, 0)
+	searchIcon.AutoButtonColor = false
+	searchIcon.ImageTransparency = 1
+	searchIcon.ZIndex = Z.Content + 4
+	searchIcon.Parent = searchFrame
+
+	local searchHit = Instance.new("TextButton")
+	searchHit.Text = ""
+	searchHit.AutoButtonColor = false
+	searchHit.BackgroundTransparency = 1
+	searchHit.Size = UDim2.fromOffset(SRCH_H, SRCH_H)
+	searchHit.ZIndex = Z.Content + 3
+	searchHit.Parent = searchFrame
+
+	local searchInput = Instance.new("TextBox")
+	searchInput.BackgroundTransparency = 1
+	searchInput.ClearTextOnFocus = false
+	searchInput.FontFace = NHUI.Theme.FontRegular
+	searchInput.PlaceholderText = "Search..."
+	searchInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 122)
+	searchInput.Text = ""
+	searchInput.TextColor3 = NHUI.Theme.Text
+	searchInput.TextSize = 14
+	searchInput.TextXAlignment = Enum.TextXAlignment.Left
+	searchInput.TextEditable = false
+	searchInput.Interactable = false
+	searchInput.TextTransparency = 1
+	searchInput.Position = UDim2.new(0, 40, 0.5, 0)
+	searchInput.AnchorPoint = Vector2.new(0, 0.5)
+	searchInput.Size = UDim2.new(1, -52, 0, 18)
+	searchInput.ZIndex = Z.Content + 4
+	searchInput.Parent = searchFrame
+
+	-- actions (multi)
+	local actions
+	if isMulti then
+		actions = Instance.new("Frame")
+		actions.Name = "Actions"
+		actions.BackgroundTransparency = 1
+		actions.BorderSizePixel = 0
+		actions.Size = UDim2.new(1, 0, 0, ACT_H)
+		actions.LayoutOrder = 2
+		actions.ZIndex = Z.Content + 1
+		actions.Parent = panel
+
+		local al = Instance.new("UIListLayout")
+		al.FillDirection = Enum.FillDirection.Horizontal
+		al.VerticalAlignment = Enum.VerticalAlignment.Center
+		al.SortOrder = Enum.SortOrder.LayoutOrder
+		al.Padding = UDim.new(0, 12)
+		al.Parent = actions
+	end
+
+	-- list
+	local list = Instance.new("ScrollingFrame")
+	list.Name = "Options"
+	list.BackgroundTransparency = 1
+	list.BorderSizePixel = 0
+	list.Size = UDim2.new(1, 0, 0, 0)
+	list.AutomaticSize = Enum.AutomaticSize.None
+	list.CanvasSize = UDim2.new(0, 0, 0, 0)
+	list.ScrollBarThickness = 3
+	list.ScrollBarImageColor3 = NHUI.Theme.TextDim
+	list.ScrollBarImageTransparency = 1
+	list.ScrollingDirection = Enum.ScrollingDirection.Y
+	list.LayoutOrder = 3
+	list.ZIndex = Z.Content + 1
+	list.Parent = panel
+
+	local listPad = Instance.new("UIPadding")
+	listPad.PaddingRight = UDim.new(0, 6)
+	listPad.Parent = list
+
+	local listLayout = Instance.new("UIListLayout")
+	listLayout.Padding = UDim.new(0, OPT_GAP)
+	listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	listLayout.Parent = list
+
+	local emptyLabel = Instance.new("TextLabel")
+	emptyLabel.Name = "Empty"
+	emptyLabel.BackgroundTransparency = 1
+	emptyLabel.FontFace = NHUI.Theme.FontRegular
+	emptyLabel.Text = "No matches"
+	emptyLabel.TextColor3 = NHUI.Theme.TextDim
+	emptyLabel.TextSize = 13
+	emptyLabel.TextTransparency = 0.55
+	emptyLabel.Visible = false
+	emptyLabel.Size = UDim2.new(1, -12, 0, OPT_H)
+	emptyLabel.LayoutOrder = 9999
+	emptyLabel.ZIndex = Z.Content + 2
+	emptyLabel.Parent = list
+
+	local optionFrames = {}
 	local popupOpen = false
 	local searchOpen = false
-	local optionFrames = {}
+	local cardTween = nil
 
-	-- ===== render option =====
 	local function renderOption(data, animate)
 		local sel = isSelected(data.name)
 		local bgT    = popupOpen and (sel and 0.9  or 0.95) or 1
@@ -10696,11 +10844,11 @@ function Tab:AddDropdown(opts)
 		end
 
 		if animate then
-			Tween(data.frame, { BackgroundTransparency = bgT }, 0.22)
-			Tween(data.title, { TextTransparency = titleT }, 0.22)
-			Tween(data.stroke, { Transparency = strT }, 0.22)
+			DropdownTween(data.frame, { BackgroundTransparency = bgT }, twOpt)
+			DropdownTween(data.title, { TextTransparency = titleT }, twOpt)
+			DropdownTween(data.stroke, { Transparency = strT }, twOpt)
 			if data.checkIcon then
-				Tween(data.checkIcon, { ImageTransparency = iconT }, 0.22)
+				DropdownTween(data.checkIcon, { ImageTransparency = iconT }, twOpt)
 			end
 		else
 			data.frame.BackgroundTransparency = bgT
@@ -10714,8 +10862,8 @@ function Tab:AddDropdown(opts)
 		if data.checkBg and data.checkBgIc then
 			local on = popupOpen and sel
 			if animate then
-				Tween(data.checkBg, { BackgroundTransparency = on and 0.05 or 0.9 }, 0.22)
-				Tween(data.checkBgIc, { ImageTransparency = on and 0 or 1 }, 0.22)
+				DropdownTween(data.checkBg, { BackgroundTransparency = on and 0.05 or 0.9 }, twOpt)
+				DropdownTween(data.checkBgIc, { ImageTransparency = on and 0 or 1 }, twOpt)
 			else
 				data.checkBg.BackgroundTransparency = on and 0.05 or 0.9
 				data.checkBgIc.ImageTransparency = on and 0 or 1
@@ -10750,243 +10898,78 @@ function Tab:AddDropdown(opts)
 		return t
 	end
 
-	-- ===== posisi popup relatif ke card =====
-	-- prioritas: kanan card, kalau gak muat → kiri card
-	local function computePopupPosition(popupW, popupH)
-		local s = GetUIScale()
-		local view = ViewportSize()
-		local realW = popupW * s
-		local realH = popupH * s
-
-		local cardPos = card.AbsolutePosition
-		local cardSize = card.AbsoluteSize
-
-		-- kanan card
-		local px = cardPos.X + cardSize.X + 8
-		if px + realW > view.X - 8 then
-			-- kiri card
-			px = cardPos.X - realW - 8
-		end
-		px = SafeClamp(px, 8, view.X - realW - 8)
-
-		-- sejajar atas card, clamp biar gak keluar layar
-		local py = cardPos.Y
-		py = SafeClamp(py, 8, view.Y - realH - 8)
-
-		return math.round(px / s), math.round(py / s)
+	local function syncScrollHint()
+		local canvasY = list.AbsoluteCanvasSize.Y
+		local winY = list.AbsoluteWindowSize.Y
+		local atY = list.CanvasPosition.Y
+		local more = popupOpen and winY > 0 and (canvasY - (atY + winY) > 1)
+		DropdownTween(list, { ScrollBarImageTransparency = more and 0.4 or 1 }, twHint)
 	end
 
-	-- ===== build popup =====
-	local function buildPopup()
-		if popup then return end
+	local function openHeight()
+		local n = 0
+		for _, d in ipairs(optionFrames) do
+			if d.frame.Visible then n += 1 end
+		end
+		local searchH = searchOpen and SRCH_HX or SRCH_H
+		local overhead = PAD_TOP + PAD_BOT + searchH + OPT_GAP
+			+ (actions and (ACT_H + OPT_GAP) or 0)
+		local avail = pageHeight()
+		local rows = math.min(math.max(n, 1), MAX_VIS, rowsFit(avail - overhead))
+		return overhead + listHeight(rows)
+	end
 
-		local root = NHUI._Root
+	local function resizeToList()
+		if not popupOpen then return end
+		if cardTween then cardTween:Cancel() end
+		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
+		local h = openHeight() - (PAD_TOP + PAD_BOT + (searchOpen and SRCH_HX or SRCH_H) + OPT_GAP + (actions and (ACT_H + OPT_GAP) or 0))
+		list.Size = UDim2.new(1, 0, 0, math.max(h, OPT_H))
+	end
 
-		backdrop = Instance.new("TextButton")
-		backdrop.Name = "DropdownBackdrop"
-		backdrop.Text = ""
-		backdrop.AutoButtonColor = false
-		backdrop.BackgroundColor3 = Color3.new(0, 0, 0)
-		backdrop.BackgroundTransparency = 1
-		backdrop.BorderSizePixel = 0
-		backdrop.Size = UDim2.fromScale(1, 1)
-		backdrop.ZIndex = Z.Backdrop
-		backdrop.Parent = root
+	local function applyFilter(q)
+		q = string.lower(q or "")
+		local shown = 0
+		for _, d in ipairs(optionFrames) do
+			local vis = q == "" or string.find(string.lower(d.name), q, 1, true) ~= nil
+			d.frame.Visible = vis
+			if vis then shown += 1 end
+		end
+		emptyLabel.Visible = shown == 0 and q ~= ""
+		updateCorners()
+		resizeToList()
+		syncScrollHint()
+	end
 
-		popup = Instance.new("CanvasGroup")
-		popup.Name = "DropdownPopup"
-		popup.Active = true
-		popup.BackgroundColor3 = NHUI.Theme.Background
-		popup.BackgroundTransparency = 0.05
-		popup.BorderSizePixel = 0
-		popup.ClipsDescendants = false
-		popup.ZIndex = Z.Popup
-		popup.Size = UDim2.fromOffset(POPUP_W, 0)
-		popup.Parent = root
-		Corner(popup, 12)
-		local popupStroke = Stroke(popup, Color3.new(1, 1, 1), 1, 0.85)
+	local function expandSearch()
+		if searchOpen then return end
+		searchOpen = true
+		searchInput.TextEditable = true
+		searchInput.Interactable = true
+		DropdownTween(searchFrame, { Size = UDim2.new(1, 0, 0, SRCH_HX) }, twSearch)
+		DropdownTween(searchStroke, { Transparency = 0.86 }, twSearch)
+		DropdownTween(searchIcon, { ImageTransparency = 0.5 }, twSearch)
+		DropdownTween(searchInput, { TextTransparency = 0.3 }, twSearch)
+		resizeToList()
+		searchInput:CaptureFocus()
+	end
 
-		-- panel container, tinggi dihitung dari konten
-		local panel = Instance.new("Frame")
-		panel.Name = "Panel"
-		panel.BackgroundTransparency = 1
-		panel.BorderSizePixel = 0
-		panel.Size = UDim2.new(1, 0, 1, 0)
-		panel.ZIndex = Z.Popup + 1
-		panel.Parent = popup
-
-		local panelPad = Instance.new("UIPadding")
-		panelPad.PaddingTop = UDim.new(0, PAD_TOP)
-		panelPad.PaddingBottom = UDim.new(0, PAD_BOT)
-		panelPad.PaddingLeft = UDim.new(0, 6)
-		panelPad.PaddingRight = UDim.new(0, 6)
-		panelPad.Parent = panel
-
-		local panelLayout = Instance.new("UIListLayout")
-		panelLayout.FillDirection = Enum.FillDirection.Vertical
-		panelLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		panelLayout.Padding = UDim.new(0, OPT_GAP)
-		panelLayout.Parent = panel
-
-		-- search
-		searchFrame = Instance.new("Frame")
-		searchFrame.Name = "Search"
-		searchFrame.BackgroundColor3 = Color3.new(1, 1, 1)
-		searchFrame.BackgroundTransparency = 0.92
-		searchFrame.BorderSizePixel = 0
-		searchFrame.Size = UDim2.new(1, 0, 0, SRCH_H)
-		searchFrame.LayoutOrder = 1
-		searchFrame.ClipsDescendants = true
-		searchFrame.ZIndex = Z.Popup + 2
-		searchFrame.Parent = panel
-		Corner(searchFrame, 10)
-
-		searchStroke = Stroke(searchFrame, Color3.new(1, 1, 1), 1, 0.86)
-
-		searchIcon = Instance.new("ImageButton")
-		searchIcon.BackgroundTransparency = 1
-		searchIcon.Image = ResolveIcon("search")
-		searchIcon.ImageColor3 = NHUI.Theme.TextDim
-		searchIcon.Size = UDim2.fromOffset(16, 16)
-		searchIcon.AnchorPoint = Vector2.new(0, 0.5)
-		searchIcon.Position = UDim2.new(0, 12, 0.5, 0)
-		searchIcon.AutoButtonColor = false
-		searchIcon.ImageTransparency = 0.5
-		searchIcon.ZIndex = Z.Popup + 4
-		searchIcon.Parent = searchFrame
-
-		searchHit = Instance.new("TextButton")
-		searchHit.Text = ""
-		searchHit.AutoButtonColor = false
-		searchHit.BackgroundTransparency = 1
-		searchHit.Size = UDim2.fromOffset(SRCH_H, SRCH_H)
-		searchHit.ZIndex = Z.Popup + 3
-		searchHit.Parent = searchFrame
-
-		searchInput = Instance.new("TextBox")
-		searchInput.BackgroundTransparency = 1
-		searchInput.ClearTextOnFocus = false
-		searchInput.FontFace = NHUI.Theme.FontRegular
-		searchInput.PlaceholderText = "Search..."
-		searchInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 122)
-		searchInput.Text = ""
-		searchInput.TextColor3 = NHUI.Theme.Text
-		searchInput.TextSize = 14
-		searchInput.TextXAlignment = Enum.TextXAlignment.Left
+	local function collapseSearch()
+		if not searchOpen then return end
+		searchOpen = false
 		searchInput.TextEditable = false
 		searchInput.Interactable = false
-		searchInput.Position = UDim2.new(0, 40, 0.5, 0)
-		searchInput.AnchorPoint = Vector2.new(0, 0.5)
-		searchInput.Size = UDim2.new(1, -52, 0, 18)
-		searchInput.TextTransparency = 0.3
-		searchInput.ZIndex = Z.Popup + 4
-		searchInput.Parent = searchFrame
-
-		-- actions (multi)
-		if isMulti then
-			actions = Instance.new("Frame")
-			actions.Name = "Actions"
-			actions.BackgroundTransparency = 1
-			actions.BorderSizePixel = 0
-			actions.Size = UDim2.new(1, 0, 0, ACT_H)
-			actions.LayoutOrder = 2
-			actions.ZIndex = Z.Popup + 2
-			actions.Parent = panel
-
-			local al = Instance.new("UIListLayout")
-			al.FillDirection = Enum.FillDirection.Horizontal
-			al.VerticalAlignment = Enum.VerticalAlignment.Center
-			al.SortOrder = Enum.SortOrder.LayoutOrder
-			al.Padding = UDim.new(0, 12)
-			al.Parent = actions
-
-			local function actionBtn(label, order, apply)
-				local b = Instance.new("TextButton")
-				b.BackgroundTransparency = 1
-				b.Text = label
-				b.TextColor3 = NHUI.Theme.TextDim
-				b.TextSize = 12
-				b.FontFace = NHUI.Theme.FontRegular
-				b.AutoButtonColor = false
-				b.AutomaticSize = Enum.AutomaticSize.X
-				b.Size = UDim2.fromOffset(0, ACT_H)
-				b.LayoutOrder = order
-				b.ZIndex = Z.Popup + 3
-				b.TextTransparency = 0.45
-				b.Parent = actions
-
-				b.MouseEnter:Connect(function()
-					Tween(b, { TextTransparency = 0.15 }, 0.15)
-				end)
-				b.MouseLeave:Connect(function()
-					Tween(b, { TextTransparency = 0.45 }, 0.15)
-				end)
-				b.MouseButton1Click:Connect(function()
-					apply()
-					for _, d in ipairs(optionFrames) do renderOption(d, true) end
-					updateLabel()
-					fireChanged(getSelectedList())
-				end)
-			end
-
-			actionBtn("Select all", 1, function()
-				for _, n in ipairs(visibleOptions()) do selected[n] = true end
-			end)
-			actionBtn("Clear", 2, function()
-				for _, n in ipairs(visibleOptions()) do selected[n] = nil end
-			end)
-		end
-
-		-- list
-		list = Instance.new("ScrollingFrame")
-		list.Name = "Options"
-		list.BackgroundTransparency = 1
-		list.BorderSizePixel = 0
-		list.Size = UDim2.new(1, 0, 0, 0)
-		list.AutomaticSize = Enum.AutomaticSize.Y
-		list.CanvasSize = UDim2.new(0, 0, 0, 0)
-		list.ScrollBarThickness = 3
-		list.ScrollBarImageColor3 = NHUI.Theme.TextDim
-		list.ScrollBarImageTransparency = 0.6
-		list.ScrollingDirection = Enum.ScrollingDirection.Y
-		list.LayoutOrder = 3
-		list.ZIndex = Z.Popup + 2
-		list.Parent = panel
-
-		local listPad = Instance.new("UIPadding")
-		listPad.PaddingRight = UDim.new(0, 4)
-		listPad.Parent = list
-
-		local listLayout = Instance.new("UIListLayout")
-		listLayout.Padding = UDim.new(0, OPT_GAP)
-		listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		listLayout.Parent = list
-
-		emptyLabel = Instance.new("TextLabel")
-		emptyLabel.Name = "Empty"
-		emptyLabel.BackgroundTransparency = 1
-		emptyLabel.FontFace = NHUI.Theme.FontRegular
-		emptyLabel.Text = "No matches"
-		emptyLabel.TextColor3 = NHUI.Theme.TextDim
-		emptyLabel.TextSize = 13
-		emptyLabel.TextTransparency = 0.55
-		emptyLabel.Visible = false
-		emptyLabel.Size = UDim2.new(1, -12, 0, OPT_H)
-		emptyLabel.LayoutOrder = 9999
-		emptyLabel.ZIndex = Z.Popup + 3
-		emptyLabel.Parent = list
-
-		-- build options
-		options = dedup(options)
-		for i, opt in ipairs(options) do
-			buildOption(opt, i)
-		end
-		updateLabel()
-		updateCorners()
+		searchInput:ReleaseFocus()
+		searchInput.Text = ""
+		DropdownTween(searchFrame, { Size = UDim2.new(1, 0, 0, SRCH_H) }, twSearch)
+		DropdownTween(searchStroke, { Transparency = 1 }, twSearch)
+		DropdownTween(searchIcon, { ImageTransparency = 1 }, twSearch)
+		DropdownTween(searchInput, { TextTransparency = 1 }, twSearch)
+		resizeToList()
 	end
 
-	-- ===== option build =====
-	function buildOption(name, order)
+	-- ===== build option =====
+	local function buildOption(name, order)
 		local frame = Instance.new("Frame")
 		frame.Name = name
 		frame.BackgroundColor3 = NHUI.Theme.Accent
@@ -10994,9 +10977,9 @@ function Tab:AddDropdown(opts)
 		frame.BorderSizePixel = 0
 		frame.Size = UDim2.new(1, 0, 0, OPT_H)
 		frame.LayoutOrder = order
-		frame.ZIndex = Z.Popup + 3
+		frame.ZIndex = Z.Content + 3
 		frame.Parent = list
-		Corner(frame, 7)
+		Corner(frame, FLAT_R)
 
 		local corner = frame:FindFirstChildOfClass("UICorner")
 		local str = Stroke(frame, Color3.new(1, 1, 1), 1, 1)
@@ -11006,7 +10989,7 @@ function Tab:AddDropdown(opts)
 		interact.AutoButtonColor = false
 		interact.BackgroundTransparency = 1
 		interact.Size = UDim2.fromScale(1, 1)
-		interact.ZIndex = Z.Popup + 10
+		interact.ZIndex = Z.Content + 10
 		interact.Parent = frame
 
 		local title = Instance.new("TextLabel")
@@ -11020,7 +11003,7 @@ function Tab:AddDropdown(opts)
 		title.TextTransparency = 1
 		title.Position = UDim2.fromOffset(14, 0)
 		title.Size = UDim2.new(1, -48, 1, 0)
-		title.ZIndex = Z.Popup + 4
+		title.ZIndex = Z.Content + 4
 		title.Parent = frame
 
 		local data = { name = name, frame = frame, title = title, interact = interact, stroke = str, corner = corner }
@@ -11033,7 +11016,7 @@ function Tab:AddDropdown(opts)
 			cb.BackgroundColor3 = Color3.new(1, 1, 1)
 			cb.BackgroundTransparency = 0.9
 			cb.BorderSizePixel = 0
-			cb.ZIndex = Z.Popup + 4
+			cb.ZIndex = Z.Content + 4
 			cb.Parent = frame
 			Corner(cb, 4)
 			Stroke(cb, Color3.new(1, 1, 1), 1, 0.75)
@@ -11046,7 +11029,7 @@ function Tab:AddDropdown(opts)
 			ci.Size = UDim2.fromOffset(10, 10)
 			ci.AnchorPoint = Vector2.new(0.5, 0.5)
 			ci.Position = UDim2.fromScale(0.5, 0.5)
-			ci.ZIndex = Z.Popup + 5
+			ci.ZIndex = Z.Content + 5
 			ci.Parent = cb
 
 			data.checkBg = cb
@@ -11060,7 +11043,7 @@ function Tab:AddDropdown(opts)
 			ci.Size = UDim2.fromOffset(14, 14)
 			ci.AnchorPoint = Vector2.new(1, 0.5)
 			ci.Position = UDim2.new(1, -14, 0.5, 0)
-			ci.ZIndex = Z.Popup + 4
+			ci.ZIndex = Z.Content + 4
 			ci.Parent = frame
 			data.checkIcon = ci
 		end
@@ -11068,14 +11051,14 @@ function Tab:AddDropdown(opts)
 		interact.MouseEnter:Connect(function()
 			if not popupOpen then return end
 			if isSelected(name) then return end
-			Tween(frame, { BackgroundTransparency = 0.9 }, 0.15)
-			Tween(title, { TextTransparency = 0.15 }, 0.15)
+			DropdownTween(frame, { BackgroundTransparency = 0.9 }, twHint)
+			DropdownTween(title, { TextTransparency = 0.15 }, twHint)
 		end)
 		interact.MouseLeave:Connect(function()
 			if not popupOpen then return end
 			if isSelected(name) then return end
-			Tween(frame, { BackgroundTransparency = 0.95 }, 0.15)
-			Tween(title, { TextTransparency = 0.3 }, 0.15)
+			DropdownTween(frame, { BackgroundTransparency = 0.95 }, twHint)
+			DropdownTween(title, { TextTransparency = 0.3 }, twHint)
 		end)
 		interact.MouseButton1Click:Connect(function()
 			if not popupOpen then return end
@@ -11085,7 +11068,9 @@ function Tab:AddDropdown(opts)
 				updateLabel()
 				for _, d in ipairs(optionFrames) do renderOption(d, true) end
 				fireChanged(selected)
-				task.delay(0.1, closePopup)
+				task.delay(0.1, function()
+					if popupOpen then close_() end
+				end)
 			else
 				selected[name] = (not selected[name]) or nil
 				for _, d in ipairs(optionFrames) do renderOption(d, true) end
@@ -11098,139 +11083,97 @@ function Tab:AddDropdown(opts)
 		return data
 	end
 
-	-- ===== filter =====
-	local function applyFilter(q)
-		q = string.lower(q or "")
-		local shown = 0
-		for _, d in ipairs(optionFrames) do
-			local vis = q == "" or string.find(string.lower(d.name), q, 1, true) ~= nil
-			d.frame.Visible = vis
-			if vis then shown += 1 end
+	-- ===== actions =====
+	if actions then
+		local function actionBtn(label, order, apply)
+			local b = Instance.new("TextButton")
+			b.BackgroundTransparency = 1
+			b.Text = label
+			b.TextColor3 = NHUI.Theme.TextDim
+			b.TextSize = 12
+			b.FontFace = NHUI.Theme.FontRegular
+			b.AutoButtonColor = false
+			b.AutomaticSize = Enum.AutomaticSize.X
+			b.Size = UDim2.fromOffset(0, ACT_H)
+			b.LayoutOrder = order
+			b.ZIndex = Z.Content + 3
+			b.TextTransparency = 0.45
+			b.Parent = actions
+
+			b.MouseEnter:Connect(function()
+				DropdownTween(b, { TextTransparency = 0.15 }, twHint)
+			end)
+			b.MouseLeave:Connect(function()
+				DropdownTween(b, { TextTransparency = 0.45 }, twHint)
+			end)
+			b.MouseButton1Click:Connect(function()
+				apply()
+				for _, d in ipairs(optionFrames) do renderOption(d, true) end
+				updateLabel()
+				fireChanged(getSelectedList())
+			end)
 		end
-		emptyLabel.Visible = shown == 0 and q ~= ""
-		updateCorners()
+
+		actionBtn("Select all", 1, function()
+			for _, n in ipairs(visibleOptions()) do selected[n] = true end
+		end)
+		actionBtn("Clear", 2, function()
+			for _, n in ipairs(visibleOptions()) do selected[n] = nil end
+		end)
 	end
 
-	-- ===== search expand / collapse =====
-	local function expandSearch()
-		if searchOpen then return end
-		searchOpen = true
-		searchInput.TextEditable = true
-		searchInput.Interactable = true
-		Tween(searchFrame, { Size = UDim2.new(1, 0, 0, SRCH_HX) }, 0.3)
-		Tween(searchIcon, { ImageTransparency = 0.2 }, 0.3)
-		searchInput:CaptureFocus()
+	-- ===== build all =====
+	options = dedup(options)
+	for i, opt in ipairs(options) do
+		buildOption(opt, i)
+	end
+	updateLabel()
+	updateCorners()
+
+	-- ===== open/close =====
+	local function bringIntoView()
+		local page = self._page
+		if not page then return end
+		local view = page.AbsoluteWindowSize
+		local at = page.CanvasPosition
+		local pPos = page.AbsolutePosition
+		local cPos = card.AbsolutePosition
+		if view.Y <= 0 then return end
+		local top = (cPos.Y - pPos.Y) + at.Y
+		local bottom = top + headerH + GAP + openHeight()
+		local over = bottom - (at.Y + view.Y)
+		if over <= 0 then return end
+		local target = math.min(at.Y + over + 8, top)
+		DropdownTween(page, { CanvasPosition = Vector2.new(at.X, target) },
+			TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out))
 	end
 
-	local function collapseSearch()
-		if not searchOpen then return end
-		searchOpen = false
-		searchInput.TextEditable = false
-		searchInput.Interactable = false
-		searchInput:ReleaseFocus()
-		searchInput.Text = ""
-		Tween(searchFrame, { Size = UDim2.new(1, 0, 0, SRCH_H) }, 0.3)
-		Tween(searchIcon, { ImageTransparency = 0.5 }, 0.3)
-		applyFilter("")
-	end
-
-	-- ===== open / close popup =====
-	function closePopup()
+	function close_()
 		if not popupOpen then return end
 		popupOpen = false
-		RegisterPopupClose(closePopup)
-
-		if followConn then followConn:Disconnect(); followConn = nil end
-
-		-- collapse search tanpa animasi visible karena popup bakal ditutup
-		searchOpen = false
-		searchInput.TextEditable = false
-		searchInput.Interactable = false
-		pcall(function() searchInput:ReleaseFocus() end)
-		searchInput.Text = ""
-
-		Tween(chevron, { Rotation = 180 }, 0.3)
-
-		if backdrop then
-			local b = backdrop
-			backdrop = nil
-			Tween(b, { BackgroundTransparency = 1 }, 0.2)
-			task.delay(0.2, function() b:Destroy() end)
-		end
-
-		if popup then
-			local p = popup
-			popup = nil
-			list = nil
-			searchFrame = nil
-			searchInput = nil
-			searchIcon = nil
-			searchStroke = nil
-			searchHit = nil
-			actions = nil
-			emptyLabel = nil
-			table.clear(optionFrames)
-			Tween(p, { Size = UDim2.new(0, POPUP_W, 0, 0) }, 0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-			Tween(p, { BackgroundTransparency = 1, GroupTransparency = 1 }, 0.25)
-			task.delay(0.25, function() p:Destroy() end)
-		end
+		collapseSearch()
+		syncScrollHint()
+		DropdownTween(chevron, { Rotation = 180 }, twChev)
+		if cardTween then cardTween:Cancel() end
+		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH) }, twOpen)
+		for _, d in ipairs(optionFrames) do renderOption(d, true) end
 	end
 
-	function openPopup()
+	function open_()
 		if popupOpen then return end
 		popupOpen = true
-		RegisterPopupOpen(closePopup)
-		Tween(chevron, { Rotation = 0 }, 0.3)
-
-		buildPopup()
-
-		-- ukur tinggi konten
-		local searchH = SRCH_H
-		local listH = 0
-		for _, d in ipairs(optionFrames) do
-			listH = listH + OPT_H + OPT_GAP
-		end
-		if #optionFrames > 0 then listH = listH - OPT_GAP end
-		listH = math.min(listH, OPT_H * MAX_VIS + OPT_GAP * (MAX_VIS - 1))
-		local actH = (isMulti and (ACT_H + OPT_GAP)) or 0
-		local totalH = PAD_TOP + PAD_BOT + searchH + OPT_GAP + actH + listH
-
-		-- batasi tinggi popup
-		local s = GetUIScale()
-		local view = ViewportSize()
-		local maxH = (view.Y / s) - 24
-		totalH = math.min(totalH, maxH)
-
-		-- batasi tinggi list sesuai totalH
-		local fixedH = PAD_TOP + PAD_BOT + searchH + OPT_GAP + actH
-		local availListH = totalH - fixedH
-		list.Size = UDim2.new(1, 0, 0, math.max(availListH, OPT_H))
-
-		local px, py = computePopupPosition(POPUP_W, totalH)
-		popup.Position = UDim2.fromOffset(px, py)
-		popup.Size = UDim2.new(0, POPUP_W, 0, 0)
-		popup.BackgroundTransparency = 0.05
-		popup.GroupTransparency = 1
-
-		Tween(popup, { Size = UDim2.new(0, POPUP_W, 0, totalH) }, 0.35, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-		Tween(popup, { GroupTransparency = 0 }, 0.3)
-
-		Tween(backdrop, { BackgroundTransparency = 0.4 }, 0.25)
-
+		DropdownTween(chevron, { Rotation = 0 }, twChev)
+		if cardTween then cardTween:Cancel() end
+		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
+		local h = openHeight() - (PAD_TOP + PAD_BOT + (searchOpen and SRCH_HX or SRCH_H) + OPT_GAP + (actions and (ACT_H + OPT_GAP) or 0))
+		list.Size = UDim2.new(1, 0, 0, math.max(h, OPT_H))
 		for _, d in ipairs(optionFrames) do renderOption(d, true) end
-
-		-- follow card kalau window di-drag
-		followConn = RunService.RenderStepped:Connect(function()
-			if not popup or not card.Parent then return end
-			local nx, ny = computePopupPosition(POPUP_W, totalH)
-			popup.Position = UDim2.fromOffset(nx, ny)
-		end)
-		jan:Add(followConn)
+		syncScrollHint()
+		task.defer(bringIntoView)
 	end
 
-	-- ===== events =====
 	click.MouseButton1Click:Connect(function()
-		if popupOpen then closePopup() else openPopup() end
+		if popupOpen then close_() else open_() end
 	end)
 
 	card.MouseEnter:Connect(function()
@@ -11240,50 +11183,36 @@ function Tab:AddDropdown(opts)
 		Tween(card, { BackgroundTransparency = 0.96 }, 0.15)
 	end)
 
-	-- search events (bind setelah popup dibuild; binding di sini karena
-	-- reference searchHit / searchInput tetap via closure dan cek nil)
-	local searchBound = false
-	local function bindSearchOnce()
-		if searchBound or not searchHit then return end
-		searchBound = true
-		searchHit.MouseButton1Click:Connect(function()
-			if not searchOpen then expandSearch() end
-		end)
-		searchIcon.MouseButton1Click:Connect(function()
-			if searchOpen then collapseSearch() else expandSearch() end
-		end)
-		searchInput:GetPropertyChangedSignal("Text"):Connect(function()
-			applyFilter(searchInput.Text)
-		end)
-		searchInput.FocusLost:Connect(function()
-			if searchInput.Text == "" then collapseSearch() end
-		end)
-	end
-
-	-- hook search binding setiap kali popup dibuka
-	local origOpen = openPopup
-	openPopup = function()
-		origOpen()
-		bindSearchOnce()
-	end
-	click.MouseButton1Click:Connect(function()
-		-- noop, click listener sudah handle
+	searchHit.MouseButton1Click:Connect(function()
+		if not searchOpen then expandSearch() end
+	end)
+	searchIcon.MouseButton1Click:Connect(function()
+		if searchOpen then collapseSearch() else expandSearch() end
+	end)
+	searchInput:GetPropertyChangedSignal("Text"):Connect(function()
+		applyFilter(searchInput.Text)
+	end)
+	searchInput.FocusLost:Connect(function()
+		if searchInput.Text == "" then collapseSearch() end
 	end)
 
-	-- close on escape
-	jan:Add(UserInputService.InputBegan:Connect(function(input, processed)
-		if processed then return end
-		if input.KeyCode == Enum.KeyCode.Escape and popupOpen then
-			closePopup()
+	jan:Add(UserInputService.InputBegan:Connect(function(input)
+		if not popupOpen then return end
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1
+			and input.UserInputType ~= Enum.UserInputType.Touch then return end
+		local pos = input.Position
+		local mp, ms = card.AbsolutePosition, card.AbsoluteSize
+		if pos.X < mp.X or pos.X > mp.X + ms.X
+			or pos.Y < mp.Y or pos.Y > mp.Y + ms.Y then
+			close_()
 		end
 	end))
 
 	jan:Add(function()
-		if popupOpen then closePopup() end
-		if followConn then followConn:Disconnect(); followConn = nil end
+		if cardTween then cardTween:Cancel() end
+		if popupOpen then close_() end
 	end)
 
-	-- ===== API =====
 	return RegisterFlag(opts, {
 		Instance = card,
 		Set = function(_, v, silent)
@@ -11306,9 +11235,10 @@ function Tab:AddDropdown(opts)
 			return selected
 		end,
 		SetOptions = function(_, newOptions)
-			if popup then closePopup() end
+			for _, d in ipairs(optionFrames) do d.frame:Destroy() end
+			table.clear(optionFrames)
 			options = dedup(newOptions or {})
-			-- rebuild happens on next open
+			for i, opt in ipairs(options) do buildOption(opt, i) end
 			if not isMulti then
 				if not table.find(options, selected) then selected = options[1] end
 			else
@@ -11319,15 +11249,24 @@ function Tab:AddDropdown(opts)
 				selected = keep
 			end
 			updateLabel()
+			updateCorners()
+			applyFilter(searchOpen and searchInput.Text or "")
 		end,
 		Refresh = function(_, newOptions)
-			options = dedup(newOptions or options)
-			if popup then closePopup() end
+			if newOptions then
+				for _, d in ipairs(optionFrames) do d.frame:Destroy() end
+				table.clear(optionFrames)
+				options = dedup(newOptions)
+				for i, opt in ipairs(options) do buildOption(opt, i) end
+			end
 			updateLabel()
+			updateCorners()
+			applyFilter(searchOpen and searchInput.Text or "")
 		end,
 		OnChanged = function(_, fn) return signal.Connect(fn) end,
 		Destroy = function()
-			if popupOpen then closePopup() end
+			if cardTween then cardTween:Cancel() end
+			if popupOpen then close_() end
 			signal.Clear()
 			card:Destroy()
 		end,
@@ -11506,29 +11445,39 @@ end
 function Tab:AddColorPicker(opts)
 	opts = opts or {}
 	local hasDesc = opts.Description and opts.Description ~= ""
-	local height = hasDesc and 56 or 44
+	local headerH = hasDesc and 56 or 44
 	local jan = self._janitor
- 
-	local card = BaseCard(self._page, height)
-	local textX = AddLeadingIcon(card, opts.Icon, height)
-	AddTitleDesc(card, textX, 52, opts.Text or "Color", opts.Description, height)
+
+	local GAP = 6
+	local ROUND_R = UDim.new(0, 8)
+
+	local twOpen    = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	local twHint    = TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+	local card = BaseCard(self._page, headerH)
+	card.AutomaticSize = Enum.AutomaticSize.None
+	card.ClipsDescendants = true
+	card.Size = UDim2.new(1, 0, 0, headerH)
+
+	local textX = AddLeadingIcon(card, opts.Icon, headerH)
+	AddTitleDesc(card, textX, 52, opts.Text or "Color", opts.Description, headerH)
 	self._window:_RegisterSearchable(self, opts.Text or "Color", card)
- 
+
 	local color = opts.Default or Color3.fromRGB(255, 255, 255)
 	local hue, sat, val = Color3.toHSV(color)
- 
+
 	local swatchHolder = Instance.new("Frame")
 	swatchHolder.AnchorPoint = Vector2.new(1, 0.5)
-	swatchHolder.Position = UDim2.new(1, -14, 0.5, 0)
+	swatchHolder.Position = UDim2.new(1, -14, 0, headerH / 2)
 	swatchHolder.Size = UDim2.fromOffset(24, 24)
 	swatchHolder.BackgroundColor3 = Color3.new(1, 1, 1)
-swatchHolder.BackgroundTransparency = 0.9
+	swatchHolder.BackgroundTransparency = 0.9
 	swatchHolder.BorderSizePixel = 0
 	swatchHolder.ZIndex = Z.Content + 1
 	swatchHolder.Parent = card
 	Corner(swatchHolder, 6)
 	local swatchStroke = Stroke(swatchHolder, Color3.new(1, 1, 1), 1, 0.85)
- 
+
 	local swatch = Instance.new("Frame")
 	swatch.AnchorPoint = Vector2.new(0.5, 0.5)
 	swatch.Position = UDim2.fromScale(0.5, 0.5)
@@ -11538,433 +11487,449 @@ swatchHolder.BackgroundTransparency = 0.9
 	swatch.ZIndex = Z.Content + 2
 	swatch.Parent = swatchHolder
 	Corner(swatch, 4)
- 
+
 	local click = Instance.new("TextButton")
 	click.Text = ""
 	click.AutoButtonColor = false
 	click.BackgroundTransparency = 1
-	click.Size = UDim2.fromScale(1, 1)
+	click.BorderSizePixel = 0
+	click.Size = UDim2.new(1, 0, 0, headerH)
+	click.Position = UDim2.fromOffset(0, 0)
 	click.ZIndex = Z.Content + 3
 	click.Parent = card
- 
-	local popupOpen = false
-	local popupFrame, popupBackdrop, followConn
-	local svCursor, hueCursor, svBox, hueBar, satGradient
-	local hexBox, rBox, gBox, bBox
-	local originalHue, originalSat, originalVal
-	local draggingSV, draggingHue = false, false
-	local colorInput = nil
-	local dragEndedAt = 0
- 
+
+	-- ===== panel inline =====
+	local panel = Instance.new("Frame")
+	panel.Name = "Panel"
+	panel.BackgroundTransparency = 1
+	panel.BorderSizePixel = 0
+	panel.Position = UDim2.fromOffset(0, headerH + GAP)
+	panel.Size = UDim2.new(1, 0, 1, -(headerH + GAP))
+	panel.ZIndex = Z.Content
+	panel.Parent = card
+
+	local panelPad = Instance.new("UIPadding")
+	panelPad.PaddingTop = UDim.new(0, 8)
+	panelPad.PaddingBottom = UDim.new(0, 8)
+	panelPad.PaddingLeft = UDim.new(0, 14)
+	panelPad.PaddingRight = UDim.new(0, 14)
+	panelPad.Parent = panel
+
+	-- layout dihitung di close_/open_ setelah lebar pasti
+	local panelW = 0
+	local function panelWidth()
+		local w = card.AbsoluteSize.X
+		return w > 0 and w or 400
+	end
+
+	-- SV map
+	local svBox = Instance.new("Frame")
+	svBox.Active = true
+	svBox.Position = UDim2.fromOffset(0, 0)
+	svBox.Size = UDim2.new(1, -120, 0, 104)
+	svBox.BackgroundColor3 = Color3.new(1, 1, 1)
+	svBox.BorderSizePixel = 0
+	svBox.ClipsDescendants = true
+	svBox.ZIndex = Z.Content + 1
+	svBox.Parent = panel
+	Corner(svBox, ROUND_R)
+
+	local satGradient = Instance.new("UIGradient")
+	satGradient.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromHSV(hue, 1, 1))
+	satGradient.Parent = svBox
+
+	local valOverlay = Instance.new("Frame")
+	valOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
+	valOverlay.BorderSizePixel = 0
+	valOverlay.Size = UDim2.fromScale(1, 1)
+	valOverlay.ZIndex = Z.Content + 2
+	valOverlay.Parent = svBox
+
+	local valGradient = Instance.new("UIGradient")
+	valGradient.Rotation = 90
+	valGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	valGradient.Parent = valOverlay
+
+	local svCursor = Instance.new("Frame")
+	svCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+	svCursor.Position = UDim2.new(sat, 0, 1 - val, 0)
+	svCursor.Size = UDim2.fromOffset(16, 16)
+	svCursor.BackgroundTransparency = 1
+	svCursor.ZIndex = Z.Content + 3
+	svCursor.Parent = svBox
+	Corner(svCursor, 8)
+	Stroke(svCursor, Color3.new(0, 0, 0), 2, 0.15)
+
+	local svCursorInner = Instance.new("Frame")
+	svCursorInner.AnchorPoint = Vector2.new(0.5, 0.5)
+	svCursorInner.Position = UDim2.fromScale(0.5, 0.5)
+	svCursorInner.Size = UDim2.fromOffset(11, 11)
+	svCursorInner.BackgroundTransparency = 1
+	svCursorInner.ZIndex = Z.Content + 4
+	svCursorInner.Parent = svCursor
+	Corner(svCursorInner, 6)
+	Stroke(svCursorInner, Color3.new(1, 1, 1), 2, 0)
+
+	-- hue bar (vertikal, di sebelah kanan SV)
+	local hueBar = Instance.new("Frame")
+	hueBar.Active = true
+	hueBar.AnchorPoint = Vector2.new(1, 0)
+	hueBar.Position = UDim2.new(1, 0, 0, 0)
+	hueBar.Size = UDim2.fromOffset(14, 104)
+	hueBar.BackgroundColor3 = Color3.new(1, 1, 1)
+	hueBar.BorderSizePixel = 0
+	hueBar.ClipsDescendants = true
+	hueBar.ZIndex = Z.Content + 1
+	hueBar.Parent = panel
+	Corner(hueBar, 7)
+
+	local hueGradient = Instance.new("UIGradient")
+	hueGradient.Rotation = 90
+	hueGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0.000, Color3.fromHSV(0.000, 1, 1)),
+		ColorSequenceKeypoint.new(0.166, Color3.fromHSV(0.166, 1, 1)),
+		ColorSequenceKeypoint.new(0.333, Color3.fromHSV(0.333, 1, 1)),
+		ColorSequenceKeypoint.new(0.500, Color3.fromHSV(0.500, 1, 1)),
+		ColorSequenceKeypoint.new(0.666, Color3.fromHSV(0.666, 1, 1)),
+		ColorSequenceKeypoint.new(0.833, Color3.fromHSV(0.833, 1, 1)),
+		ColorSequenceKeypoint.new(1.000, Color3.fromHSV(1.000, 1, 1)),
+	})
+	hueGradient.Parent = hueBar
+
+	local hueCursor = Instance.new("Frame")
+	hueCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+	hueCursor.Position = UDim2.new(0.5, 0, hue, 0)
+	hueCursor.Size = UDim2.fromOffset(18, 6)
+	hueCursor.BackgroundColor3 = Color3.new(1, 1, 1)
+	hueCursor.BorderSizePixel = 0
+	hueCursor.ZIndex = Z.Content + 3
+	hueCursor.Parent = hueBar
+	Corner(hueCursor, 3)
+	Stroke(hueCursor, Color3.new(0, 0, 0), 1, 0.4)
+
+	-- alpha bar (vertikal, di sebelah kiri hue)
+	local alphaBar = Instance.new("Frame")
+	alphaBar.Active = true
+	alphaBar.AnchorPoint = Vector2.new(1, 0)
+	alphaBar.Position = UDim2.new(1, -20, 0, 0)
+	alphaBar.Size = UDim2.fromOffset(14, 104)
+	alphaBar.BackgroundColor3 = color
+	alphaBar.BorderSizePixel = 0
+	alphaBar.ClipsDescendants = true
+	alphaBar.ZIndex = Z.Content + 1
+	alphaBar.Parent = panel
+	Corner(alphaBar, 7)
+
+	local alphaGradient = Instance.new("UIGradient")
+	alphaGradient.Rotation = 90
+	alphaGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	alphaGradient.Parent = alphaBar
+
+	local alphaCursor = Instance.new("Frame")
+	alphaCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+	alphaCursor.Position = UDim2.new(0.5, 0, 1, 0)
+	alphaCursor.Size = UDim2.fromOffset(18, 6)
+	alphaCursor.BackgroundColor3 = Color3.new(1, 1, 1)
+	alphaCursor.BorderSizePixel = 0
+	alphaCursor.ZIndex = Z.Content + 3
+	alphaCursor.Parent = alphaBar
+	Corner(alphaCursor, 3)
+	Stroke(alphaCursor, Color3.new(0, 0, 0), 1, 0.4)
+
+	local alphaValue = opts.Alpha or 1
+
+	-- hex + rgb row (di bawah sv)
+	local fieldRow = Instance.new("Frame")
+	fieldRow.BackgroundTransparency = 1
+	fieldRow.Position = UDim2.new(0, 0, 0, 114)
+	fieldRow.Size = UDim2.new(1, 0, 0, 32)
+	fieldRow.ZIndex = Z.Content + 1
+	fieldRow.Parent = panel
+
+	local hexBox = Instance.new("TextBox")
+	hexBox.BackgroundColor3 = Color3.new(1, 1, 1)
+	hexBox.BackgroundTransparency = 0.9
+	hexBox.BorderSizePixel = 0
+	hexBox.FontFace = NHUI.Theme.FontRegular
+	hexBox.Text = "#" .. color:ToHex():upper()
+	hexBox.TextColor3 = NHUI.Theme.Text
+	hexBox.TextSize = 13
+	hexBox.ClearTextOnFocus = false
+	hexBox.Position = UDim2.new(0, 0, 0, 0)
+	hexBox.Size = UDim2.new(0.4, -4, 1, 0)
+	hexBox.ZIndex = Z.Content + 2
+	hexBox.Parent = fieldRow
+	Corner(hexBox, 7)
+	local hexStroke = Stroke(hexBox, Color3.new(1, 1, 1), 1, 0.88)
+
+	local rBox = Instance.new("TextBox")
+	rBox.BackgroundColor3 = Color3.new(1, 1, 1)
+	rBox.BackgroundTransparency = 0.9
+	rBox.BorderSizePixel = 0
+	rBox.FontFace = NHUI.Theme.FontRegular
+	rBox.Text = tostring(math.floor(color.R * 255 + 0.5))
+	rBox.TextColor3 = NHUI.Theme.Text
+	rBox.TextSize = 13
+	rBox.ClearTextOnFocus = false
+	rBox.Position = UDim2.new(0.4, 0, 0, 0)
+	rBox.Size = UDim2.new(0.2, -4, 1, 0)
+	rBox.ZIndex = Z.Content + 2
+	rBox.Parent = fieldRow
+	Corner(rBox, 7)
+	Stroke(rBox, Color3.new(1, 1, 1), 1, 0.88)
+
+	local gBox = Instance.new("TextBox")
+	gBox.BackgroundColor3 = Color3.new(1, 1, 1)
+	gBox.BackgroundTransparency = 0.9
+	gBox.BorderSizePixel = 0
+	gBox.FontFace = NHUI.Theme.FontRegular
+	gBox.Text = tostring(math.floor(color.G * 255 + 0.5))
+	gBox.TextColor3 = NHUI.Theme.Text
+	gBox.TextSize = 13
+	gBox.ClearTextOnFocus = false
+	gBox.Position = UDim2.new(0.6, 0, 0, 0)
+	gBox.Size = UDim2.new(0.2, -4, 1, 0)
+	gBox.ZIndex = Z.Content + 2
+	gBox.Parent = fieldRow
+	Corner(gBox, 7)
+	Stroke(gBox, Color3.new(1, 1, 1), 1, 0.88)
+
+	local bBox = Instance.new("TextBox")
+	bBox.BackgroundColor3 = Color3.new(1, 1, 1)
+	bBox.BackgroundTransparency = 0.9
+	bBox.BorderSizePixel = 0
+	bBox.FontFace = NHUI.Theme.FontRegular
+	bBox.Text = tostring(math.floor(color.B * 255 + 0.5))
+	bBox.TextColor3 = NHUI.Theme.Text
+	bBox.TextSize = 13
+	bBox.ClearTextOnFocus = false
+	bBox.Position = UDim2.new(0.8, 0, 0, 0)
+	bBox.Size = UDim2.new(0.2, 0, 1, 0)
+	bBox.ZIndex = Z.Content + 2
+	bBox.Parent = fieldRow
+	Corner(bBox, 7)
+	Stroke(bBox, Color3.new(1, 1, 1), 1, 0.88)
+
+	local signal = MakeSignal()
+	local lastFired = nil
+
 	local function currentColor()
 		return Color3.fromHSV(hue, sat, val)
 	end
- 
-	local function syncFields()
-		if svCursor then svCursor.Position = UDim2.new(sat, 0, 1 - val, 0) end
-		if hueCursor then hueCursor.Position = UDim2.new(hue, 0, 0.5, 0) end
-		if svBox then svBox.BackgroundColor3 = Color3.new(1, 1, 1) end
-		if satGradient then
-			satGradient.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromHSV(hue, 1, 1))
-		end
- 
-		local c = currentColor()
-		local r = math.floor(c.R * 255 + 0.5)
-		local g = math.floor(c.G * 255 + 0.5)
-		local b = math.floor(c.B * 255 + 0.5)
-		if hexBox and not hexBox:IsFocused() then hexBox.Text = "#" .. c:ToHex():upper() end
-		if rBox and not rBox:IsFocused() then rBox.Text = tostring(r) end
-		if gBox and not gBox:IsFocused() then gBox.Text = tostring(g) end
-		if bBox and not bBox:IsFocused() then bBox.Text = tostring(b) end
-	end
- 
-	local signal = MakeSignal()
-	local lastFired = nil
- 
+
 	local function ColorsClose(a, b)
 		if a == nil or b == nil then return false end
 		return math.abs(a.R - b.R) < 0.001
 			and math.abs(a.G - b.G) < 0.001
 			and math.abs(a.B - b.B) < 0.001
 	end
- 
+
+	local function syncFields()
+		svCursor.Position = UDim2.new(sat, 0, 1 - val, 0)
+		hueCursor.Position = UDim2.new(0.5, 0, hue, 0)
+		alphaCursor.Position = UDim2.new(0.5, 0, 1 - alphaValue, 0)
+		satGradient.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromHSV(hue, 1, 1))
+		alphaBar.BackgroundColor3 = currentColor()
+
+		local c = currentColor()
+		local r = math.floor(c.R * 255 + 0.5)
+		local g = math.floor(c.G * 255 + 0.5)
+		local b = math.floor(c.B * 255 + 0.5)
+		if not hexBox:IsFocused() then hexBox.Text = "#" .. c:ToHex():upper() end
+		if not rBox:IsFocused() then rBox.Text = tostring(r) end
+		if not gBox:IsFocused() then gBox.Text = tostring(g) end
+		if not bBox:IsFocused() then bBox.Text = tostring(b) end
+	end
+
 	local function applyColor(fireCallback)
 		local c = currentColor()
 		swatch.BackgroundColor3 = c
 		syncFields()
-		if fireCallback then
-			if not ColorsClose(c, lastFired) then
-				lastFired = c
-				if opts.Callback then task.spawn(opts.Callback, c) end
-				signal.Fire(c)
-			end
+		if fireCallback and not ColorsClose(c, lastFired) then
+			lastFired = c
+			if opts.Callback then task.spawn(opts.Callback, c) end
+			signal.Fire(c)
 		end
 	end
- 
-	local function closePopup()
+
+	-- dragging
+	local dragTarget = nil
+	local dragInput = nil
+
+	local function updateSV(pos)
+		local rel, sz = svBox.AbsolutePosition, svBox.AbsoluteSize
+		if sz.X <= 0 or sz.Y <= 0 then return end
+		sat = math.clamp((pos.X - rel.X) / sz.X, 0, 1)
+		val = 1 - math.clamp((pos.Y - rel.Y) / sz.Y, 0, 1)
+		applyColor(true)
+	end
+
+	local function updateHue(pos)
+		local rel, sz = hueBar.AbsolutePosition, hueBar.AbsoluteSize
+		if sz.Y <= 0 then return end
+		hue = math.clamp((pos.Y - rel.Y) / sz.Y, 0, 1)
+		applyColor(true)
+	end
+
+	local function updateAlpha(pos)
+		local rel, sz = alphaBar.AbsolutePosition, alphaBar.AbsoluteSize
+		if sz.Y <= 0 then return end
+		alphaValue = 1 - math.clamp((pos.Y - rel.Y) / sz.Y, 0, 1)
+		syncFields()
+		signal.Fire(currentColor())
+		if opts.Callback then task.spawn(opts.Callback, currentColor()) end
+	end
+
+	jan:Add(UserInputService.InputChanged:Connect(function(input)
+		if not dragTarget then return end
+		if input ~= dragInput
+			and not (dragInput and dragInput.UserInputType == Enum.UserInputType.MouseButton1
+				and input.UserInputType == Enum.UserInputType.MouseMovement) then return end
+		if dragTarget == "sv" then updateSV(input.Position)
+		elseif dragTarget == "hue" then updateHue(input.Position)
+		elseif dragTarget == "alpha" then updateAlpha(input.Position) end
+	end))
+
+	jan:Add(UserInputService.InputEnded:Connect(function(input)
+		if input == dragInput
+			or (dragInput and dragInput.UserInputType == Enum.UserInputType.MouseButton1
+				and input.UserInputType == Enum.UserInputType.MouseButton1) then
+			dragTarget = nil
+			dragInput = nil
+		end
+	end))
+
+	local function bindDrag(hitbox, target)
+		hitbox.InputBegan:Connect(function(input)
+			if input.UserInputType ~= Enum.UserInputType.MouseButton1
+				and input.UserInputType ~= Enum.UserInputType.Touch then return end
+			dragTarget = target
+			dragInput = input
+			if target == "sv" then updateSV(input.Position)
+			elseif target == "hue" then updateHue(input.Position)
+			elseif target == "alpha" then updateAlpha(input.Position) end
+		end)
+	end
+
+	local svHit = Instance.new("TextButton")
+	svHit.Text = ""
+	svHit.AutoButtonColor = false
+	svHit.BackgroundTransparency = 1
+	svHit.Size = UDim2.fromScale(1, 1)
+	svHit.ZIndex = Z.Content + 6
+	svHit.Parent = svBox
+	bindDrag(svHit, "sv")
+
+	local hueHit = Instance.new("TextButton")
+	hueHit.Text = ""
+	hueHit.AutoButtonColor = false
+	hueHit.BackgroundTransparency = 1
+	hueHit.Size = UDim2.fromScale(1, 1)
+	hueHit.ZIndex = Z.Content + 6
+	hueHit.Parent = hueBar
+	bindDrag(hueHit, "hue")
+
+	local alphaHit = Instance.new("TextButton")
+	alphaHit.Text = ""
+	alphaHit.AutoButtonColor = false
+	alphaHit.BackgroundTransparency = 1
+	alphaHit.Size = UDim2.fromScale(1, 1)
+	alphaHit.ZIndex = Z.Content + 6
+	alphaHit.Parent = alphaBar
+	bindDrag(alphaHit, "alpha")
+
+	hexBox.FocusLost:Connect(function()
+		local clean = hexBox.Text:gsub("#", ""):gsub("%s", "")
+		if #clean == 3 then
+			clean = clean:sub(1, 1):rep(2) .. clean:sub(2, 2):rep(2) .. clean:sub(3, 3):rep(2)
+		end
+		if #clean == 6 then
+			local ok, c = pcall(Color3.fromHex, clean)
+			if ok and c then
+				hue, sat, val = Color3.toHSV(c)
+				applyColor(true)
+				return
+			end
+		end
+		syncFields()
+	end)
+
+	local function onRGB()
+		local r = math.clamp(tonumber(rBox.Text) or 0, 0, 255)
+		local g = math.clamp(tonumber(gBox.Text) or 0, 0, 255)
+		local b = math.clamp(tonumber(bBox.Text) or 0, 0, 255)
+		hue, sat, val = Color3.toHSV(Color3.fromRGB(r, g, b))
+		applyColor(true)
+	end
+	rBox.FocusLost:Connect(onRGB)
+	gBox.FocusLost:Connect(onRGB)
+	bBox.FocusLost:Connect(onRGB)
+
+	local function filterDigits(b)
+		b:GetPropertyChangedSignal("Text"):Connect(function()
+			local f = b.Text:gsub("%D", ""):sub(1, 3)
+			if f ~= b.Text then b.Text = f end
+		end)
+	end
+	filterDigits(rBox); filterDigits(gBox); filterDigits(bBox)
+
+	syncFields()
+
+	-- ===== open/close =====
+	local popupOpen = false
+	local cardTween = nil
+
+	function close_()
 		if not popupOpen then return end
 		popupOpen = false
-		draggingSV, draggingHue = false, false
-		colorInput = nil
-		RegisterPopupClose(closePopup)
-		Tween(swatchStroke, { Color = Color3.new(1, 1, 1), Transparency = 0.85 }, 0.15)
- 
-		if followConn then followConn:Disconnect(); followConn = nil end
-		if popupBackdrop then popupBackdrop:Destroy(); popupBackdrop = nil end
- 
-		if popupFrame then
-			local pf = popupFrame
-			popupFrame = nil
-			svCursor, hueCursor, svBox, hueBar, satGradient = nil, nil, nil, nil, nil
-			hexBox, rBox, gBox, bBox = nil, nil, nil, nil
-			Tween(pf, { Size = UDim2.new(0, pf.Size.X.Offset, 0, 0) }, 0.4,
-				Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-			Tween(pf, { BackgroundTransparency = 1 }, 0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-			task.delay(0.4, function() if pf then pf:Destroy() end end)
-		end
+		dragTarget, dragInput = nil, nil
+		DropdownTween(swatchStroke, { Color = Color3.new(1, 1, 1), Transparency = 0.85 }, twHint)
+		if cardTween then cardTween:Cancel() end
+		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH) }, twOpen)
 	end
- 
-	local function updateSV(inputPos)
-		if not svBox or svBox.AbsoluteSize.X <= 0 then return end
-		local rel, sz = svBox.AbsolutePosition, svBox.AbsoluteSize
-		sat = math.clamp((inputPos.X - rel.X) / sz.X, 0, 1)
-		val = 1 - math.clamp((inputPos.Y - rel.Y) / sz.Y, 0, 1)
-		applyColor(true)
-	end
- 
-	local function updateHue(inputPos)
-		if not hueBar or hueBar.AbsoluteSize.X <= 0 then return end
-		local rel, sz = hueBar.AbsolutePosition, hueBar.AbsoluteSize
-		hue = math.clamp((inputPos.X - rel.X) / sz.X, 0, 1)
-		applyColor(true)
-	end
- 
-	jan:Add(UserInputService.InputChanged:Connect(function(input)
-		if not popupFrame then return end
-		if input ~= colorInput
-			and not (colorInput and colorInput.UserInputType == Enum.UserInputType.MouseButton1
-				and input.UserInputType == Enum.UserInputType.MouseMovement) then
-			return
-		end
-		if draggingSV then updateSV(input.Position) end
-		if draggingHue then updateHue(input.Position) end
-	end))
- 
-	jan:Add(UserInputService.InputEnded:Connect(function(input)
-		if input == colorInput
-			or (colorInput and colorInput.UserInputType == Enum.UserInputType.MouseButton1
-				and input.UserInputType == Enum.UserInputType.MouseButton1) then
-			if draggingSV or draggingHue then
-				dragEndedAt = os.clock()
-			end
-			draggingSV, draggingHue = false, false
-			colorInput = nil
-		end
-	end))
- 
-	local function requestCloseFromBackdrop()
-		if draggingSV or draggingHue then return end
-		if os.clock() - dragEndedAt < 0.2 then return end
-		closePopup()
-	end
- 
-	local function openPopup()
+
+	function open_()
 		if popupOpen then return end
 		popupOpen = true
-		originalHue, originalSat, originalVal = hue, sat, val
-		lastFired = currentColor()
-		RegisterPopupOpen(closePopup)
-		Tween(swatchStroke, { Color = NHUI.Theme.Accent, Transparency = 0.3 }, 0.15)
- 
-		local root = NHUI._Root
-		local mainWindow = self._window and self._window._gui or root
-		local popupW, popupH = 208, math.min(290, math.max(1, (ViewportSize().Y - 16) / GetUIScale()))
- 
-		popupBackdrop = MakePopupBackdrop(requestCloseFromBackdrop)
- 
-		popupFrame = Instance.new("ScrollingFrame")
-		popupFrame.CanvasSize = UDim2.fromOffset(0, 290)
-		popupFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-		popupFrame.ScrollBarThickness = 3
-		popupFrame.ScrollBarImageColor3 = NHUI.Theme.TextDim
-		popupFrame.ScrollBarImageTransparency = 0.35
-		popupFrame.BorderSizePixel = 0
-		popupFrame.Name = "ColorPickerPopup"
-		popupFrame.Active = true
-		popupFrame.BackgroundColor3 = NHUI.Theme.Background
-		popupFrame.BackgroundTransparency = 1
-		popupFrame.BorderSizePixel = 0
-		popupFrame.ClipsDescendants = true
-		popupFrame.ZIndex = Z.Popup
-		popupFrame.Size = UDim2.new(0, popupW, 0, 0)
-		popupFrame.Parent = root
-		Corner(popupFrame, 10)
-		local popupStroke = Stroke(popupFrame, NHUI.Theme.Accent, 1, 0.92)
-		GlassLayer(popupFrame, 10, 0.985)
- 
-		local px, py = ComputePopupPosition(mainWindow, card, popupW, popupH)
-		popupFrame.Position = UDim2.fromOffset(px, py)
- 
-		local pad = Instance.new("UIPadding")
-		pad.PaddingTop = UDim.new(0, 14)
-		pad.PaddingBottom = UDim.new(0, 14)
-		pad.PaddingLeft = UDim.new(0, 14)
-		pad.PaddingRight = UDim.new(0, 14)
-		pad.Parent = popupFrame
- 
-		local innerW = popupW - 28
- 
-		svBox = Instance.new("Frame")
-		svBox.Active = true
-		svBox.Position = UDim2.fromOffset(0, 0)
-		svBox.Size = UDim2.fromOffset(innerW, 104)
-		svBox.BackgroundColor3 = Color3.new(1, 1, 1)
-		svBox.BorderSizePixel = 0
-		svBox.ClipsDescendants = true
-		svBox.ZIndex = Z.Popup + 1
-		svBox.Parent = popupFrame
-		Corner(svBox, 8)
- 
-		satGradient = Instance.new("UIGradient")
-		satGradient.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromHSV(hue, 1, 1))
-		satGradient.Parent = svBox
- 
-		local valOverlay = Instance.new("Frame")
-		valOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
-		valOverlay.BorderSizePixel = 0
-		valOverlay.Size = UDim2.fromScale(1, 1)
-		valOverlay.ZIndex = Z.Popup + 1
-		valOverlay.Parent = svBox
-		local valGradient = Instance.new("UIGradient")
-		valGradient.Rotation = 90
-		valGradient.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 1),
-			NumberSequenceKeypoint.new(1, 0),
-		})
-		valGradient.Parent = valOverlay
- 
-		local svCursorLayer = Instance.new("Frame")
-		svCursorLayer.BackgroundTransparency = 1
-		svCursorLayer.BorderSizePixel = 0
-		svCursorLayer.ClipsDescendants = false
-		svCursorLayer.Position = svBox.Position
-		svCursorLayer.Size = svBox.Size
-		svCursorLayer.ZIndex = Z.Popup + 2
-		svCursorLayer.Parent = popupFrame
- 
-		svCursor = Instance.new("Frame")
-		svCursor.AnchorPoint = Vector2.new(0.5, 0.5)
-		svCursor.Position = UDim2.new(sat, 0, 1 - val, 0)
-		svCursor.Size = UDim2.fromOffset(16, 16)
-		svCursor.BackgroundTransparency = 1
-		svCursor.ZIndex = Z.Popup + 3
-		svCursor.Parent = svCursorLayer
-		Corner(svCursor, 8)
-		Stroke(svCursor, Color3.new(0, 0, 0), 2, 0.15)
- 
-		local svCursorInner = Instance.new("Frame")
-		svCursorInner.AnchorPoint = Vector2.new(0.5, 0.5)
-		svCursorInner.Position = UDim2.fromScale(0.5, 0.5)
-		svCursorInner.Size = UDim2.fromOffset(11, 11)
-		svCursorInner.BackgroundTransparency = 1
-		svCursorInner.ZIndex = Z.Popup + 4
-		svCursorInner.Parent = svCursor
-		Corner(svCursorInner, 6)
-		Stroke(svCursorInner, Color3.new(1, 1, 1), 2, 0)
- 
-		hueBar = Instance.new("Frame")
-		hueBar.Active = true
-		hueBar.Position = UDim2.fromOffset(0, 114)
-		hueBar.Size = UDim2.fromOffset(innerW, 10)
-		hueBar.BackgroundColor3 = Color3.new(1, 1, 1)
-		hueBar.BorderSizePixel = 0
-		hueBar.ClipsDescendants = true
-		hueBar.ZIndex = Z.Popup + 1
-		hueBar.Parent = popupFrame
-		Corner(hueBar, 5)
- 
-		local hueGradient = Instance.new("UIGradient")
-		hueGradient.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0.000, Color3.fromHSV(0.000, 1, 1)),
-			ColorSequenceKeypoint.new(0.166, Color3.fromHSV(0.166, 1, 1)),
-			ColorSequenceKeypoint.new(0.333, Color3.fromHSV(0.333, 1, 1)),
-			ColorSequenceKeypoint.new(0.500, Color3.fromHSV(0.500, 1, 1)),
-			ColorSequenceKeypoint.new(0.666, Color3.fromHSV(0.666, 1, 1)),
-			ColorSequenceKeypoint.new(0.833, Color3.fromHSV(0.833, 1, 1)),
-			ColorSequenceKeypoint.new(1.000, Color3.fromHSV(1.000, 1, 1)),
-		})
-		hueGradient.Parent = hueBar
- 
-		local hueCursorLayer = Instance.new("Frame")
-		hueCursorLayer.BackgroundTransparency = 1
-		hueCursorLayer.BorderSizePixel = 0
-		hueCursorLayer.ClipsDescendants = false
-		hueCursorLayer.Position = hueBar.Position
-		hueCursorLayer.Size = hueBar.Size
-		hueCursorLayer.ZIndex = Z.Popup + 2
-		hueCursorLayer.Parent = popupFrame
- 
-		hueCursor = Instance.new("Frame")
-		hueCursor.AnchorPoint = Vector2.new(0.5, 0.5)
-		hueCursor.Position = UDim2.new(hue, 0, 0.5, 0)
-		hueCursor.Size = UDim2.fromOffset(6, 10)
-		hueCursor.BackgroundColor3 = Color3.new(1, 1, 1)
-		hueCursor.BorderSizePixel = 0
-		hueCursor.ZIndex = Z.Popup + 3
-		hueCursor.Parent = hueCursorLayer
-		Corner(hueCursor, 3)
-		Stroke(hueCursor, Color3.new(0, 0, 0), 1, 0.4)
- 
-		local hexHolder, hexRef = MiniField(popupFrame, "HEX", innerW, Z.Popup)
-		hexHolder.Position = UDim2.fromOffset(0, 136)
-		hexBox = hexRef
- 
-		local rgbRow = Instance.new("Frame")
-		rgbRow.BackgroundTransparency = 1
-		rgbRow.Position = UDim2.fromOffset(0, 182)
-		rgbRow.Size = UDim2.fromOffset(innerW, 36)
-		rgbRow.ZIndex = Z.Popup + 1
-		rgbRow.Parent = popupFrame
- 
-		local rHolder, rRef = MiniField(rgbRow, "R", 54, Z.Popup)
-		rHolder.Position = UDim2.fromOffset(0, 0)
-		rBox = rRef
- 
-		local gHolder, gRef = MiniField(rgbRow, "G", 54, Z.Popup)
-		gHolder.Position = UDim2.fromOffset(62, 0)
-		gBox = gRef
- 
-		local bHolder, bRef = MiniField(rgbRow, "B", 56, Z.Popup)
-		bHolder.Position = UDim2.fromOffset(124, 0)
-		bBox = bRef
- 
-		local btnRow = Instance.new("Frame")
-		btnRow.BackgroundTransparency = 1
-		btnRow.Position = UDim2.fromOffset(0, 232)
-		btnRow.Size = UDim2.fromOffset(innerW, 30)
-		btnRow.ZIndex = Z.Popup + 1
-		btnRow.Parent = popupFrame
- 
-		local function MakeButton(text, x, w, filled)
-			local btn = Instance.new("TextButton")
-			btn.Position = UDim2.fromOffset(x, 0)
-			btn.Size = UDim2.fromOffset(w, 30)
-			btn.FontFace = NHUI.Theme.Font
-			btn.Text = text
-			btn.TextSize = 13
-			btn.AutoButtonColor = false
-			btn.BorderSizePixel = 0
-			btn.ZIndex = Z.Popup + 2
-			if filled then
-				btn.BackgroundColor3 = NHUI.Theme.Accent
-				btn.BackgroundTransparency = 0
-				btn.TextColor3 = NHUI.Theme.Background
-			else
-				btn.BackgroundColor3 = Color3.new(1, 1, 1)
-				btn.BackgroundTransparency = 0.92
-				btn.TextColor3 = NHUI.Theme.Text
-			end
-			btn.Parent = btnRow
-			Corner(btn, 8)
-			if not filled then Stroke(btn, Color3.new(1, 1, 1), 1, 0.88) end
-			return btn
-		end
- 
-		local halfW = (innerW - 10) / 2
-		local cancelBtn = MakeButton("Cancel", 0, halfW, false)
-		local doneBtn   = MakeButton("Done", halfW + 10, halfW, true)
- 
-		cancelBtn.Activated:Connect(function()
-			hue, sat, val = originalHue, originalSat, originalVal
-			applyColor(true)
-			closePopup()
-		end)
-		doneBtn.Activated:Connect(closePopup)
- 
-		svBox.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1
-				or input.UserInputType == Enum.UserInputType.Touch then
-				if draggingSV or draggingHue then return end
-				draggingSV = true
-				colorInput = input
-				updateSV(input.Position)
-			end
-		end)
- 
-		hueBar.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1
-				or input.UserInputType == Enum.UserInputType.Touch then
-				if draggingSV or draggingHue then return end
-				draggingHue = true
-				colorInput = input
-				updateHue(input.Position)
-			end
-		end)
- 
-		hexBox:GetPropertyChangedSignal("Text"):Connect(function()
-			local filtered = hexBox.Text:gsub("[^%x]", "")
-			filtered = filtered:sub(1, 6)
-			if filtered ~= hexBox.Text then hexBox.Text = filtered end
-		end)
- 
-		hexBox.FocusLost:Connect(function()
-			local clean = hexBox.Text:gsub("#", "")
-			if #clean == 3 then
-				clean = clean:sub(1, 1):rep(2) .. clean:sub(2, 2):rep(2) .. clean:sub(3, 3):rep(2)
-			end
-			if #clean == 6 then
-				local ok, c = pcall(Color3.fromHex, clean)
-				if ok and c then
-					hue, sat, val = Color3.toHSV(c)
-					applyColor(true)
-					return
-				end
-			end
-			syncFields()
-		end)
- 
-		local function filterDigits(b)
-			b:GetPropertyChangedSignal("Text"):Connect(function()
-				local filtered = b.Text:gsub("%D", ""):sub(1, 3)
-				if filtered ~= b.Text then b.Text = filtered end
-			end)
-		end
-		filterDigits(rBox); filterDigits(gBox); filterDigits(bBox)
- 
-		local function onRGBCommit()
-			local r = math.clamp(tonumber(rBox.Text) or 0, 0, 255)
-			local g = math.clamp(tonumber(gBox.Text) or 0, 0, 255)
-			local b = math.clamp(tonumber(bBox.Text) or 0, 0, 255)
-			hue, sat, val = Color3.toHSV(Color3.fromRGB(r, g, b))
-			applyColor(true)
-		end
-		rBox.FocusLost:Connect(onRGBCommit)
-		gBox.FocusLost:Connect(onRGBCommit)
-		bBox.FocusLost:Connect(onRGBCommit)
- 
-		syncFields()
- 
-		Tween(popupFrame, {
-			Size = UDim2.new(0, popupW, 0, popupH),
-			BackgroundTransparency = 0.15,
-		}, 0.44, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-		Tween(popupStroke, { Transparency = 0.85 }, 0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
- 
-		followConn = RunService.RenderStepped:Connect(function()
-			if not popupFrame or not card.Parent then return end
-			local nx, ny = ComputePopupPosition(mainWindow, card, popupW, popupH)
-			popupFrame.Position = UDim2.fromOffset(nx, ny)
-		end)
-		jan:Add(followConn)
+		DropdownTween(swatchStroke, { Color = NHUI.Theme.Accent, Transparency = 0.3 }, twHint)
+		if cardTween then cardTween:Cancel() end
+		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + 154) }, twOpen)
 	end
- 
+
 	click.MouseButton1Click:Connect(function()
-		if popupOpen then closePopup() else openPopup() end
+		if popupOpen then close_() else open_() end
 	end)
- 
-	card.MouseEnter:Connect(function() Tween(card, { BackgroundTransparency = 0.93 }, 0.15) end)
-	card.MouseLeave:Connect(function() Tween(card, { BackgroundTransparency = 0.96 }, 0.15) end)
- 
+
+	card.MouseEnter:Connect(function()
+		Tween(card, { BackgroundTransparency = 0.93 }, 0.15)
+	end)
+	card.MouseLeave:Connect(function()
+		Tween(card, { BackgroundTransparency = 0.96 }, 0.15)
+	end)
+
+	jan:Add(UserInputService.InputBegan:Connect(function(input)
+		if not popupOpen then return end
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1
+			and input.UserInputType ~= Enum.UserInputType.Touch then return end
+		local pos = input.Position
+		local mp, ms = card.AbsolutePosition, card.AbsoluteSize
+		if pos.X < mp.X or pos.X > mp.X + ms.X
+			or pos.Y < mp.Y or pos.Y > mp.Y + ms.Y then
+			close_()
+		end
+	end))
+
+	jan:Add(function()
+		if cardTween then cardTween:Cancel() end
+		if popupOpen then close_() end
+	end)
+
 	return RegisterFlag(opts, {
 		Instance = card,
 		Set = function(_, c, silent)
@@ -11974,7 +11939,12 @@ swatchHolder.BackgroundTransparency = 0.9
 		end,
 		Get = function() return currentColor() end,
 		OnChanged = function(_, fn) return signal.Connect(fn) end,
-		Destroy = function() closePopup(); signal.Clear(); card:Destroy() end,
+		Destroy = function()
+			if cardTween then cardTween:Cancel() end
+			if popupOpen then close_() end
+			signal.Clear()
+			card:Destroy()
+		end,
 	}, "ColorPicker")
 end
  
