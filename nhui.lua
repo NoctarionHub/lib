@@ -10572,7 +10572,7 @@ function Tab:AddDropdown(opts)
 	local PAD_TOP    = 7
 	local PAD_BOT    = 6
 	local OPT_H      = 38
-	local OPT_GAP    = 3
+	local OPT_GAP    = 5
 	local LIST_PAD   = 2
 	local MAX_VIS    = 5
 	local ACT_H      = 22
@@ -10753,7 +10753,7 @@ function Tab:AddDropdown(opts)
 	searchIcon.AnchorPoint = Vector2.new(0, 0.5)
 	searchIcon.Position = UDim2.new(0, 12, 0.5, 0)
 	searchIcon.AutoButtonColor = false
-	searchIcon.ImageTransparency = 1
+	searchIcon.ImageTransparency = 0
 	searchIcon.ZIndex = Z.Content + 4
 	searchIcon.Parent = searchFrame
 
