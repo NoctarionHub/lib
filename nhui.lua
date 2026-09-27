@@ -10832,6 +10832,10 @@ function Tab:AddDropdown(opts)
 	local searchOpen = false
 	local cardTween = nil
 
+	-- FORWARD DECLARE (fix utama!)
+	local openDropdown_
+	local closeDropdown_
+
 	local function renderOption(data, animate)
 		local sel = isSelected(data.name)
 		local bgT    = ddOpen and (sel and 0.9  or 0.95) or 1
@@ -11152,7 +11156,8 @@ function Tab:AddDropdown(opts)
 			TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out))
 	end
 
-	function closeDropdown_()
+	-- LOCAL ASSIGN (bukan `function name()` tanpa local)
+	closeDropdown_ = function()
 		if not ddOpen then return end
 		ddOpen = false
 		collapseSearch()
@@ -11163,7 +11168,7 @@ function Tab:AddDropdown(opts)
 		for _, d in ipairs(optionFrames) do renderOption(d, true) end
 	end
 
-	function openDropdown_()
+	openDropdown_ = function()
 		if ddOpen then return end
 		ddOpen = true
 		DropdownTween(chevron, { Rotation = 0 }, twChev)
