@@ -10572,7 +10572,7 @@ function Tab:AddDropdown(opts)
 	local PAD_TOP    = 7
 	local PAD_BOT    = 6
 	local OPT_H      = 38
-	local OPT_GAP    = 5
+	local OPT_GAP    = 3
 	local LIST_PAD   = 2
 	local MAX_VIS    = 5
 	local ACT_H      = 22
@@ -10990,7 +10990,7 @@ function Tab:AddDropdown(opts)
 		searchInput.Text = ""
 		tw(searchFrame, { Size = UDim2.new(1, 0, 0, SRCH_H) }, twSearch)
 		tw(searchStroke, { Transparency = 1 }, twSearch)
-		tw(searchIcon, { ImageTransparency = 1 }, twSearch)
+		tw(searchIcon, { ImageTransparency = 0 }, twSearch)
 		tw(searchInput, { TextTransparency = 1 }, twSearch)
 		resizeToList()
 	end
