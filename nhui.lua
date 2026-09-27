@@ -11985,26 +11985,55 @@ function Tab:AddKeybind(opts)
 	local hasDesc = opts.Description and opts.Description ~= ""
 	local height = hasDesc and 56 or 44
 	local jan = self._janitor
- 
+
+	local mouseNames = {
+		[Enum.UserInputType.MouseButton1] = "MB1",
+		[Enum.UserInputType.MouseButton2] = "MB2",
+		[Enum.UserInputType.MouseButton3] = "MB3",
+	}
+
+	local function keyName(value)
+		if typeof(value) ~= "EnumItem" or value == Enum.KeyCode.Unknown then
+			return "None"
+		end
+		return mouseNames[value] or value.Name
+	end
+
+	local function coerceKey(value)
+		if typeof(value) == "EnumItem" then return value end
+		if type(value) == "string" then
+			local ok, key = pcall(function() return Enum.KeyCode[value] end)
+			if ok and key then return key end
+			local ok2, btn = pcall(function() return Enum.UserInputType[value] end)
+			if ok2 and btn and mouseNames[btn] then return btn end
+		end
+		return Enum.KeyCode.Unknown
+	end
+
 	local card = BaseCard(self._page, height)
 	local textX = AddLeadingIcon(card, opts.Icon, height)
 	AddTitleDesc(card, textX, 128, opts.Text or "Keybind", opts.Description, height)
 	self._window:_RegisterSearchable(self, opts.Text or "Keybind", card)
- 
-	local currentKey = opts.Default
- 
-	local pill = Instance.new("Frame")
+
+	local currentKey = coerceKey(opts.Default)
+	local isMenuToggle = opts.IsMenuToggle == true
+	local hold = opts.Hold == true
+	local holdThreshold = tonumber(opts.HoldThreshold) or 0.2
+
+	local pill = Instance.new("TextButton")
+	pill.Text = ""
+	pill.AutoButtonColor = false
 	pill.AnchorPoint = Vector2.new(1, 0.5)
 	pill.Position = UDim2.new(1, -14, 0.5, 0)
 	pill.Size = UDim2.fromOffset(104, 26)
 	pill.BackgroundColor3 = Color3.new(1, 1, 1)
-pill.BackgroundTransparency = 0.95 
+	pill.BackgroundTransparency = 0.95
 	pill.BorderSizePixel = 0
 	pill.ZIndex = Z.Content + 2
 	pill.Parent = card
 	Corner(pill, 8)
 	local pillStroke = Stroke(pill, NHUI.Theme.TextDim, 1, 0.88)
- 
+
 	local keyIcon = Instance.new("ImageLabel")
 	keyIcon.BackgroundTransparency = 1
 	keyIcon.Image = ResolveIcon("keyboard")
@@ -12014,11 +12043,11 @@ pill.BackgroundTransparency = 0.95
 	keyIcon.Position = UDim2.new(0, 10, 0.5, 0)
 	keyIcon.ZIndex = Z.Content + 3
 	keyIcon.Parent = pill
- 
+
 	local keyLabel = Instance.new("TextLabel")
 	keyLabel.BackgroundTransparency = 1
 	keyLabel.FontFace = NHUI.Theme.FontRegular
-	keyLabel.Text = currentKey and currentKey.Name or "None"
+	keyLabel.Text = keyName(currentKey)
 	keyLabel.TextColor3 = NHUI.Theme.Text
 	keyLabel.TextSize = 13
 	keyLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -12027,87 +12056,191 @@ pill.BackgroundTransparency = 0.95
 	keyLabel.Size = UDim2.new(1, -37, 1, 0)
 	keyLabel.ZIndex = Z.Content + 3
 	keyLabel.Parent = pill
- 
-	local click = Instance.new("TextButton")
-	click.Text = ""
-	click.AutoButtonColor = false
-	click.BackgroundTransparency = 1
-	click.Size = UDim2.fromScale(1, 1)
-	click.ZIndex = Z.Content + 4
-	click.Parent = pill
- 
-	local listening = false
-	local listenConn = nil
+
 	local signal = MakeSignal()
- 
 	local function fireChanged(key)
+		if opts.OnChanged then task.spawn(opts.OnChanged, key) end
 		signal.Fire(key)
 	end
- 
-	local function stopListening()
-		listening = false
+
+	local recording = false
+	local recordingToken = 0
+
+	local function stopRecording(keepText)
+		if not recording then return end
+		recording = false
+		recordingToken += 1
 		KeybindCapturing = false
-		if listenConn then listenConn:Disconnect(); listenConn = nil end
+		if self._window and self._window._recordingKeybind == pill then
+			self._window._recordingKeybind = nil
+		end
+		if not keepText then
+			keyLabel.Text = keyName(currentKey)
+		end
 		Tween(pillStroke, { Color = NHUI.Theme.TextDim, Transparency = 0.88 }, 0.15)
-		Tween(pill, { BackgroundTransparency = 0.9 }, 0.15)
-		keyLabel.Text = currentKey and currentKey.Name or "None"
+		Tween(pill, { BackgroundTransparency = 0.95 }, 0.15)
 	end
- 
-	local function startListening()
-		if listening then return end
-		listening = true
+
+	local function startRecording()
+		if recording then return end
+		-- tutup keybind lain yang lagi recording
+		local w = self._window
+		if w and w._recordingKeybind and w._recordingKeybind ~= pill then
+			w._recordingOtherKeybind = true
+		end
+		recording = true
+		recordingToken += 1
 		KeybindCapturing = true
+		if w then w._recordingKeybind = pill end
 		keyLabel.Text = "..."
 		Tween(pillStroke, { Color = NHUI.Theme.Accent, Transparency = 0.3 }, 0.15)
 		Tween(pill, { BackgroundTransparency = 0.82 }, 0.15)
- 
-		listenConn = UserInputService.InputBegan:Connect(function(input)
-			if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
- 
+	end
+
+	-- klik pill -> mulai / stop recording
+	pill.MouseButton1Click:Connect(function()
+		if recording then
+			stopRecording()
+		else
+			startRecording()
+		end
+	end)
+
+	-- capture input selama recording
+	jan:Add(UserInputService.InputBegan:Connect(function(input)
+		if not recording then return end
+
+		if input.UserInputType == Enum.UserInputType.Keyboard then
 			if input.KeyCode == Enum.KeyCode.Escape then
-				stopListening()
+				stopRecording()
 				return
 			end
 			if input.KeyCode == Enum.KeyCode.Backspace or input.KeyCode == Enum.KeyCode.Delete then
-				currentKey = nil
-				stopListening()
+				currentKey = Enum.KeyCode.Unknown
+				stopRecording()
+				if opts.Callback then task.spawn(opts.Callback, nil, "bind") end
 				fireChanged(nil)
 				return
 			end
- 
-			currentKey = input.KeyCode
-			stopListening()
+			local newKey = input.KeyCode
+			-- cek bentrok dengan menu toggle
+			if isMenuToggle and self._window then
+				local clash = self._window:_keybindUsing(newKey, nil, nil)
+				if clash and clash.Value ~= nil then
+					-- kunci lain sudah pakai, tapi karena kita capture,
+					-- kita tetap izinkan kalau kunci itu bukan menu toggle
+				end
+				local menuKey = self._window.settings and self._window.settings.toggleKeybind
+				if newKey == menuKey then
+					stopRecording()
+					if self._window.Notify then
+						self._window:Notify({
+							Title = "Keybind unavailable",
+							Text = string.format("%s is the menu toggle key. Kept %s.", keyName(newKey), keyName(currentKey)),
+							Type = "warning",
+							Duration = 3,
+						})
+					end
+					return
+				end
+			end
+			currentKey = newKey
+			stopRecording()
 			if opts.Callback then task.spawn(opts.Callback, currentKey, "bind") end
 			fireChanged(currentKey)
-		end)
-		jan:Add(listenConn)
-	end
- 
-	click.MouseButton1Click:Connect(startListening)
- 
+			return
+		end
+
+		-- mouse button (selain MB1, karena MB1 itu klik pill sendiri)
+		if input.UserInputType == Enum.UserInputType.MouseButton2
+			or input.UserInputType == Enum.UserInputType.MouseButton3 then
+			currentKey = input.UserInputType
+			stopRecording()
+			if opts.Callback then task.spawn(opts.Callback, currentKey, "bind") end
+			fireChanged(currentKey)
+		end
+	end))
+
+	-- eksekusi callback saat key ditekan (bukan saat recording)
 	jan:Add(UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if listening or KeybindCapturing or gameProcessed then return end
+		if recording or KeybindCapturing or gameProcessed then return end
 		if UserInputService:GetFocusedTextBox() then return end
-		if currentKey
-			and input.UserInputType == Enum.UserInputType.Keyboard
-			and input.KeyCode == currentKey then
+		if not currentKey or currentKey == Enum.KeyCode.Unknown then return end
+
+		local matched = false
+		if typeof(currentKey) == "EnumItem" then
+			if currentKey.EnumType == Enum.KeyCode then
+				matched = input.KeyCode == currentKey
+			elseif currentKey.EnumType == Enum.UserInputType then
+				matched = input.UserInputType == currentKey
+			end
+		end
+
+		if not matched then return end
+
+		if hold then
+			-- tahan -> callback(true) setelah threshold, lepas -> callback(false)
+			local press = {}
+			local heldKeyCode = input.KeyCode
+			local heldInputType = input.UserInputType
+			local fired = false
+
+			local holdConn
+			holdConn = UserInputService.InputEnded:Connect(function(ended)
+				local released = if heldKeyCode ~= Enum.KeyCode.Unknown
+					then ended.KeyCode == heldKeyCode
+					else ended.InputType == heldInputType or ended.UserInputType == heldInputType
+				if not released then return end
+				if holdConn then holdConn:Disconnect() end
+				if fired then
+					if opts.Callback then task.spawn(opts.Callback, false, "release") end
+				end
+			end)
+			jan:Add(holdConn)
+
+			task.delay(holdThreshold, function()
+				if holdConn and holdConn.Connected then
+					fired = true
+					if opts.Callback then task.spawn(opts.Callback, true, "hold") end
+				end
+			end)
+		else
 			if opts.Callback then task.spawn(opts.Callback, currentKey, "press") end
 		end
 	end))
- 
-	card.MouseEnter:Connect(function() Tween(card, { BackgroundTransparency = 0.93 }, 0.15) end)
-	card.MouseLeave:Connect(function() Tween(card, { BackgroundTransparency = 0.96 }, 0.15) end)
- 
+
+	-- hover state
+	card.MouseEnter:Connect(function()
+		Tween(card, { BackgroundTransparency = 0.93 }, 0.15)
+	end)
+	card.MouseLeave:Connect(function()
+		Tween(card, { BackgroundTransparency = 0.96 }, 0.15)
+	end)
+
+	jan:Add(function()
+		if recording then
+			recording = false
+			KeybindCapturing = false
+			if self._window and self._window._recordingKeybind == pill then
+				self._window._recordingKeybind = nil
+			end
+		end
+	end)
+
 	return RegisterFlag(opts, {
 		Instance = card,
 		Set = function(_, key, silent)
-			currentKey = key
-			keyLabel.Text = key and key.Name or "None"
-			if not silent then fireChanged(key) end
+			currentKey = coerceKey(key)
+			keyLabel.Text = keyName(currentKey)
+			if not silent then fireChanged(currentKey) end
 		end,
 		Get = function() return currentKey end,
 		OnChanged = function(_, fn) return signal.Connect(fn) end,
-		Destroy = function() stopListening(); signal.Clear(); card:Destroy() end,
+		Destroy = function()
+			stopRecording()
+			signal.Clear()
+			card:Destroy()
+		end,
 	}, "Keybind")
 end
  
