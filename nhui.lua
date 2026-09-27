@@ -11449,10 +11449,10 @@ function Tab:AddColorPicker(opts)
 	local jan = self._janitor
 
 	local GAP = 6
-	local ROUND_R = UDim.new(0, 8)
+	local ROUND_R = 8
 
-	local twOpen    = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-	local twHint    = TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	local twOpen = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	local twHint = TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
 	local card = BaseCard(self._page, headerH)
 	card.AutomaticSize = Enum.AutomaticSize.None
@@ -11465,7 +11465,9 @@ function Tab:AddColorPicker(opts)
 
 	local color = opts.Default or Color3.fromRGB(255, 255, 255)
 	local hue, sat, val = Color3.toHSV(color)
+	local alphaValue = opts.Alpha or 1
 
+	-- swatch
 	local swatchHolder = Instance.new("Frame")
 	swatchHolder.AnchorPoint = Vector2.new(1, 0.5)
 	swatchHolder.Position = UDim2.new(1, -14, 0, headerH / 2)
@@ -11488,15 +11490,15 @@ function Tab:AddColorPicker(opts)
 	swatch.Parent = swatchHolder
 	Corner(swatch, 4)
 
-	local click = Instance.new("TextButton")
-	click.Text = ""
-	click.AutoButtonColor = false
-	click.BackgroundTransparency = 1
-	click.BorderSizePixel = 0
-	click.Size = UDim2.new(1, 0, 0, headerH)
-	click.Position = UDim2.fromOffset(0, 0)
-	click.ZIndex = Z.Content + 3
-	click.Parent = card
+	local cpClick = Instance.new("TextButton")
+	cpClick.Text = ""
+	cpClick.AutoButtonColor = false
+	cpClick.BackgroundTransparency = 1
+	cpClick.BorderSizePixel = 0
+	cpClick.Size = UDim2.new(1, 0, 0, headerH)
+	cpClick.Position = UDim2.fromOffset(0, 0)
+	cpClick.ZIndex = Z.Content + 3
+	cpClick.Parent = card
 
 	-- ===== panel inline =====
 	local panel = Instance.new("Frame")
@@ -11515,23 +11517,117 @@ function Tab:AddColorPicker(opts)
 	panelPad.PaddingRight = UDim.new(0, 14)
 	panelPad.Parent = panel
 
-	-- layout dihitung di close_/open_ setelah lebar pasti
-	local panelW = 0
-	local function panelWidth()
-		local w = card.AbsoluteSize.X
-		return w > 0 and w or 400
-	end
+	local panelLayout = Instance.new("UIListLayout")
+	panelLayout.FillDirection = Enum.FillDirection.Vertical
+	panelLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	panelLayout.Padding = UDim.new(0, 8)
+	panelLayout.Parent = panel
 
-	-- SV map
+	-- baris SV + hue + alpha (horizontal)
+	local topRow = Instance.new("Frame")
+	topRow.BackgroundTransparency = 1
+	topRow.BorderSizePixel = 0
+	topRow.Size = UDim2.new(1, 0, 0, 120)
+	topRow.LayoutOrder = 1
+	topRow.ZIndex = Z.Content + 1
+	topRow.Parent = panel
+
+	-- hue bar (kanan, vertikal)
+	local hueBar = Instance.new("Frame")
+	hueBar.Active = true
+	hueBar.AnchorPoint = Vector2.new(1, 0)
+	hueBar.Position = UDim2.new(1, 0, 0, 0)
+	hueBar.Size = UDim2.fromOffset(14, 120)
+	hueBar.BackgroundColor3 = Color3.new(1, 1, 1)
+	hueBar.BorderSizePixel = 0
+	hueBar.ClipsDescendants = true
+	hueBar.ZIndex = Z.Content + 2
+	hueBar.Parent = topRow
+	Corner(hueBar, 7)
+
+	local hueGradient = Instance.new("UIGradient")
+	hueGradient.Rotation = 90
+	hueGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0.000, Color3.fromHSV(0.000, 1, 1)),
+		ColorSequenceKeypoint.new(0.166, Color3.fromHSV(0.166, 1, 1)),
+		ColorSequenceKeypoint.new(0.333, Color3.fromHSV(0.333, 1, 1)),
+		ColorSequenceKeypoint.new(0.500, Color3.fromHSV(0.500, 1, 1)),
+		ColorSequenceKeypoint.new(0.666, Color3.fromHSV(0.666, 1, 1)),
+		ColorSequenceKeypoint.new(0.833, Color3.fromHSV(0.833, 1, 1)),
+		ColorSequenceKeypoint.new(1.000, Color3.fromHSV(1.000, 1, 1)),
+	})
+	hueGradient.Parent = hueBar
+
+	local hueCursor = Instance.new("Frame")
+	hueCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+	hueCursor.Position = UDim2.new(0.5, 0, hue, 0)
+	hueCursor.Size = UDim2.fromOffset(18, 6)
+	hueCursor.BackgroundColor3 = Color3.new(1, 1, 1)
+	hueCursor.BorderSizePixel = 0
+	hueCursor.ZIndex = Z.Content + 4
+	hueCursor.Parent = hueBar
+	Corner(hueCursor, 3)
+	Stroke(hueCursor, Color3.new(0, 0, 0), 1, 0.4)
+
+	local hueHit = Instance.new("TextButton")
+	hueHit.Text = ""
+	hueHit.AutoButtonColor = false
+	hueHit.BackgroundTransparency = 1
+	hueHit.Size = UDim2.fromScale(1, 1)
+	hueHit.ZIndex = Z.Content + 6
+	hueHit.Parent = hueBar
+
+	-- alpha bar (kiri hue)
+	local alphaBar = Instance.new("Frame")
+	alphaBar.Active = true
+	alphaBar.AnchorPoint = Vector2.new(1, 0)
+	alphaBar.Position = UDim2.new(1, -20, 0, 0)
+	alphaBar.Size = UDim2.fromOffset(14, 120)
+	alphaBar.BackgroundColor3 = color
+	alphaBar.BorderSizePixel = 0
+	alphaBar.ClipsDescendants = true
+	alphaBar.ZIndex = Z.Content + 2
+	alphaBar.Parent = topRow
+	Corner(alphaBar, 7)
+
+	local alphaGradient = Instance.new("UIGradient")
+	alphaGradient.Rotation = 90
+	alphaGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	alphaGradient.Parent = alphaBar
+
+	local alphaCursor = Instance.new("Frame")
+	alphaCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+	alphaCursor.Position = UDim2.new(0.5, 0, 1 - alphaValue, 0)
+	alphaCursor.Size = UDim2.fromOffset(18, 6)
+	alphaCursor.BackgroundColor3 = Color3.new(1, 1, 1)
+	alphaCursor.BorderSizePixel = 0
+	alphaCursor.ZIndex = Z.Content + 4
+	alphaCursor.Parent = alphaBar
+	Corner(alphaCursor, 3)
+	Stroke(alphaCursor, Color3.new(0, 0, 0), 1, 0.4)
+
+	local alphaHit = Instance.new("TextButton")
+	alphaHit.Text = ""
+	alphaHit.AutoButtonColor = false
+	alphaHit.BackgroundTransparency = 1
+	alphaHit.Size = UDim2.fromScale(1, 1)
+	alphaHit.ZIndex = Z.Content + 6
+	alphaHit.Parent = alphaBar
+
+	-- SV map (sisa lebar)
 	local svBox = Instance.new("Frame")
 	svBox.Active = true
-	svBox.Position = UDim2.fromOffset(0, 0)
-	svBox.Size = UDim2.new(1, -120, 0, 104)
+	svBox.AnchorPoint = Vector2.new(0, 0)
+	svBox.Position = UDim2.new(0, 0, 0, 0)
+	svBox.Size = UDim2.new(1, -44, 0, 120)
 	svBox.BackgroundColor3 = Color3.new(1, 1, 1)
 	svBox.BorderSizePixel = 0
 	svBox.ClipsDescendants = true
 	svBox.ZIndex = Z.Content + 1
-	svBox.Parent = panel
+	svBox.Parent = topRow
 	Corner(svBox, ROUND_R)
 
 	local satGradient = Instance.new("UIGradient")
@@ -11558,7 +11654,7 @@ function Tab:AddColorPicker(opts)
 	svCursor.Position = UDim2.new(sat, 0, 1 - val, 0)
 	svCursor.Size = UDim2.fromOffset(16, 16)
 	svCursor.BackgroundTransparency = 1
-	svCursor.ZIndex = Z.Content + 3
+	svCursor.ZIndex = Z.Content + 4
 	svCursor.Parent = svBox
 	Corner(svCursor, 8)
 	Stroke(svCursor, Color3.new(0, 0, 0), 2, 0.15)
@@ -11568,154 +11664,53 @@ function Tab:AddColorPicker(opts)
 	svCursorInner.Position = UDim2.fromScale(0.5, 0.5)
 	svCursorInner.Size = UDim2.fromOffset(11, 11)
 	svCursorInner.BackgroundTransparency = 1
-	svCursorInner.ZIndex = Z.Content + 4
+	svCursorInner.ZIndex = Z.Content + 5
 	svCursorInner.Parent = svCursor
 	Corner(svCursorInner, 6)
 	Stroke(svCursorInner, Color3.new(1, 1, 1), 2, 0)
 
-	-- hue bar (vertikal, di sebelah kanan SV)
-	local hueBar = Instance.new("Frame")
-	hueBar.Active = true
-	hueBar.AnchorPoint = Vector2.new(1, 0)
-	hueBar.Position = UDim2.new(1, 0, 0, 0)
-	hueBar.Size = UDim2.fromOffset(14, 104)
-	hueBar.BackgroundColor3 = Color3.new(1, 1, 1)
-	hueBar.BorderSizePixel = 0
-	hueBar.ClipsDescendants = true
-	hueBar.ZIndex = Z.Content + 1
-	hueBar.Parent = panel
-	Corner(hueBar, 7)
+	local svHit = Instance.new("TextButton")
+	svHit.Text = ""
+	svHit.AutoButtonColor = false
+	svHit.BackgroundTransparency = 1
+	svHit.Size = UDim2.fromScale(1, 1)
+	svHit.ZIndex = Z.Content + 6
+	svHit.Parent = svBox
 
-	local hueGradient = Instance.new("UIGradient")
-	hueGradient.Rotation = 90
-	hueGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0.000, Color3.fromHSV(0.000, 1, 1)),
-		ColorSequenceKeypoint.new(0.166, Color3.fromHSV(0.166, 1, 1)),
-		ColorSequenceKeypoint.new(0.333, Color3.fromHSV(0.333, 1, 1)),
-		ColorSequenceKeypoint.new(0.500, Color3.fromHSV(0.500, 1, 1)),
-		ColorSequenceKeypoint.new(0.666, Color3.fromHSV(0.666, 1, 1)),
-		ColorSequenceKeypoint.new(0.833, Color3.fromHSV(0.833, 1, 1)),
-		ColorSequenceKeypoint.new(1.000, Color3.fromHSV(1.000, 1, 1)),
-	})
-	hueGradient.Parent = hueBar
-
-	local hueCursor = Instance.new("Frame")
-	hueCursor.AnchorPoint = Vector2.new(0.5, 0.5)
-	hueCursor.Position = UDim2.new(0.5, 0, hue, 0)
-	hueCursor.Size = UDim2.fromOffset(18, 6)
-	hueCursor.BackgroundColor3 = Color3.new(1, 1, 1)
-	hueCursor.BorderSizePixel = 0
-	hueCursor.ZIndex = Z.Content + 3
-	hueCursor.Parent = hueBar
-	Corner(hueCursor, 3)
-	Stroke(hueCursor, Color3.new(0, 0, 0), 1, 0.4)
-
-	-- alpha bar (vertikal, di sebelah kiri hue)
-	local alphaBar = Instance.new("Frame")
-	alphaBar.Active = true
-	alphaBar.AnchorPoint = Vector2.new(1, 0)
-	alphaBar.Position = UDim2.new(1, -20, 0, 0)
-	alphaBar.Size = UDim2.fromOffset(14, 104)
-	alphaBar.BackgroundColor3 = color
-	alphaBar.BorderSizePixel = 0
-	alphaBar.ClipsDescendants = true
-	alphaBar.ZIndex = Z.Content + 1
-	alphaBar.Parent = panel
-	Corner(alphaBar, 7)
-
-	local alphaGradient = Instance.new("UIGradient")
-	alphaGradient.Rotation = 90
-	alphaGradient.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0),
-		NumberSequenceKeypoint.new(1, 1),
-	})
-	alphaGradient.Parent = alphaBar
-
-	local alphaCursor = Instance.new("Frame")
-	alphaCursor.AnchorPoint = Vector2.new(0.5, 0.5)
-	alphaCursor.Position = UDim2.new(0.5, 0, 1, 0)
-	alphaCursor.Size = UDim2.fromOffset(18, 6)
-	alphaCursor.BackgroundColor3 = Color3.new(1, 1, 1)
-	alphaCursor.BorderSizePixel = 0
-	alphaCursor.ZIndex = Z.Content + 3
-	alphaCursor.Parent = alphaBar
-	Corner(alphaCursor, 3)
-	Stroke(alphaCursor, Color3.new(0, 0, 0), 1, 0.4)
-
-	local alphaValue = opts.Alpha or 1
-
-	-- hex + rgb row (di bawah sv)
+	-- baris HEX + RGB
 	local fieldRow = Instance.new("Frame")
 	fieldRow.BackgroundTransparency = 1
-	fieldRow.Position = UDim2.new(0, 0, 0, 114)
+	fieldRow.BorderSizePixel = 0
 	fieldRow.Size = UDim2.new(1, 0, 0, 32)
+	fieldRow.LayoutOrder = 2
 	fieldRow.ZIndex = Z.Content + 1
 	fieldRow.Parent = panel
 
-	local hexBox = Instance.new("TextBox")
-	hexBox.BackgroundColor3 = Color3.new(1, 1, 1)
-	hexBox.BackgroundTransparency = 0.9
-	hexBox.BorderSizePixel = 0
-	hexBox.FontFace = NHUI.Theme.FontRegular
-	hexBox.Text = "#" .. color:ToHex():upper()
-	hexBox.TextColor3 = NHUI.Theme.Text
-	hexBox.TextSize = 13
-	hexBox.ClearTextOnFocus = false
-	hexBox.Position = UDim2.new(0, 0, 0, 0)
-	hexBox.Size = UDim2.new(0.4, -4, 1, 0)
-	hexBox.ZIndex = Z.Content + 2
-	hexBox.Parent = fieldRow
-	Corner(hexBox, 7)
-	local hexStroke = Stroke(hexBox, Color3.new(1, 1, 1), 1, 0.88)
+	local function makeField(x, w, text)
+		local b = Instance.new("TextBox")
+		b.BackgroundColor3 = Color3.new(1, 1, 1)
+		b.BackgroundTransparency = 0.9
+		b.BorderSizePixel = 0
+		b.FontFace = NHUI.Theme.FontRegular
+		b.Text = text
+		b.TextColor3 = NHUI.Theme.Text
+		b.TextSize = 13
+		b.ClearTextOnFocus = false
+		b.Position = UDim2.new(x, 0, 0, 0)
+		b.Size = UDim2.new(w, x == 0 and 0 or -4, 1, 0)
+		b.ZIndex = Z.Content + 2
+		b.Parent = fieldRow
+		Corner(b, 7)
+		Stroke(b, Color3.new(1, 1, 1), 1, 0.88)
+		return b
+	end
 
-	local rBox = Instance.new("TextBox")
-	rBox.BackgroundColor3 = Color3.new(1, 1, 1)
-	rBox.BackgroundTransparency = 0.9
-	rBox.BorderSizePixel = 0
-	rBox.FontFace = NHUI.Theme.FontRegular
-	rBox.Text = tostring(math.floor(color.R * 255 + 0.5))
-	rBox.TextColor3 = NHUI.Theme.Text
-	rBox.TextSize = 13
-	rBox.ClearTextOnFocus = false
-	rBox.Position = UDim2.new(0.4, 0, 0, 0)
-	rBox.Size = UDim2.new(0.2, -4, 1, 0)
-	rBox.ZIndex = Z.Content + 2
-	rBox.Parent = fieldRow
-	Corner(rBox, 7)
-	Stroke(rBox, Color3.new(1, 1, 1), 1, 0.88)
+	local hexBox = makeField(0,   0.4, "#" .. color:ToHex():upper())
+	local rBox   = makeField(0.4, 0.2, tostring(math.floor(color.R * 255 + 0.5)))
+	local gBox   = makeField(0.6, 0.2, tostring(math.floor(color.G * 255 + 0.5)))
+	local bBox   = makeField(0.8, 0.2, tostring(math.floor(color.B * 255 + 0.5)))
 
-	local gBox = Instance.new("TextBox")
-	gBox.BackgroundColor3 = Color3.new(1, 1, 1)
-	gBox.BackgroundTransparency = 0.9
-	gBox.BorderSizePixel = 0
-	gBox.FontFace = NHUI.Theme.FontRegular
-	gBox.Text = tostring(math.floor(color.G * 255 + 0.5))
-	gBox.TextColor3 = NHUI.Theme.Text
-	gBox.TextSize = 13
-	gBox.ClearTextOnFocus = false
-	gBox.Position = UDim2.new(0.6, 0, 0, 0)
-	gBox.Size = UDim2.new(0.2, -4, 1, 0)
-	gBox.ZIndex = Z.Content + 2
-	gBox.Parent = fieldRow
-	Corner(gBox, 7)
-	Stroke(gBox, Color3.new(1, 1, 1), 1, 0.88)
-
-	local bBox = Instance.new("TextBox")
-	bBox.BackgroundColor3 = Color3.new(1, 1, 1)
-	bBox.BackgroundTransparency = 0.9
-	bBox.BorderSizePixel = 0
-	bBox.FontFace = NHUI.Theme.FontRegular
-	bBox.Text = tostring(math.floor(color.B * 255 + 0.5))
-	bBox.TextColor3 = NHUI.Theme.Text
-	bBox.TextSize = 13
-	bBox.ClearTextOnFocus = false
-	bBox.Position = UDim2.new(0.8, 0, 0, 0)
-	bBox.Size = UDim2.new(0.2, 0, 1, 0)
-	bBox.ZIndex = Z.Content + 2
-	bBox.Parent = fieldRow
-	Corner(bBox, 7)
-	Stroke(bBox, Color3.new(1, 1, 1), 1, 0.88)
-
+	-- ===== state & handlers =====
 	local signal = MakeSignal()
 	local lastFired = nil
 
@@ -11738,29 +11733,24 @@ function Tab:AddColorPicker(opts)
 		alphaBar.BackgroundColor3 = currentColor()
 
 		local c = currentColor()
-		local r = math.floor(c.R * 255 + 0.5)
-		local g = math.floor(c.G * 255 + 0.5)
-		local b = math.floor(c.B * 255 + 0.5)
 		if not hexBox:IsFocused() then hexBox.Text = "#" .. c:ToHex():upper() end
-		if not rBox:IsFocused() then rBox.Text = tostring(r) end
-		if not gBox:IsFocused() then gBox.Text = tostring(g) end
-		if not bBox:IsFocused() then bBox.Text = tostring(b) end
+		if not rBox:IsFocused()   then rBox.Text   = tostring(math.floor(c.R * 255 + 0.5)) end
+		if not gBox:IsFocused()   then gBox.Text   = tostring(math.floor(c.G * 255 + 0.5)) end
+		if not bBox:IsFocused()   then bBox.Text   = tostring(math.floor(c.B * 255 + 0.5)) end
 	end
 
-	local function applyColor(fireCallback)
+	local function applyColor(fire)
 		local c = currentColor()
 		swatch.BackgroundColor3 = c
 		syncFields()
-		if fireCallback and not ColorsClose(c, lastFired) then
+		if fire and not ColorsClose(c, lastFired) then
 			lastFired = c
 			if opts.Callback then task.spawn(opts.Callback, c) end
 			signal.Fire(c)
 		end
 	end
 
-	-- dragging
-	local dragTarget = nil
-	local dragInput = nil
+	local dragTarget, dragInput
 
 	local function updateSV(pos)
 		local rel, sz = svBox.AbsolutePosition, svBox.AbsoluteSize
@@ -11782,9 +11772,25 @@ function Tab:AddColorPicker(opts)
 		if sz.Y <= 0 then return end
 		alphaValue = 1 - math.clamp((pos.Y - rel.Y) / sz.Y, 0, 1)
 		syncFields()
-		signal.Fire(currentColor())
 		if opts.Callback then task.spawn(opts.Callback, currentColor()) end
+		signal.Fire(currentColor())
 	end
+
+	local function bindDrag(hitbox, target)
+		hitbox.InputBegan:Connect(function(input)
+			if input.UserInputType ~= Enum.UserInputType.MouseButton1
+				and input.UserInputType ~= Enum.UserInputType.Touch then return end
+			dragTarget = target
+			dragInput = input
+			if target == "sv" then updateSV(input.Position)
+			elseif target == "hue" then updateHue(input.Position)
+			elseif target == "alpha" then updateAlpha(input.Position) end
+		end)
+	end
+
+	bindDrag(svHit,    "sv")
+	bindDrag(hueHit,   "hue")
+	bindDrag(alphaHit, "alpha")
 
 	jan:Add(UserInputService.InputChanged:Connect(function(input)
 		if not dragTarget then return end
@@ -11800,54 +11806,14 @@ function Tab:AddColorPicker(opts)
 		if input == dragInput
 			or (dragInput and dragInput.UserInputType == Enum.UserInputType.MouseButton1
 				and input.UserInputType == Enum.UserInputType.MouseButton1) then
-			dragTarget = nil
-			dragInput = nil
+			dragTarget, dragInput = nil, nil
 		end
 	end))
-
-	local function bindDrag(hitbox, target)
-		hitbox.InputBegan:Connect(function(input)
-			if input.UserInputType ~= Enum.UserInputType.MouseButton1
-				and input.UserInputType ~= Enum.UserInputType.Touch then return end
-			dragTarget = target
-			dragInput = input
-			if target == "sv" then updateSV(input.Position)
-			elseif target == "hue" then updateHue(input.Position)
-			elseif target == "alpha" then updateAlpha(input.Position) end
-		end)
-	end
-
-	local svHit = Instance.new("TextButton")
-	svHit.Text = ""
-	svHit.AutoButtonColor = false
-	svHit.BackgroundTransparency = 1
-	svHit.Size = UDim2.fromScale(1, 1)
-	svHit.ZIndex = Z.Content + 6
-	svHit.Parent = svBox
-	bindDrag(svHit, "sv")
-
-	local hueHit = Instance.new("TextButton")
-	hueHit.Text = ""
-	hueHit.AutoButtonColor = false
-	hueHit.BackgroundTransparency = 1
-	hueHit.Size = UDim2.fromScale(1, 1)
-	hueHit.ZIndex = Z.Content + 6
-	hueHit.Parent = hueBar
-	bindDrag(hueHit, "hue")
-
-	local alphaHit = Instance.new("TextButton")
-	alphaHit.Text = ""
-	alphaHit.AutoButtonColor = false
-	alphaHit.BackgroundTransparency = 1
-	alphaHit.Size = UDim2.fromScale(1, 1)
-	alphaHit.ZIndex = Z.Content + 6
-	alphaHit.Parent = alphaBar
-	bindDrag(alphaHit, "alpha")
 
 	hexBox.FocusLost:Connect(function()
 		local clean = hexBox.Text:gsub("#", ""):gsub("%s", "")
 		if #clean == 3 then
-			clean = clean:sub(1, 1):rep(2) .. clean:sub(2, 2):rep(2) .. clean:sub(3, 3):rep(2)
+			clean = clean:sub(1,1):rep(2) .. clean:sub(2,2):rep(2) .. clean:sub(3,3):rep(2)
 		end
 		if #clean == 6 then
 			local ok, c = pcall(Color3.fromHex, clean)
@@ -11884,6 +11850,8 @@ function Tab:AddColorPicker(opts)
 	-- ===== open/close =====
 	local popupOpen = false
 	local cardTween = nil
+	-- tinggi total panel: padding 8+8, topRow 120, fieldRow 32, layout gap 8 = 176
+	local PANEL_H = 176
 
 	function close_()
 		if not popupOpen then return end
@@ -11899,10 +11867,10 @@ function Tab:AddColorPicker(opts)
 		popupOpen = true
 		DropdownTween(swatchStroke, { Color = NHUI.Theme.Accent, Transparency = 0.3 }, twHint)
 		if cardTween then cardTween:Cancel() end
-		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + 154) }, twOpen)
+		cardTween = DropdownTween(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + PANEL_H) }, twOpen)
 	end
 
-	click.MouseButton1Click:Connect(function()
+	cpClick.MouseButton1Click:Connect(function()
 		if popupOpen then close_() else open_() end
 	end)
 
