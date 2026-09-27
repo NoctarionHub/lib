@@ -757,6 +757,13 @@ local IconSources = {
 	Phosphor = "https://raw.githubusercontent.com/NoctarionHub/lib/main/icons/Phosphor.luau",
 	["Phosphor-Filled"] = "https://raw.githubusercontent.com/NoctarionHub/lib/main/icons/Phosphor%20Filled.luau",
 	SF       = "https://raw.githubusercontent.com/NoctarionHub/lib/main/icons/SFSymbols.luau",
+	Craft	 = "https://raw.githubusercontent.com/NoctarionHub/lib/refs/heads/main/icons/craft.lua",
+	Solar	 = "https://raw.githubusercontent.com/NoctarionHub/lib/refs/heads/main/icons/solar.lua",
+	Hero	 = "https://raw.githubusercontent.com/NoctarionHub/lib/refs/heads/main/icons/hero.lua",
+	Feather  = "https://raw.githubusercontent.com/NoctarionHub/lib/refs/heads/main/icons/feather.lua",
+	Gmi		 = "https://raw.githubusercontent.com/NoctarionHub/lib/refs/heads/main/icons/gmi.lua",
+	Geist	 = "https://raw.githubusercontent.com/NoctarionHub/lib/refs/heads/main/icons/geist.lua",
+	Gravity  = "https://raw.githubusercontent.com/NoctarionHub/lib/refs/heads/main/icons/gravity.lua",
 }
  
 local IconCache = {}
@@ -10565,7 +10572,7 @@ function Tab:AddDropdown(opts)
 	local PAD_TOP    = 7
 	local PAD_BOT    = 6
 	local OPT_H      = 38
-	local OPT_GAP    = 5
+	local OPT_GAP    = 2
 	local LIST_PAD   = 2
 	local MAX_VIS    = 5
 	local ACT_H      = 22
@@ -12092,7 +12099,7 @@ function Tab:AddKeybind(opts)
 		recordingToken += 1
 		KeybindCapturing = true
 		if w then w._recordingKeybind = pill end
-		keyLabel.Text = "..."
+		keyLabel.Text = "Recording"
 		Tween(pillStroke, { Color = NHUI.Theme.Accent, Transparency = 0.3 }, 0.15)
 		Tween(pill, { BackgroundTransparency = 0.82 }, 0.15)
 	end
