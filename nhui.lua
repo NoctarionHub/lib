@@ -10623,6 +10623,29 @@ function Tab:AddDropdown(opts)
 	local headerH = hasDesc and 56 or 44
 	local jan = self._janitor
 
+	-- ===== constants =====
+	local HDR_H       = headerH
+	local GAP         = 6
+	local PAD_TOP     = 7
+	local PAD_BOT     = 6
+	local OPT_H       = 38
+	local OPT_GAP     = 5
+	local LIST_PAD    = 2
+	local MAX_VIS     = 4
+	local ACT_H       = 22
+	local SRCH_H      = 30
+	local SRCH_HX     = 38
+	local ROUND_R     = UDim.new(0, 12)
+	local FLAT_R      = UDim.new(0, 7)
+	local TOTAL_HDR   = HDR_H + GAP   -- jarak dari card top ke panel top
+
+	local twOpen    = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	local twSearch  = TweenInfo.new(0.35, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	local twChev    = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	local twHint    = TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	local twOpt     = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+	-- ===== state =====
 	local selected
 	if isMulti then
 		selected = {}
@@ -10634,40 +10657,68 @@ function Tab:AddDropdown(opts)
 	end
 
 	local signal = MakeSignal()
-	local function fireChanged(newValue)
-		if opts.Callback then task.spawn(opts.Callback, newValue) end
-		signal.Fire(newValue)
+	local function fireChanged(v)
+		if opts.Callback then task.spawn(opts.Callback, v) end
+		signal.Fire(v)
 	end
 
 	local function getSelectedList()
-		local list = {}
-		for _, name in ipairs(options) do
-			if isMulti and selected[name] then table.insert(list, name) end
+		local t = {}
+		for _, n in ipairs(options) do
+			if isMulti and selected[n] then table.insert(t, n) end
 		end
-		return list
+		return t
 	end
 
-	local function isOptionSelected(name)
+	local function isSelected(name)
 		if isMulti then return selected[name] == true end
 		return name == selected
 	end
 
 	local function formatValue()
 		if isMulti then
-			local list = getSelectedList()
-			if #list == 0 then return "None" end
-			if #list == 1 then return list[1] end
-			return #list .. " selected"
+			local t = getSelectedList()
+			if #t == 0 then return "None" end
+			if #t == 1 then return t[1] end
+			return #t .. " selected"
 		end
 		return tostring(selected or "None")
 	end
 
-	local card = BaseCard(self._page, headerH)
+	-- ===== helpers =====
+	local function dedup(arr)
+		local seen, out = {}, {}
+		for _, v in ipairs(arr) do
+			if type(v) == "string" and not seen[v] then
+				seen[v] = true
+				table.insert(out, v)
+			end
+		end
+		return out
+	end
+
+	local function listHeight(n)
+		return n * OPT_H + math.max(0, n - 1) * OPT_GAP + LIST_PAD * 2
+	end
+
+	local function rowsFit(space)
+		return math.max(math.floor((space - LIST_PAD * 2 + OPT_GAP) / (OPT_H + OPT_GAP)), 1)
+	end
+
+	local function pageHeight()
+		local s = GetUIScale()
+		local view = ViewportSize()
+		return math.max(view.Y / s - 120, 200)
+	end
+
+	-- ===== card =====
+	local card = BaseCard(self._page, HDR_H)
 	card.AutomaticSize = Enum.AutomaticSize.None
 	card.ClipsDescendants = true
+	card.Size = UDim2.new(1, 0, 0, HDR_H)
 
-	local textX = AddLeadingIcon(card, opts.Icon, headerH)
-	AddTitleDesc(card, textX, 166, opts.Text or "Dropdown", opts.Description, headerH)
+	local textX = AddLeadingIcon(card, opts.Icon, HDR_H)
+	AddTitleDesc(card, textX, 166, opts.Text or "Dropdown", opts.Description, HDR_H)
 	self._window:_RegisterSearchable(self, opts.Text or "Dropdown", card)
 
 	local valueLabel = Instance.new("TextLabel")
@@ -10678,10 +10729,10 @@ function Tab:AddDropdown(opts)
 	valueLabel.TextSize = 13
 	valueLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-	valueLabel.AnchorPoint = Vector2.new(1, 0)
-	valueLabel.Position = UDim2.new(1, -34, 0, (headerH - 15) / 2)
-	valueLabel.Size = UDim2.fromOffset(120, 15)
-	valueLabel.ZIndex = Z.Content + 1
+	valueLabel.AnchorPoint = Vector2.new(1, 0.5)
+	valueLabel.Position = UDim2.new(1, -34, 0, HDR_H / 2)
+	valueLabel.Size = UDim2.fromOffset(120, HDR_H)
+	valueLabel.ZIndex = Z.Content + 2
 	valueLabel.Parent = card
 
 	local chevron = Instance.new("ImageLabel")
@@ -10690,63 +10741,57 @@ function Tab:AddDropdown(opts)
 	chevron.ImageColor3 = NHUI.Theme.TextDim
 	chevron.Size = UDim2.fromOffset(14, 14)
 	chevron.AnchorPoint = Vector2.new(1, 0.5)
-	chevron.Position = UDim2.new(1, -14, 0, headerH / 2)
-	chevron.ZIndex = Z.Content + 1
+	chevron.Position = UDim2.new(1, -14, 0, HDR_H / 2)
+	chevron.ZIndex = Z.Content + 2
 	chevron.Parent = card
 
-	local topInteract = Instance.new("TextButton")
-	topInteract.Text = ""
-	topInteract.AutoButtonColor = false
-	topInteract.BackgroundTransparency = 1
-	topInteract.Size = UDim2.new(1, 0, 0, headerH)
-	topInteract.Position = UDim2.fromOffset(0, 0)
-	topInteract.ZIndex = Z.Content + 3
-	topInteract.Parent = card
+	-- header hit zone: cuma setinggi header, jadi gak nutup panel
+	local headerHit = Instance.new("TextButton")
+	headerHit.Text = ""
+	headerHit.AutoButtonColor = false
+	headerHit.BackgroundTransparency = 1
+	headerHit.BorderSizePixel = 0
+	headerHit.Size = UDim2.new(1, 0, 0, HDR_H)
+	headerHit.Position = UDim2.fromOffset(0, 0)
+	headerHit.ZIndex = Z.Content + 5
+	headerHit.Parent = card
 
-	-- Panel (inline, di dalam card)
+	-- ===== panel =====
 	local panel = Instance.new("Frame")
-	panel.Name = "DropdownPanel"
+	panel.Name = "Panel"
 	panel.BackgroundTransparency = 1
 	panel.BorderSizePixel = 0
-	panel.Position = UDim2.fromOffset(0, headerH + DROPDOWN_GAP)
-	panel.Size = UDim2.new(1, 0, 0, 0)
+	panel.Position = UDim2.fromOffset(0, TOTAL_HDR)
+	panel.Size = UDim2.new(1, 0, 1, -TOTAL_HDR)
+	panel.ZIndex = Z.Content + 1
 	panel.ClipsDescendants = true
-	panel.ZIndex = Z.Content
 	panel.Parent = card
 
 	local panelPad = Instance.new("UIPadding")
-	panelPad.PaddingTop = UDim.new(0, DROPDOWN_PAD_TOP)
-	panelPad.PaddingBottom = UDim.new(0, DROPDOWN_PAD_BOT)
+	panelPad.PaddingTop = UDim.new(0, PAD_TOP)
+	panelPad.PaddingBottom = UDim.new(0, PAD_BOT)
 	panelPad.Parent = panel
 
 	local panelLayout = Instance.new("UIListLayout")
 	panelLayout.FillDirection = Enum.FillDirection.Vertical
 	panelLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	panelLayout.Padding = UDim.new(0, DROPDOWN_OPT_GAP)
+	panelLayout.Padding = UDim.new(0, OPT_GAP)
 	panelLayout.Parent = panel
 
-	-- Search bar
+	-- ===== search =====
 	local searchFrame = Instance.new("Frame")
 	searchFrame.Name = "Search"
-	searchFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	searchFrame.BackgroundColor3 = Color3.new(1, 1, 1)
 	searchFrame.BackgroundTransparency = 1
 	searchFrame.BorderSizePixel = 0
-	searchFrame.Size = UDim2.new(1, 0, 0, DROPDOWN_SEARCH_H)
+	searchFrame.Size = UDim2.new(1, 0, 0, SRCH_H)
 	searchFrame.LayoutOrder = 1
 	searchFrame.ClipsDescendants = true
-	searchFrame.ZIndex = Z.Content + 1
+	searchFrame.ZIndex = Z.Content + 2
 	searchFrame.Parent = panel
 	Corner(searchFrame, 12)
 
 	local searchStroke = Stroke(searchFrame, Color3.new(1, 1, 1), 1, 1)
-
-	local searchToggle = Instance.new("TextButton")
-	searchToggle.Text = ""
-	searchToggle.AutoButtonColor = false
-	searchToggle.BackgroundTransparency = 1
-	searchToggle.Size = UDim2.fromScale(1, 1)
-	searchToggle.ZIndex = Z.Content + 4
-	searchToggle.Parent = searchFrame
 
 	local searchIcon = Instance.new("ImageButton")
 	searchIcon.BackgroundTransparency = 1
@@ -10757,8 +10802,17 @@ function Tab:AddDropdown(opts)
 	searchIcon.Position = UDim2.new(0, 12, 0.5, 0)
 	searchIcon.AutoButtonColor = false
 	searchIcon.ImageTransparency = 1
-	searchIcon.ZIndex = Z.Content + 3
+	searchIcon.ZIndex = Z.Content + 4
 	searchIcon.Parent = searchFrame
+
+	local searchHit = Instance.new("TextButton")
+	searchHit.Text = ""
+	searchHit.AutoButtonColor = false
+	searchHit.BackgroundTransparency = 1
+	searchHit.Size = UDim2.fromOffset(SRCH_H, SRCH_H)
+	searchHit.Position = UDim2.fromOffset(0, 0)
+	searchHit.ZIndex = Z.Content + 3
+	searchHit.Parent = searchFrame
 
 	local searchInput = Instance.new("TextBox")
 	searchInput.BackgroundTransparency = 1
@@ -10776,29 +10830,30 @@ function Tab:AddDropdown(opts)
 	searchInput.Position = UDim2.new(0, 40, 0.5, 0)
 	searchInput.AnchorPoint = Vector2.new(0, 0.5)
 	searchInput.Size = UDim2.new(1, -52, 0, 18)
-	searchInput.ZIndex = Z.Content + 3
+	searchInput.ZIndex = Z.Content + 4
 	searchInput.Parent = searchFrame
 
-	-- Actions row (multi-select only)
+	-- ===== actions (multi only) =====
 	local actions
 	if isMulti then
 		actions = Instance.new("Frame")
 		actions.Name = "Actions"
 		actions.BackgroundTransparency = 1
-		actions.Size = UDim2.new(1, 0, 0, DROPDOWN_ACTION_H)
+		actions.BorderSizePixel = 0
+		actions.Size = UDim2.new(1, 0, 0, ACT_H)
 		actions.LayoutOrder = 2
-		actions.ZIndex = Z.Content + 1
+		actions.ZIndex = Z.Content + 2
 		actions.Parent = panel
 
-		local actionsLayout = Instance.new("UIListLayout")
-		actionsLayout.FillDirection = Enum.FillDirection.Horizontal
-		actionsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-		actionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		actionsLayout.Padding = UDim.new(0, 12)
-		actionsLayout.Parent = actions
+		local al = Instance.new("UIListLayout")
+		al.FillDirection = Enum.FillDirection.Horizontal
+		al.VerticalAlignment = Enum.VerticalAlignment.Center
+		al.SortOrder = Enum.SortOrder.LayoutOrder
+		al.Padding = UDim.new(0, 12)
+		al.Parent = actions
 	end
 
-	-- Options list
+	-- ===== list =====
 	local list = Instance.new("ScrollingFrame")
 	list.Name = "Options"
 	list.BackgroundTransparency = 1
@@ -10811,17 +10866,17 @@ function Tab:AddDropdown(opts)
 	list.ScrollBarImageTransparency = 1
 	list.ScrollingDirection = Enum.ScrollingDirection.Y
 	list.LayoutOrder = 3
-	list.ZIndex = Z.Content + 1
+	list.ZIndex = Z.Content + 2
 	list.Parent = panel
 
 	local listPad = Instance.new("UIPadding")
-	listPad.PaddingTop = UDim.new(0, DROPDOWN_LIST_PAD)
-	listPad.PaddingBottom = UDim.new(0, DROPDOWN_LIST_PAD)
+	listPad.PaddingTop = UDim.new(0, LIST_PAD)
+	listPad.PaddingBottom = UDim.new(0, LIST_PAD)
 	listPad.PaddingRight = UDim.new(0, 6)
 	listPad.Parent = list
 
 	local listLayout = Instance.new("UIListLayout")
-	listLayout.Padding = UDim.new(0, DROPDOWN_OPT_GAP)
+	listLayout.Padding = UDim.new(0, OPT_GAP)
 	listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	listLayout.Parent = list
 
@@ -10834,67 +10889,65 @@ function Tab:AddDropdown(opts)
 	emptyLabel.TextSize = 13
 	emptyLabel.TextTransparency = 0.55
 	emptyLabel.Visible = false
-	emptyLabel.Size = UDim2.new(1, -12, 0, DROPDOWN_OPT_H)
+	emptyLabel.Size = UDim2.new(1, -12, 0, OPT_H)
 	emptyLabel.LayoutOrder = 9999
-	emptyLabel.ZIndex = Z.Content + 2
+	emptyLabel.ZIndex = Z.Content + 3
 	emptyLabel.Parent = list
 
+	-- ===== state =====
 	local optionFrames = {}
-	local optionByName = {}
-	local popupOpen = false
+	local open_ = false
 	local searchOpen = false
-	local selectedIndex = 0
-	local wrapActive = false
+	local cardTween = nil
 
-	-- ===== state renderers =====
-	local function renderOptionState(data, animate)
-		local sel = isOptionSelected(data.name)
-		local bgT   = popupOpen and (sel and 0.9  or 0.95) or 1
-		local titleT= popupOpen and (sel and 0    or 0.3)  or 1
-		local iconT = popupOpen and (sel and 0    or 0.7)  or 1
-		local strT  = popupOpen and (sel and 0.85 or 0.93) or 1
+	-- ===== render =====
+	local function renderOption(data, animate)
+		local sel = isSelected(data.name)
+		local bgT   = open_ and (sel and 0.9  or 0.95) or 1
+		local titleT= open_ and (sel and 0    or 0.3)  or 1
+		local iconT = open_ and (sel and 0    or 0.7)  or 1
+		local strT  = open_ and (sel and 0.85 or 0.93) or 1
 
-		-- single select: check vs dot; multi: checkbox fill
 		if data.checkIcon then
 			data.checkIcon.Image = ResolveIcon(sel and "check" or (isMulti and "check" or "dot"))
 		end
 
 		if animate then
-			Tween(data.frame,  { BackgroundTransparency = bgT  }, dropdownOptTween)
-			Tween(data.title,  { TextTransparency     = titleT }, dropdownOptTween)
-			Tween(data.checkIcon, { ImageTransparency = iconT  }, dropdownOptTween)
-			Tween(data.stroke, { Transparency         = strT   }, dropdownOptTween)
+			Tween(data.frame, { BackgroundTransparency = bgT }, twOpt)
+			Tween(data.title, { TextTransparency = titleT }, twOpt)
+			Tween(data.stroke, { Transparency = strT }, twOpt)
+			if data.checkIcon then Tween(data.checkIcon, { ImageTransparency = iconT }, twOpt) end
 		else
 			data.frame.BackgroundTransparency = bgT
 			data.title.TextTransparency = titleT
-			data.checkIcon.ImageTransparency = iconT
 			data.stroke.Transparency = strT
+			if data.checkIcon then data.checkIcon.ImageTransparency = iconT end
 		end
 
-		if data.checkBg then
-			local bgSel = popupOpen and sel
+		if data.checkBg and data.checkBgIc then
+			local on = open_ and sel
 			if animate then
-				Tween(data.checkBg,   { BackgroundTransparency = bgSel and 0.05 or 0.9 }, dropdownOptTween)
-				Tween(data.checkBgIc, { ImageTransparency      = bgSel and 0    or 1  }, dropdownOptTween)
+				Tween(data.checkBg, { BackgroundTransparency = on and 0.05 or 0.9 }, twOpt)
+				Tween(data.checkBgIc, { ImageTransparency = on and 0 or 1 }, twOpt)
 			else
-				data.checkBg.BackgroundTransparency = bgSel and 0.05 or 0.9
-				data.checkBgIc.ImageTransparency    = bgSel and 0    or 1
+				data.checkBg.BackgroundTransparency = on and 0.05 or 0.9
+				data.checkBgIc.ImageTransparency = on and 0 or 1
 			end
 		end
 	end
 
-	local function updateSelectedLabel()
+	local function updateLabel()
 		valueLabel.Text = formatValue()
 	end
 
 	local function updateCorners()
-		local visible = {}
+		local vis = {}
 		for _, d in ipairs(optionFrames) do
-			if d.frame.Visible then table.insert(visible, d) end
+			if d.frame.Parent and d.frame.Visible then table.insert(vis, d) end
 		end
-		for i, d in ipairs(visible) do
-			local topR = (i == 1) and DROPDOWN_ROUND_R or DROPDOWN_FLAT_R
-			local botR = (i == #visible) and DROPDOWN_ROUND_R or DROPDOWN_FLAT_R
+		for i, d in ipairs(vis) do
+			local topR = (i == 1) and ROUND_R or FLAT_R
+			local botR = (i == #vis) and ROUND_R or FLAT_R
 			d.corner.TopLeftRadius     = topR
 			d.corner.TopRightRadius    = topR
 			d.corner.BottomLeftRadius  = botR
@@ -10902,71 +10955,64 @@ function Tab:AddDropdown(opts)
 		end
 	end
 
+	local function visibleOptions()
+		local t = {}
+		for _, d in ipairs(optionFrames) do
+			if d.frame.Visible then table.insert(t, d.name) end
+		end
+		return t
+	end
+
 	local function syncScrollHint()
 		local canvasY = list.AbsoluteCanvasSize.Y
-		local winY    = list.AbsoluteWindowSize.Y
-		local atY     = list.CanvasPosition.Y
-		local more = popupOpen and winY > 0 and (canvasY - (atY + winY) > 1)
-		Tween(list, dropdownHintTween, { ScrollBarImageTransparency = more and 0.4 or 1 })
+		local winY = list.AbsoluteWindowSize.Y
+		local atY = list.CanvasPosition.Y
+		local more = open_ and winY > 0 and (canvasY - (atY + winY) > 1)
+		Tween(list, twHint, { ScrollBarImageTransparency = more and 0.4 or 1 })
 	end
 
-	local function visibleOptions()
-		local names = {}
-		for _, d in ipairs(optionFrames) do
-			if d.frame.Visible then table.insert(names, d.name) end
-		end
-		return names
-	end
-
-	-- ===== height calc =====
 	local function openHeight()
 		local n = 0
 		for _, d in ipairs(optionFrames) do
 			if d.frame.Visible then n += 1 end
 		end
-		local searchH = searchOpen and DROPDOWN_SEARCH_HX or DROPDOWN_SEARCH_H
-		local overhead = DROPDOWN_GAP + DROPDOWN_PAD_TOP + DROPDOWN_PAD_BOT
-			+ searchH + DROPDOWN_OPT_GAP
-			+ (actions and (DROPDOWN_ACTION_H + DROPDOWN_OPT_GAP) or 0)
-
-		local available = dropdownPageHeight()
-		local rows = math.min(math.max(n, 1), DROPDOWN_MAX_VIS,
-			dropdownRowsThatFit(available - overhead))
-		return math.min(overhead + dropdownListHeight(rows), available)
+		local searchH = searchOpen and SRCH_HX or SRCH_H
+		local overhead = PAD_TOP + PAD_BOT + searchH + OPT_GAP
+			+ (actions and (ACT_H + OPT_GAP) or 0)
+		local avail = pageHeight()
+		local rows = math.min(math.max(n, 1), MAX_VIS, rowsFit(avail - overhead))
+		return overhead + listHeight(rows)
 	end
 
 	local function resizeToList()
-		if not popupOpen then return end
-		Tween(card, dropdownSearchTween,
-			{ Size = UDim2.new(1, 0, 0, headerH + openHeight()) })
+		if not open_ then return end
+		if cardTween then cardTween:Cancel() end
+		cardTween = Tween(card, twOpen, { Size = UDim2.new(1, 0, 0, TOTAL_HDR + openHeight()) })
 	end
 
-	-- ===== filter =====
-	local function applyFilter(query)
-		query = string.lower(query or "")
+	local function applyFilter(q)
+		q = string.lower(q or "")
 		local shown = 0
 		for _, d in ipairs(optionFrames) do
-			local vis = query == "" or string.find(string.lower(d.name), query, 1, true) ~= nil
+			local vis = q == "" or string.find(string.lower(d.name), q, 1, true) ~= nil
 			d.frame.Visible = vis
 			if vis then shown += 1 end
 		end
-		emptyLabel.Visible = shown == 0 and query ~= ""
+		emptyLabel.Visible = shown == 0 and q ~= ""
 		updateCorners()
 		resizeToList()
 		syncScrollHint()
 	end
 
-	-- ===== search =====
 	local function expandSearch()
 		if searchOpen then return end
 		searchOpen = true
 		searchInput.TextEditable = true
 		searchInput.Interactable = true
-		Tween(searchFrame, dropdownSearchTween,
-			{ Size = UDim2.new(1, 0, 0, DROPDOWN_SEARCH_HX), BackgroundTransparency = 0.92 })
-		Tween(searchStroke, dropdownSearchTween, { Transparency = 0.86 })
-		Tween(searchIcon,  dropdownSearchTween, { ImageTransparency = 0.5 })
-		Tween(searchInput, dropdownSearchTween, { TextTransparency = 0.3 })
+		Tween(searchFrame, twSearch, { Size = UDim2.new(1, 0, 0, SRCH_HX), BackgroundTransparency = 0.92 })
+		Tween(searchStroke, twSearch, { Transparency = 0.86 })
+		Tween(searchIcon, twSearch, { ImageTransparency = 0.5 })
+		Tween(searchInput, twSearch, { TextTransparency = 0.3 })
 		resizeToList()
 		searchInput:CaptureFocus()
 	end
@@ -10978,28 +11024,25 @@ function Tab:AddDropdown(opts)
 		searchInput.Interactable = false
 		searchInput:ReleaseFocus()
 		searchInput.Text = ""
-		Tween(searchFrame, dropdownSearchTween,
-			{ Size = UDim2.new(1, 0, 0, DROPDOWN_SEARCH_H), BackgroundTransparency = 1 })
-		Tween(searchStroke, dropdownSearchTween, { Transparency = 1 })
-		Tween(searchIcon,  dropdownSearchTween, { ImageTransparency = 1 })
-		Tween(searchInput, dropdownSearchTween, { TextTransparency = 1 })
+		Tween(searchFrame, twSearch, { Size = UDim2.new(1, 0, 0, SRCH_H), BackgroundTransparency = 1 })
+		Tween(searchStroke, twSearch, { Transparency = 1 })
+		Tween(searchIcon, twSearch, { ImageTransparency = 1 })
+		Tween(searchInput, twSearch, { TextTransparency = 1 })
 		resizeToList()
 	end
 
-	local close, open
-
 	-- ===== option build =====
-	local function buildOption(name)
+	local function buildOption(name, order)
 		local frame = Instance.new("Frame")
 		frame.Name = name
 		frame.BackgroundColor3 = NHUI.Theme.Accent
 		frame.BackgroundTransparency = 1
 		frame.BorderSizePixel = 0
-		frame.Size = UDim2.new(1, 0, 0, DROPDOWN_OPT_H)
-		frame.LayoutOrder = #optionFrames + 1
-		frame.ZIndex = Z.Content + 1
+		frame.Size = UDim2.new(1, 0, 0, OPT_H)
+		frame.LayoutOrder = order
+		frame.ZIndex = Z.Content + 3
 		frame.Parent = list
-		Corner(frame, DROPDOWN_FLAT_R)
+		Corner(frame, FLAT_R)
 
 		local corner = frame:FindFirstChildOfClass("UICorner")
 		local str = Stroke(frame, Color3.new(1, 1, 1), 1, 1)
@@ -11009,7 +11052,7 @@ function Tab:AddDropdown(opts)
 		interact.AutoButtonColor = false
 		interact.BackgroundTransparency = 1
 		interact.Size = UDim2.fromScale(1, 1)
-		interact.ZIndex = Z.Content + 5
+		interact.ZIndex = Z.Content + 10
 		interact.Parent = frame
 
 		local title = Instance.new("TextLabel")
@@ -11023,180 +11066,178 @@ function Tab:AddDropdown(opts)
 		title.TextTransparency = 1
 		title.Position = UDim2.fromOffset(14, 0)
 		title.Size = UDim2.new(1, -48, 1, 0)
-		title.ZIndex = Z.Content + 3
+		title.ZIndex = Z.Content + 4
 		title.Parent = frame
 
-		local data = { name = name, frame = frame, title = title, interact = interact,
-			stroke = str, corner = corner }
+		local data = { name = name, frame = frame, title = title, interact = interact, stroke = str, corner = corner }
 
 		if isMulti then
-			local checkBg = Instance.new("Frame")
-			checkBg.AnchorPoint = Vector2.new(1, 0.5)
-			checkBg.Position = UDim2.new(1, -14, 0.5, 0)
-			checkBg.Size = UDim2.fromOffset(14, 14)
-			checkBg.BackgroundColor3 = Color3.new(1, 1, 1)
-			checkBg.BackgroundTransparency = 0.9
-			checkBg.BorderSizePixel = 0
-			checkBg.ZIndex = Z.Content + 3
-			checkBg.Parent = frame
-			Corner(checkBg, 4)
-			Stroke(checkBg, Color3.new(1, 1, 1), 1, 0.75)
+			local cb = Instance.new("Frame")
+			cb.AnchorPoint = Vector2.new(1, 0.5)
+			cb.Position = UDim2.new(1, -14, 0.5, 0)
+			cb.Size = UDim2.fromOffset(14, 14)
+			cb.BackgroundColor3 = Color3.new(1, 1, 1)
+			cb.BackgroundTransparency = 0.9
+			cb.BorderSizePixel = 0
+			cb.ZIndex = Z.Content + 4
+			cb.Parent = frame
+			Corner(cb, 4)
+			Stroke(cb, Color3.new(1, 1, 1), 1, 0.75)
 
-			local checkBgIc = Instance.new("ImageLabel")
-			checkBgIc.BackgroundTransparency = 1
-			checkBgIc.Image = ResolveIcon("check")
-			checkBgIc.ImageColor3 = NHUI.Theme.Background
-			checkBgIc.ImageTransparency = 1
-			checkBgIc.Size = UDim2.fromOffset(10, 10)
-			checkBgIc.AnchorPoint = Vector2.new(0.5, 0.5)
-			checkBgIc.Position = UDim2.fromScale(0.5, 0.5)
-			checkBgIc.ZIndex = Z.Content + 4
-			checkBgIc.Parent = checkBg
+			local ci = Instance.new("ImageLabel")
+			ci.BackgroundTransparency = 1
+			ci.Image = ResolveIcon("check")
+			ci.ImageColor3 = NHUI.Theme.Background
+			ci.ImageTransparency = 1
+			ci.Size = UDim2.fromOffset(10, 10)
+			ci.AnchorPoint = Vector2.new(0.5, 0.5)
+			ci.Position = UDim2.fromScale(0.5, 0.5)
+			ci.ZIndex = Z.Content + 5
+			ci.Parent = cb
 
-			data.checkBg   = checkBg
-			data.checkBgIc = checkBgIc
+			data.checkBg = cb
+			data.checkBgIc = ci
 		else
-			local checkIcon = Instance.new("ImageLabel")
-			checkIcon.BackgroundTransparency = 1
-			checkIcon.Image = ResolveIcon("dot")
-			checkIcon.ImageColor3 = NHUI.Theme.Text
-			checkIcon.ImageTransparency = 1
-			checkIcon.Size = UDim2.fromOffset(14, 14)
-			checkIcon.AnchorPoint = Vector2.new(1, 0.5)
-			checkIcon.Position = UDim2.new(1, -14, 0.5, 0)
-			checkIcon.ZIndex = Z.Content + 3
-			checkIcon.Parent = frame
-			data.checkIcon = checkIcon
+			local ci = Instance.new("ImageLabel")
+			ci.BackgroundTransparency = 1
+			ci.Image = ResolveIcon("dot")
+			ci.ImageColor3 = NHUI.Theme.Text
+			ci.ImageTransparency = 1
+			ci.Size = UDim2.fromOffset(14, 14)
+			ci.AnchorPoint = Vector2.new(1, 0.5)
+			ci.Position = UDim2.new(1, -14, 0.5, 0)
+			ci.ZIndex = Z.Content + 4
+			ci.Parent = frame
+			data.checkIcon = ci
 		end
 
 		interact.MouseEnter:Connect(function()
-			if not popupOpen or not self._window:_interactive() then return end
-			if isOptionSelected(name) then return end
-			Tween(frame, { BackgroundTransparency = 0.9 }, dropdownHintTween)
-			Tween(title, { TextTransparency = 0.15 }, dropdownHintTween)
+			if not open_ then return end
+			if isSelected(name) then return end
+			Tween(frame, { BackgroundTransparency = 0.9 }, twHint)
+			Tween(title, { TextTransparency = 0.15 }, twHint)
 		end)
 		interact.MouseLeave:Connect(function()
-			if not popupOpen then return end
-			if isOptionSelected(name) then return end
-			Tween(frame, { BackgroundTransparency = 0.95 }, dropdownHintTween)
-			Tween(title, { TextTransparency = 0.3 }, dropdownHintTween)
+			if not open_ then return end
+			if isSelected(name) then return end
+			Tween(frame, { BackgroundTransparency = 0.95 }, twHint)
+			Tween(title, { TextTransparency = 0.3 }, twHint)
 		end)
-
 		interact.MouseButton1Click:Connect(function()
-			if not popupOpen then return end
-			local sel = isOptionSelected(name)
+			if not open_ then return end
 			if not isMulti then
-				if sel then return end
+				if isSelected(name) then return end
 				selected = name
-				selectedIndex = frame.LayoutOrder
-				updateSelectedLabel()
+				updateLabel()
+				for _, d in ipairs(optionFrames) do renderOption(d, true) end
 				fireChanged(selected)
-				task.wait(0.1)
-				close()
+				task.delay(0.1, function()
+					if open_ then close_() end
+				end)
 			else
 				selected[name] = (not selected[name]) or nil
-				for _, d in ipairs(optionFrames) do renderOptionState(d, true) end
-				updateSelectedLabel()
+				for _, d in ipairs(optionFrames) do renderOption(d, true) end
+				updateLabel()
 				fireChanged(getSelectedList())
 			end
 		end)
 
-		optionByName[name] = data
 		table.insert(optionFrames, data)
 		return data
 	end
 
-	-- ===== actions (multi) =====
+	-- ===== actions =====
 	if actions then
-		local function actionButton(label, order, apply)
-			local btn = Instance.new("TextButton")
-			btn.BackgroundTransparency = 1
-			btn.Text = label
-			btn.TextColor3 = NHUI.Theme.TextDim
-			btn.TextSize = 12
-			btn.FontFace = NHUI.Theme.FontRegular
-			btn.AutoButtonColor = false
-			btn.AutomaticSize = Enum.AutomaticSize.X
-			btn.Size = UDim2.fromOffset(0, DROPDOWN_ACTION_H)
-			btn.LayoutOrder = order
-			btn.ZIndex = Z.Content + 3
-			btn.Parent = actions
-			btn.TextTransparency = 0.45
+		local function actionBtn(label, order, apply)
+			local b = Instance.new("TextButton")
+			b.BackgroundTransparency = 1
+			b.Text = label
+			b.TextColor3 = NHUI.Theme.TextDim
+			b.TextSize = 12
+			b.FontFace = NHUI.Theme.FontRegular
+			b.AutoButtonColor = false
+			b.AutomaticSize = Enum.AutomaticSize.X
+			b.Size = UDim2.fromOffset(0, ACT_H)
+			b.LayoutOrder = order
+			b.ZIndex = Z.Content + 3
+			b.TextTransparency = 0.45
+			b.Parent = actions
 
-			btn.MouseEnter:Connect(function()
-				Tween(btn, dropdownHintTween, { TextTransparency = 0.15 })
+			b.MouseEnter:Connect(function()
+				Tween(b, twHint, { TextTransparency = 0.15 })
 			end)
-			btn.MouseLeave:Connect(function()
-				Tween(btn, dropdownHintTween, { TextTransparency = 0.45 })
+			b.MouseLeave:Connect(function()
+				Tween(b, twHint, { TextTransparency = 0.45 })
 			end)
-			btn.MouseButton1Click:Connect(function()
+			b.MouseButton1Click:Connect(function()
 				apply()
-				for _, d in ipairs(optionFrames) do renderOptionState(d, true) end
-				updateSelectedLabel()
+				for _, d in ipairs(optionFrames) do renderOption(d, true) end
+				updateLabel()
 				fireChanged(getSelectedList())
 			end)
 		end
 
-		actionButton("Select all", 1, function()
-			for _, n in ipairs(visibleOptions()) do
-				if not selected[n] then selected[n] = true end
-			end
+		actionBtn("Select all", 1, function()
+			for _, n in ipairs(visibleOptions()) do selected[n] = true end
 		end)
-		actionButton("Clear", 2, function()
-			for _, n in ipairs(visibleOptions()) do
-				selected[n] = nil
-			end
+		actionBtn("Clear", 2, function()
+			for _, n in ipairs(visibleOptions()) do selected[n] = nil end
 		end)
 	end
 
-	-- build all options
-	for _, opt in ipairs(options) do buildOption(opt) end
-	updateSelectedLabel()
+	-- ===== build =====
+	options = dedup(options)
+	for i, opt in ipairs(options) do
+		buildOption(opt, i)
+	end
+	updateLabel()
 	updateCorners()
 
 	-- ===== open / close =====
 	local function bringIntoView()
 		local page = self._page
 		if not page then return end
-		local view   = page.AbsoluteWindowSize
-		local at     = page.CanvasPosition
-		local pPos   = page.AbsolutePosition
-		local cPos   = card.AbsolutePosition
+		local view = page.AbsoluteWindowSize
+		local at = page.CanvasPosition
+		local pPos = page.AbsolutePosition
+		local cPos = card.AbsolutePosition
 		if view.Y <= 0 then return end
-		local top    = (cPos.Y - pPos.Y) + at.Y
-		local bottom = top + headerH + openHeight()
-		local over   = bottom - (at.Y + view.Y)
+		local top = (cPos.Y - pPos.Y) + at.Y
+		local bottom = top + TOTAL_HDR + openHeight()
+		local over = bottom - (at.Y + view.Y)
 		if over <= 0 then return end
 		local target = math.min(at.Y + over + 8, top)
 		Tween(page, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 			{ CanvasPosition = Vector2.new(at.X, target) })
 	end
 
-	function close()
-		if not popupOpen then return end
-		popupOpen = false
+	function close_()
+		if not open_ then return end
+		open_ = false
 		collapseSearch()
 		syncScrollHint()
-		Tween(chevron, dropdownChevronTw, { Rotation = 180 })
-		Tween(card, dropdownOpenTween, { Size = UDim2.new(1, 0, 0, headerH) })
-		Tween(searchIcon, dropdownOpenTween, { ImageTransparency = 1 })
-		Tween(searchFrame, dropdownOpenTween, { BackgroundTransparency = 1 })
-		for _, d in ipairs(optionFrames) do renderOptionState(d, true) end
+		Tween(chevron, twChev, { Rotation = 180 })
+		if cardTween then cardTween:Cancel() end
+		cardTween = Tween(card, twOpen, { Size = UDim2.new(1, 0, 0, HDR_H) })
+		Tween(searchIcon, twOpen, { ImageTransparency = 1 })
+		Tween(searchFrame, twOpen, { BackgroundTransparency = 1 })
+		for _, d in ipairs(optionFrames) do renderOption(d, true) end
 	end
 
-	function open()
-		if popupOpen then return end
-		popupOpen = true
-		Tween(chevron, dropdownChevronTw, { Rotation = 0 })
-		Tween(card, dropdownOpenTween, { Size = UDim2.new(1, 0, 0, headerH + openHeight()) })
-		Tween(searchIcon, dropdownOpenTween, { ImageTransparency = 0.5 })
-		for _, d in ipairs(optionFrames) do renderOptionState(d, true) end
+	function open_()
+		if open_ then return end
+		open_ = true
+		Tween(chevron, twChev, { Rotation = 0 })
+		if cardTween then cardTween:Cancel() end
+		cardTween = Tween(card, twOpen, { Size = UDim2.new(1, 0, 0, TOTAL_HDR + openHeight()) })
+		Tween(searchIcon, twOpen, { ImageTransparency = 0.5 })
+		for _, d in ipairs(optionFrames) do renderOption(d, true) end
 		syncScrollHint()
 		task.defer(bringIntoView)
 	end
 
-	topInteract.MouseButton1Click:Connect(function()
-		if popupOpen then close() else open() end
+	headerHit.MouseButton1Click:Connect(function()
+		if open_ then close_() else open_() end
 	end)
 
 	card.MouseEnter:Connect(function()
@@ -11206,8 +11247,7 @@ function Tab:AddDropdown(opts)
 		Tween(card, { BackgroundTransparency = 0.96 }, 0.15)
 	end)
 
-	-- search toggle behavior
-	searchToggle.MouseButton1Click:Connect(function()
+	searchHit.MouseButton1Click:Connect(function()
 		if not searchOpen then expandSearch() end
 	end)
 	searchIcon.MouseButton1Click:Connect(function()
@@ -11220,35 +11260,36 @@ function Tab:AddDropdown(opts)
 		if searchInput.Text == "" then collapseSearch() end
 	end)
 
-	-- close on outside click
 	jan:Add(UserInputService.InputBegan:Connect(function(input)
-		if not popupOpen then return end
+		if not open_ then return end
 		if input.UserInputType ~= Enum.UserInputType.MouseButton1
 			and input.UserInputType ~= Enum.UserInputType.Touch then return end
 		local pos = input.Position
 		local mp, ms = card.AbsolutePosition, card.AbsoluteSize
 		if pos.X < mp.X or pos.X > mp.X + ms.X
 			or pos.Y < mp.Y or pos.Y > mp.Y + ms.Y then
-			close()
+			close_()
 		end
 	end))
 
-	jan:Add(function() if popupOpen then close() end end)
+	jan:Add(function()
+		if cardTween then cardTween:Cancel() end
+		if open_ then close_() end
+	end)
 
-	-- ===== API =====
 	return RegisterFlag(opts, {
 		Instance = card,
 		Set = function(_, v, silent)
 			if isMulti then
 				selected = {}
 				if type(v) == "table" then
-					for _, name in ipairs(v) do selected[name] = true end
+					for _, n in ipairs(v) do selected[n] = true end
 				end
 			else
 				selected = v
 			end
-			updateSelectedLabel()
-			for _, d in ipairs(optionFrames) do renderOptionState(d, false) end
+			updateLabel()
+			for _, d in ipairs(optionFrames) do renderOption(d, false) end
 			if not silent then
 				fireChanged(isMulti and getSelectedList() or selected)
 			end
@@ -11258,20 +11299,20 @@ function Tab:AddDropdown(opts)
 			return selected
 		end,
 		SetOptions = function(_, newOptions)
-			-- destroy + rebuild
 			for _, d in ipairs(optionFrames) do d.frame:Destroy() end
 			table.clear(optionFrames)
-			table.clear(optionByName)
-			options = dropdownDedup(newOptions or {})
-			for _, opt in ipairs(options) do buildOption(opt) end
+			options = dedup(newOptions or {})
+			for i, opt in ipairs(options) do buildOption(opt, i) end
 			if not isMulti then
-				if not table.find(options, selected) then
-					selected = options[1]
-				end
+				if not table.find(options, selected) then selected = options[1] end
 			else
-				selected = {}
+				local keep = {}
+				for _, n in ipairs(options) do
+					if selected[n] then keep[n] = true end
+				end
+				selected = keep
 			end
-			updateSelectedLabel()
+			updateLabel()
 			updateCorners()
 			applyFilter(searchOpen and searchInput.Text or "")
 		end,
@@ -11279,17 +11320,17 @@ function Tab:AddDropdown(opts)
 			if newOptions then
 				for _, d in ipairs(optionFrames) do d.frame:Destroy() end
 				table.clear(optionFrames)
-				table.clear(optionByName)
-				options = dropdownDedup(newOptions)
-				for _, opt in ipairs(options) do buildOption(opt) end
+				options = dedup(newOptions)
+				for i, opt in ipairs(options) do buildOption(opt, i) end
 			end
-			updateSelectedLabel()
+			updateLabel()
 			updateCorners()
 			applyFilter(searchOpen and searchInput.Text or "")
 		end,
 		OnChanged = function(_, fn) return signal.Connect(fn) end,
 		Destroy = function()
-			if popupOpen then close() end
+			if cardTween then cardTween:Cancel() end
+			if open_ then close_() end
 			signal.Clear()
 			card:Destroy()
 		end,
