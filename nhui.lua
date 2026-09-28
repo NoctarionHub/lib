@@ -2898,7 +2898,7 @@ function Window:AddPanelTab(opts)
 		Icon   = opts.Icon,
 		Hidden = opts.Hidden ~= false,
 	})
-	tabObj._page.Visible = false
+	--tabObj._page.Visible = false
 	local staleEmptyState = tabObj._group:FindFirstChild("EmptyState")
 	if staleEmptyState then staleEmptyState.Visible = false end
  
