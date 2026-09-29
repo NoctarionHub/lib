@@ -2555,12 +2555,20 @@ function NHUI:LoadingScreen(opts)
 	bannerImage.ZIndex = 5001
 	bannerImage.Parent = holder
 
-	-- fade in
-	NHUI.Tween(bannerImage, { ImageTransparency = 0 }, fadeIn, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	local t1 = TweenService:Create(
+		bannerImage,
+		TweenInfo.new(fadeIn, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+		{ ImageTransparency = 0 }
+	)
+	t1:Play()
 
-	-- tunggu, terus fade out + destroy
 	task.delay(fadeIn + holdTime, function()
-		NHUI.Tween(bannerImage, { ImageTransparency = 1 }, fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		local t2 = TweenService:Create(
+			bannerImage,
+			TweenInfo.new(fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+			{ ImageTransparency = 1 }
+		)
+		t2:Play()
 		task.delay(fadeOut + 0.05, function()
 			if holder and holder.Parent then
 				holder:Destroy()
