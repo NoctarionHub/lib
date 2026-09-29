@@ -11172,7 +11172,7 @@ function Tab:AddDropdown(opts)
 	local jan = self._janitor
 
 	local GAP        = 1
-	local PAD_TOP    = 3
+	local PAD_TOP    = 1
 	local PAD_BOT    = 6
 	local OPT_H      = 38
 	local OPT_GAP    = 5
