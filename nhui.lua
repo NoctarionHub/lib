@@ -2384,7 +2384,7 @@ local function BaseCard(parent, height)
 	return card
 end
  
-local function AddLeadingIcon(card, icon, height, anchorTop)
+local function AddLeadingIcon(card, icon, height)
 	local asset = icon and ResolveIcon(icon) or ""
 	if asset == "" then return 14, nil end
  
@@ -2394,13 +2394,8 @@ local function AddLeadingIcon(card, icon, height, anchorTop)
 	img.Image = asset
 	img.ImageColor3 = NHUI.Theme.TextDim
 	img.Size = UDim2.fromOffset(16, 16)
-	if anchorTop then
-		img.AnchorPoint = Vector2.new(0, 0)
-		img.Position = UDim2.fromOffset(14, math.floor((height - 16) / 2))
-	else
-		img.AnchorPoint = Vector2.new(0, 0.5)
-		img.Position = UDim2.new(0, 14, 0.5, 0)
-	end
+	img.AnchorPoint = Vector2.new(0, 0.5)
+	img.Position = UDim2.new(0, 14, 0.5, 0)
 	img.ZIndex = Z.Content + 1
 	img.Parent = card
 	return 14 + 16 + 10, img
@@ -11277,6 +11272,11 @@ function Tab:AddDropdown(opts)
 	card.Size = UDim2.new(1, 0, 0, headerH)
 
 	local textX = AddLeadingIcon(card, opts.Icon, headerH)
+local leadingIcon = card:FindFirstChild("LeadingIcon")
+if leadingIcon then
+    leadingIcon.AnchorPoint = Vector2.new(0, 0)
+    leadingIcon.Position = UDim2.fromOffset(14, math.floor((headerH - 16) / 2))
+end
 	AddTitleDesc(card, textX, 166, opts.Text or "Dropdown", opts.Description, headerH)
 	self._window:_RegisterSearchable(self, opts.Text or "Dropdown", card)
 
@@ -11911,14 +11911,7 @@ function Tab:AddTextbox(opts)
 	local height = hasDesc and 56 or 44
 	local card = BaseCard(self._page, height)
  
-	local textX = AddLeadingIcon(card, opts.Icon, height, true)
-
-	local leadingIcon = card:FindFirstChild("LeadingIcon")
-if leadingIcon then
-    leadingIcon.AnchorPoint = Vector2.new(0, 0)
-    leadingIcon.Position = UDim2.fromOffset(14, (headerH - 16) / 2)
-end
- 
+	local textX = AddLeadingIcon(card, opts.Icon, height)
 	local iconGap, rightPad, pillMinW = 29, 12, 90
 	local titleReserve = pillMinW + 26
  
@@ -12126,6 +12119,11 @@ function Tab:AddColorPicker(opts)
 	card.Size = UDim2.new(1, 0, 0, headerH)
 
 	local textX = AddLeadingIcon(card, opts.Icon, headerH)
+local leadingIcon = card:FindFirstChild("LeadingIcon")
+if leadingIcon then
+    leadingIcon.AnchorPoint = Vector2.new(0, 0)
+    leadingIcon.Position = UDim2.fromOffset(14, math.floor((headerH - 16) / 2))
+end
 	AddTitleDesc(card, textX, 52, opts.Text or "Color", opts.Description, headerH)
 	self._window:_RegisterSearchable(self, opts.Text or "Color", card)
 
