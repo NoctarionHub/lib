@@ -626,6 +626,20 @@ local Z = {
 	Modal    = 800,
 	ModalTop = 810,
 }
+
+local function Tween(instance, props, duration, style, direction)
+	local t = TweenService:Create(
+		instance,
+		TweenInfo.new(
+			math.max(duration or 0.25, 0),
+			style or Enum.EasingStyle.Quint,
+			direction or Enum.EasingDirection.Out
+		),
+		props
+	)
+	t:Play()
+	return t
+end
  
 local function tw(instance, a, b, ...)
 	local props, info
@@ -2994,18 +3008,22 @@ function NHUI:CreateWindow(opts)
 		task.spawn(SetupDiscordInvite, opts.Discord)
 	end
 
-	task.spawn(function()
+	if banner then
 		local loadingOpts = opts.Loading or {}
 		local fadeIn  = loadingOpts.FadeIn  or 0.3
 		local fadeOut = loadingOpts.FadeOut or 0.4
 		local hold    = loadingOpts.HoldTime or 0.8
 
-		task.wait(fadeIn + hold + fadeOut + 0.1)
-		if banner then banner:Destroy() end
-		if not self._destroyed then
-			self:Open()
-		end
-	end)
+		task.spawn(function()
+			task.wait(fadeIn + hold + fadeOut + 0.1)
+			banner:Destroy()
+			if not self._destroyed then
+				self:Open()
+			end
+		end)
+	else
+		self:Open()
+	end
 
 	return self
 end
