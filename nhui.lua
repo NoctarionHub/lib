@@ -2695,7 +2695,7 @@ function NHUI:CreateWindow(opts)
 	local tagLayout = Instance.new("UIListLayout")
 	tagLayout.FillDirection = Enum.FillDirection.Horizontal
 	tagLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	tagLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	tagLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 	tagLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	tagLayout.Padding = UDim.new(0, 5)
 	tagLayout.Parent = tagContainer
