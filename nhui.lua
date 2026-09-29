@@ -627,6 +627,21 @@ local Z = {
 	ModalTop = 810,
 }
  
+local function tw(instance, a, b, ...)
+	local props, info
+	if typeof(a) == "TweenInfo" then
+		info, props = a, b
+	else
+		props, info = a, b
+	end
+	if typeof(info) == "TweenInfo" then
+		local t = TweenService:Create(instance, info, props)
+		t:Play()
+		return t
+	end
+	return Tween(instance, props, info or 0.25, ...)
+end
+ 
 local function Corner(parent, radius)
 	local c = Instance.new("UICorner")
 	c.CornerRadius = UDim.new(0, radius or NHUI.Theme.CornerRadius)
@@ -1298,20 +1313,6 @@ local TOAST_GROW_INFO  = TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.E
 local TOAST_FADE_LONG  = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
 local TOAST_FADE_SHORT = TweenInfo.new(0.3, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
 local TOAST_SHRINK_INFO = TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-
-local function Tween(instance, props, duration, style, direction)
-	local t = TweenService:Create(
-		instance,
-		TweenInfo.new(
-			math.max(duration or 0.25, 0),
-			style or Enum.EasingStyle.Quint,
-			direction or Enum.EasingDirection.Out
-		),
-		props
-	)
-	t:Play()
-	return t
-end
 
 local function ToastAutoDuration(text)
 	return math.clamp(#tostring(text or "") * 0.06 + 3, 3, 9)
