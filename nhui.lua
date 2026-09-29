@@ -2556,11 +2556,11 @@ function NHUI:LoadingScreen(opts)
 	bannerImage.Parent = holder
 
 	-- fade in
-	Tween(bannerImage, { ImageTransparency = 0 }, fadeIn, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	NHUI.Tween(bannerImage, { ImageTransparency = 0 }, fadeIn, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
 	-- tunggu, terus fade out + destroy
 	task.delay(fadeIn + holdTime, function()
-		Tween(bannerImage, { ImageTransparency = 1 }, fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		NHUI.Tween(bannerImage, { ImageTransparency = 1 }, fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 		task.delay(fadeOut + 0.05, function()
 			if holder and holder.Parent then
 				holder:Destroy()
@@ -2571,7 +2571,7 @@ function NHUI:LoadingScreen(opts)
 	return {
 		Instance = holder,
 		Destroy = function()
-			Tween(bannerImage, { ImageTransparency = 1 }, fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			NHUI.Tween(bannerImage, { ImageTransparency = 1 }, fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 			task.delay(fadeOut + 0.05, function()
 				if holder and holder.Parent then
 					holder:Destroy()
