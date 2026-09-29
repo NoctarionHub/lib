@@ -11359,19 +11359,19 @@ end
 	searchIcon.ImageColor3 = NHUI.Theme.TextDim
 	searchIcon.Size = UDim2.fromOffset(16, 16)
 	searchIcon.AnchorPoint = Vector2.new(0, 0.5)
-	searchIcon.Position = UDim2.new(0, 12, 0.5, -4)
+	searchIcon.Position = UDim2.new(0, 12, 0.5, 0)
 	searchIcon.AutoButtonColor = false
 	searchIcon.ImageTransparency = 0
 	searchIcon.ZIndex = Z.Content + 4
 	searchIcon.Parent = searchFrame
 
-	local searchHit = Instance.new("TextButton")
+	--[[local searchHit = Instance.new("TextButton")
 	searchHit.Text = ""
 	searchHit.AutoButtonColor = false
 	searchHit.BackgroundTransparency = 1
 	searchHit.Size = UDim2.fromOffset(SRCH_H, SRCH_H)
 	searchHit.ZIndex = Z.Content + 3
-	searchHit.Parent = searchFrame
+	searchHit.Parent = searchFrame]]
 
 	local searchInput = Instance.new("TextBox")
 	searchInput.BackgroundTransparency = 1
@@ -11818,9 +11818,9 @@ end
 	searchHit.MouseButton1Click:Connect(function()
 		if not searchOpen then expandSearch() end
 	end)
-	searchIcon.MouseButton1Click:Connect(function()
+	--[[searchIcon.MouseButton1Click:Connect(function()
 		if searchOpen then collapseSearch() else expandSearch() end
-	end)
+	end)]]
 	searchInput:GetPropertyChangedSignal("Text"):Connect(function()
 		applyFilter(searchInput.Text)
 	end)
