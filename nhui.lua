@@ -2543,10 +2543,10 @@ function NHUI:LoadingScreen(opts)
 	opts = opts or {}
 	local bannerAsset = opts.Banner or NHUI_BANNER_ASSET
 	local bannerSize  = opts.BannerSize or 262
-	local holdTime    = opts.HoldTime or 0.8
-	local fadeIn      = opts.FadeIn or 0.3
-	local fadeOut     = opts.FadeOut or 0.4
-	local gap         = opts.Gap or 0.5   -- jeda setelah banner hilang (Rayfield style)
+	local holdTime    = opts.HoldTime or 0.25
+	local fadeIn      = opts.FadeIn or 0.15
+	local fadeOut     = opts.FadeOut or 0.2
+	local gap         = opts.Gap or 0.3   -- jeda setelah banner hilang (Rayfield style)
 
 	local holder = Instance.new("Frame")
 	holder.Name = "NHUI_LoadingBanner"
