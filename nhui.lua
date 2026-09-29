@@ -2685,8 +2685,8 @@ function NHUI:CreateWindow(opts)
 	local tagContainer = Instance.new("Frame")
 	tagContainer.Name = "TagContainer"
 	tagContainer.BackgroundTransparency = 1
-	tagContainer.AnchorPoint = Vector2.new(1, 0.5)
-	tagContainer.Position = UDim2.new(1, -controlsHolder.Size.X.Offset - margin - 8, 0.5, 0)
+	tagContainer.AnchorPoint = Vector2.new(0, 0.5)
+	tagContainer.Position = UDim2.new(0, titleStartX, 0.5, 0)
 	tagContainer.Size = UDim2.fromOffset(0, 24)
 	tagContainer.AutomaticSize = Enum.AutomaticSize.X
 	tagContainer.ZIndex = Z.Content + 1
@@ -2697,7 +2697,7 @@ function NHUI:CreateWindow(opts)
 	tagLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 	tagLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 	tagLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	tagLayout.Padding = UDim.new(0, 5)
+	tagLayout.Padding = UDim.new(0, 6)
 	tagLayout.Parent = tagContainer
  
 	local tabBar = Instance.new("ScrollingFrame")
