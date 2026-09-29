@@ -2543,8 +2543,8 @@ function NHUI:LoadingScreen(opts)
 	opts = opts or {}
 	local bannerAsset = opts.Banner or NHUI_BANNER_ASSET
 	local bannerSize  = opts.BannerSize or 262
-	local holdTime    = opts.HoldTime or 0.5   -- berapa lama banner diam
-	local gap         = opts.Gap or 0.5        -- jeda setelah banner hilang, sebelum window muncul
+	local holdTime    = opts.HoldTime or 0.5
+	local gap         = opts.Gap or 0.5
 
 	local holder = Instance.new("Frame")
 	holder.Name = "NHUI_LoadingBanner"
@@ -2564,49 +2564,30 @@ function NHUI:LoadingScreen(opts)
 	bannerImage.Image = bannerAsset
 	bannerImage.Position = UDim2.new(0.5, -26, 0.5, 0)
 	bannerImage.Size = UDim2.fromOffset(bannerSize, bannerSize)
-	bannerImage.ImageTransparency = 0   -- LANGSUNG MUNCUL, gak fade in
+	bannerImage.ImageTransparency = 0
 	bannerImage.ZIndex = 5001
 	bannerImage.Parent = holder
 
-	-- state
-	local finished = false
-	local finishCallbacks = {}
+	local destroyed = false
 
-	local function fireFinished()
-		if finished then return end
-		finished = true
-		for _, cb in ipairs(finishCallbacks) do
-			task.spawn(cb)
-		end
-		table.clear(finishCallbacks)
-	end
-
-	-- jadwal: diam → destroy
+	-- banner hilang setelah holdTime
 	task.delay(holdTime, function()
-		if finished then return end
+		if destroyed then return end
+		destroyed = true
 		if holder and holder.Parent then
 			holder:Destroy()
 		end
-		fireFinished()
 	end)
 
 	return {
 		Instance = holder,
 
-		Duration = holdTime,
-
-		Gap = gap,
-
-		OnFinished = function(callback)
-			if finished then
-				task.spawn(callback)
-				return
-			end
-			table.insert(finishCallbacks, callback)
-		end,
+		-- TOTAL waktu dari sekarang sampai window boleh muncul:
+		-- holdTime (banner diam) + gap (jeda sebelum window)
+		TotalDuration = holdTime + gap,
 
 		Destroy = function()
-			finished = true
+			destroyed = true
 			if holder and holder.Parent then
 				holder:Destroy()
 			end
@@ -3047,7 +3028,7 @@ function NHUI:CreateWindow(opts)
 
     banner.OnFinished(function()
         if self._destroyed then return end
-        task.wait(gap)
+        task.wait(totalWait)
         if not self._destroyed then
             self:Open()
         end
