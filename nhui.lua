@@ -11171,26 +11171,22 @@ function Tab:AddDropdown(opts)
 	local headerH = hasDesc and 56 or 44
 	local jan = self._janitor
 
-	local GAP        = 1
-	local PAD_TOP    = 1
-	local PAD_BOT    = 3
+	local GAP        = 6
+	local PAD_TOP    = 3
+	local PAD_BOT    = 6
 	local OPT_H      = 38
 	local OPT_GAP    = 5
 	local LIST_PAD   = 2
 	local MAX_VIS    = 5
 	local ACT_H      = 22
-	local SRCH_H     = 30
-	local SRCH_HX    = 38
 	local ROUND_R    = UDim.new(0, 12)
 	local FLAT_R     = UDim.new(0, 7)
 
 	local twOpen   = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-	local twSearch = TweenInfo.new(0.3, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
 	local twChev   = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
 	local twHint   = TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	local twOpt    = TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
-	-- Helper: aman untuk TweenInfo atau number
 	local function tw(instance, props, info)
 		if typeof(info) == "TweenInfo" then
 			local t = TweenService:Create(instance, info, props)
@@ -11272,11 +11268,11 @@ function Tab:AddDropdown(opts)
 	card.Size = UDim2.new(1, 0, 0, headerH)
 
 	local textX = AddLeadingIcon(card, opts.Icon, headerH)
-local leadingIcon = card:FindFirstChild("LeadingIcon")
-if leadingIcon then
-    leadingIcon.AnchorPoint = Vector2.new(0, 0)
-    leadingIcon.Position = UDim2.fromOffset(14, math.floor((headerH - 16) / 2))
-end
+	local leadingIcon = card:FindFirstChild("LeadingIcon")
+	if leadingIcon then
+		leadingIcon.AnchorPoint = Vector2.new(0, 0)
+		leadingIcon.Position = UDim2.fromOffset(14, math.floor((headerH - 16) / 2))
+	end
 	AddTitleDesc(card, textX, 166, opts.Text or "Dropdown", opts.Description, headerH)
 	self._window:_RegisterSearchable(self, opts.Text or "Dropdown", card)
 
@@ -11338,60 +11334,6 @@ end
 	panelLayout.Padding = UDim.new(0, OPT_GAP)
 	panelLayout.Parent = panel
 
-	-- search
-	local searchFrame = Instance.new("Frame")
-	searchFrame.Name = "Search"
-	searchFrame.BackgroundColor3 = Color3.new(1, 1, 1)
-	searchFrame.BackgroundTransparency = 1
-	searchFrame.BorderSizePixel = 0
-	searchFrame.Size = UDim2.new(1, 0, 0, SRCH_H)
-	searchFrame.LayoutOrder = 1
-	searchFrame.ClipsDescendants = true
-	searchFrame.ZIndex = Z.Content + 1
-	searchFrame.Parent = panel
-	Corner(searchFrame, 10)
-
-	local searchStroke = Stroke(searchFrame, Color3.new(1, 1, 1), 1, 1)
-
-	local searchIcon = Instance.new("ImageButton")
-	searchIcon.BackgroundTransparency = 1
-	searchIcon.Image = ResolveIcon("search")
-	searchIcon.ImageColor3 = NHUI.Theme.TextDim
-	searchIcon.Size = UDim2.fromOffset(16, 16)
-	searchIcon.AnchorPoint = Vector2.new(0, 0.5)
-	searchIcon.Position = UDim2.new(0, 12, 0.5, 0)
-	searchIcon.AutoButtonColor = false
-	searchIcon.ImageTransparency = 0
-	searchIcon.ZIndex = Z.Content + 4
-	searchIcon.Parent = searchFrame
-
-	local searchHit = Instance.new("TextButton")
-	searchHit.Text = ""
-	searchHit.AutoButtonColor = false
-	searchHit.BackgroundTransparency = 1
-	searchHit.Size = UDim2.fromOffset(SRCH_H, SRCH_H)
-	searchHit.ZIndex = Z.Content + 3
-	searchHit.Parent = searchFrame
-
-	local searchInput = Instance.new("TextBox")
-	searchInput.BackgroundTransparency = 1
-	searchInput.ClearTextOnFocus = false
-	searchInput.FontFace = NHUI.Theme.FontRegular
-	searchInput.PlaceholderText = "Search..."
-	searchInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 122)
-	searchInput.Text = ""
-	searchInput.TextColor3 = NHUI.Theme.Text
-	searchInput.TextSize = 14
-	searchInput.TextXAlignment = Enum.TextXAlignment.Left
-	searchInput.TextEditable = false
-	searchInput.Interactable = false
-	searchInput.TextTransparency = 1
-	searchInput.Position = UDim2.new(0, 40, 0.5, 0)
-	searchInput.AnchorPoint = Vector2.new(0, 0.5)
-	searchInput.Size = UDim2.new(1, -52, 0, 18)
-	searchInput.ZIndex = Z.Content + 4
-	searchInput.Parent = searchFrame
-
 	-- actions (multi)
 	local actions
 	if isMulti then
@@ -11400,7 +11342,7 @@ end
 		actions.BackgroundTransparency = 1
 		actions.BorderSizePixel = 0
 		actions.Size = UDim2.new(1, 0, 0, ACT_H)
-		actions.LayoutOrder = 2
+		actions.LayoutOrder = 1
 		actions.ZIndex = Z.Content + 1
 		actions.Parent = panel
 
@@ -11424,7 +11366,7 @@ end
 	list.ScrollBarImageColor3 = NHUI.Theme.TextDim
 	list.ScrollBarImageTransparency = 1
 	list.ScrollingDirection = Enum.ScrollingDirection.Y
-	list.LayoutOrder = 3
+	list.LayoutOrder = 2
 	list.ZIndex = Z.Content + 1
 	list.Parent = panel
 
@@ -11453,7 +11395,6 @@ end
 
 	local optionFrames = {}
 	local ddOpen = false
-	local searchOpen = false
 	local cardTween = nil
 
 	local openDropdown_
@@ -11538,8 +11479,7 @@ end
 		for _, d in ipairs(optionFrames) do
 			if d.frame.Visible then n += 1 end
 		end
-		local searchH = searchOpen and SRCH_HX or SRCH_H
-		local overhead = PAD_TOP + PAD_BOT + searchH + OPT_GAP
+		local overhead = PAD_TOP + PAD_BOT
 			+ (actions and (ACT_H + OPT_GAP) or 0)
 		local avail = pageHeight()
 		local rows = math.min(math.max(n, 1), MAX_VIS, rowsFit(avail - overhead))
@@ -11560,47 +11500,6 @@ end
 		if cardTween then cardTween:Cancel() end
 		cardTween = tw(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
 		list.Size = UDim2.new(1, 0, 0, listSize())
-	end
-
-	local function applyFilter(q)
-		q = string.lower(q or "")
-		local shown = 0
-		for _, d in ipairs(optionFrames) do
-			local vis = q == "" or string.find(string.lower(d.name), q, 1, true) ~= nil
-			d.frame.Visible = vis
-			if vis then shown += 1 end
-		end
-		emptyLabel.Visible = shown == 0 and q ~= ""
-		updateCorners()
-		resizeToList()
-		syncScrollHint()
-	end
-
-	local function expandSearch()
-		if searchOpen then return end
-		searchOpen = true
-		searchInput.TextEditable = true
-		searchInput.Interactable = true
-		tw(searchFrame, { Size = UDim2.new(1, 0, 0, SRCH_HX) }, twSearch)
-		tw(searchStroke, { Transparency = 0.86 }, twSearch)
-		tw(searchIcon, { ImageTransparency = 0.5 }, twSearch)
-		tw(searchInput, { TextTransparency = 0.3 }, twSearch)
-		resizeToList()
-		searchInput:CaptureFocus()
-	end
-
-	local function collapseSearch()
-		if not searchOpen then return end
-		searchOpen = false
-		searchInput.TextEditable = false
-		searchInput.Interactable = false
-		searchInput:ReleaseFocus()
-		searchInput.Text = ""
-		tw(searchFrame, { Size = UDim2.new(1, 0, 0, SRCH_H) }, twSearch)
-		tw(searchStroke, { Transparency = 1 }, twSearch)
-		tw(searchIcon, { ImageTransparency = 0 }, twSearch)
-		tw(searchInput, { TextTransparency = 1 }, twSearch)
-		resizeToList()
 	end
 
 	local function buildOption(name, order)
@@ -11784,7 +11683,6 @@ end
 	closeDropdown_ = function()
 		if not ddOpen then return end
 		ddOpen = false
-		collapseSearch()
 		syncScrollHint()
 		tw(chevron, { Rotation = 180 }, twChev)
 		if cardTween then cardTween:Cancel() end
@@ -11813,19 +11711,6 @@ end
 	end)
 	card.MouseLeave:Connect(function()
 		Tween(card, { BackgroundTransparency = 0.96 }, 0.15)
-	end)
-
-	searchHit.MouseButton1Click:Connect(function()
-		if not searchOpen then expandSearch() end
-	end)
-	searchIcon.MouseButton1Click:Connect(function()
-		if searchOpen then collapseSearch() else expandSearch() end
-	end)
-	searchInput:GetPropertyChangedSignal("Text"):Connect(function()
-		applyFilter(searchInput.Text)
-	end)
-	searchInput.FocusLost:Connect(function()
-		if searchInput.Text == "" then collapseSearch() end
 	end)
 
 	jan:Add(UserInputService.InputBegan:Connect(function(input)
@@ -11882,7 +11767,6 @@ end
 			end
 			updateLabel()
 			updateCorners()
-			applyFilter(searchOpen and searchInput.Text or "")
 		end,
 		Refresh = function(_, newOptions)
 			if newOptions then
@@ -11893,7 +11777,6 @@ end
 			end
 			updateLabel()
 			updateCorners()
-			applyFilter(searchOpen and searchInput.Text or "")
 		end,
 		OnChanged = function(_, fn) return signal.Connect(fn) end,
 		Destroy = function()
