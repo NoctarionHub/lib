@@ -2820,7 +2820,7 @@ function NHUI:CreateWindow(opts)
 		Tween(resizeHandle, { ImageTransparency = 0.35 }, 0.12)
 	end))
  
-	Tween(main, { BackgroundTransparency = 0.15 }, 0.6, Enum.EasingStyle.Exponential)
+	--Tween(main, { BackgroundTransparency = 0.15 }, 0.6, Enum.EasingStyle.Exponential)
  
 	local self = setmetatable({
 		_gui            = main,
