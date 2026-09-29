@@ -2546,6 +2546,7 @@ function NHUI:LoadingScreen(opts)
 	local holdTime    = opts.HoldTime or 0.8
 	local fadeIn      = opts.FadeIn or 0.3
 	local fadeOut     = opts.FadeOut or 0.4
+	local gap         = opts.Gap or 0.5   -- jeda setelah banner hilang (Rayfield style)
 
 	local holder = Instance.new("Frame")
 	holder.Name = "NHUI_LoadingBanner"
@@ -2571,28 +2572,64 @@ function NHUI:LoadingScreen(opts)
 
 	local tweenService = game:GetService("TweenService")
 
+	-- state
+	local finished = false
+	local finishCallbacks = {}
+
+	local function fireFinished()
+		if finished then return end
+		finished = true
+		for _, cb in ipairs(finishCallbacks) do
+			task.spawn(cb)
+		end
+		table.clear(finishCallbacks)
+	end
+
+	-- fade in
 	tweenService:Create(
 		bannerImage,
 		TweenInfo.new(fadeIn, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 		{ ImageTransparency = 0 }
 	):Play()
 
+	-- jadwal: hold → fade out → destroy
 	task.delay(fadeIn + holdTime, function()
+		if finished then return end
+
 		tweenService:Create(
 			bannerImage,
 			TweenInfo.new(fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 			{ ImageTransparency = 1 }
 		):Play()
+
 		task.delay(fadeOut + 0.05, function()
 			if holder and holder.Parent then
 				holder:Destroy()
 			end
+			fireFinished()
 		end)
 	end)
 
 	return {
 		Instance = holder,
+
+		-- total durasi banner tampil sampai hilang
+		Duration = fadeIn + holdTime + fadeOut + 0.05,
+
+		-- gap default (bisa di-override dari opts.Gap)
+		Gap = gap,
+
+		-- dipanggil kalau banner udah bener-bener hilang
+		OnFinished = function(callback)
+			if finished then
+				task.spawn(callback)
+				return
+			end
+			table.insert(finishCallbacks, callback)
+		end,
+
 		Destroy = function()
+			finished = true
 			tweenService:Create(
 				bannerImage,
 				TweenInfo.new(fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
@@ -3035,21 +3072,20 @@ function NHUI:CreateWindow(opts)
 	end
 
 	if banner then
-		local loadingOpts = opts.Loading or {}
-		local fadeIn  = loadingOpts.FadeIn  or 0.3
-		local fadeOut = loadingOpts.FadeOut or 0.4
-		local hold    = loadingOpts.HoldTime or 0.8
+    local loadingOpts = opts.Loading or {}
+    local gap = loadingOpts.Gap or banner.Gap or 0.5
 
-		task.spawn(function()
-			task.wait(fadeIn + hold + fadeOut + 0.1)
-			banner:Destroy()
-			if not self._destroyed then
-				self:Open()
-			end
-		end)
-	else
-		self:Open()
-	end
+    -- tunggu banner bener-bener hilang, baru tunggu gap, baru Open()
+    banner.OnFinished(function()
+        if self._destroyed then return end
+        task.wait(gap)
+        if not self._destroyed then
+            self:Open()
+        end
+    end)
+else
+    self:Open()
+end
 
 	return self
 end
