@@ -11319,7 +11319,7 @@ end
 	panel.Name = "Panel"
 	panel.BackgroundTransparency = 1
 	panel.BorderSizePixel = 0
-	panel.Position = UDim2.fromOffset(0, headerH + GAP)
+	panel.Position = UDim2.fromOffset(0, headerH, 0)
 	panel.Size = UDim2.new(1, 0, 1, -(headerH + GAP))
 	panel.ZIndex = Z.Content
 	panel.ClipsDescendants = true
