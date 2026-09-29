@@ -631,10 +631,13 @@ local function Tween(instance, a, b, c, d)
 	local props, info
 
 	if typeof(a) == "TweenInfo" then
+		-- Tween(instance, TweenInfo, props)
 		info, props = a, b
 	elseif typeof(b) == "TweenInfo" then
+		-- Tween(instance, props, TweenInfo)
 		props, info = a, b
 	else
+		-- Tween(instance, props, duration, style, direction)
 		props = a
 		info = TweenInfo.new(
 			math.max(tonumber(b) or 0.25, 0),
@@ -643,8 +646,8 @@ local function Tween(instance, a, b, c, d)
 		)
 	end
 
-	if type(props) ~= "table" then
-		warn("[NHUI Tween] props must table, got:", typeof(props))
+	if type(props) ~= "table" or typeof(info) ~= "TweenInfo" then
+		warn("args not valid", typeof(a), typeof(b))
 		return nil
 	end
 
@@ -3138,9 +3141,13 @@ function Window:AddTag(opts)
 	function api.SetColor(_, newColor)
 		color = newColor
 		contrast = ContrastColor(color)
-		Tween(chip, { BackgroundColor3 = color }, 0.18)
-		if iconLabel then Tween(iconLabel, { ImageColor3 = contrast }, 0.18) end
-		if label then Tween(label, { TextColor3 = contrast }, 0.18) end
+		TweenService:Create(chip, TweenInfo.new(0.18), { BackgroundColor3 = color }):Play()
+		if iconLabel then
+			TweenService:Create(iconLabel, TweenInfo.new(0.18), { ImageColor3 = contrast }):Play()
+		end
+		if label then
+			TweenService:Create(label, TweenInfo.new(0.18), { TextColor3 = contrast }):Play()
+		end
 	end
 
 	function api.SetText(_, newText)
@@ -3164,7 +3171,7 @@ function Window:AddTag(opts)
 			label.ZIndex = Z.Content + 3
 			label.Parent = chip
 			api.Label = label
-			Tween(label, { TextTransparency = 0 }, 0.18)
+			TweenService:Create(label, TweenInfo.new(0.18), { TextTransparency = 0 }):Play()
 		end
 	end
 
@@ -3173,9 +3180,9 @@ function Window:AddTag(opts)
 		if iconLabel then
 			if newIcon and newIcon ~= "" then
 				iconLabel.Image = ResolveIcon(newIcon)
-				Tween(iconLabel, { ImageTransparency = 0 }, 0.18)
+				TweenService:Create(iconLabel, TweenInfo.new(0.18), { ImageTransparency = 0 }):Play()
 			else
-				Tween(iconLabel, { ImageTransparency = 1 }, 0.18)
+				TweenService:Create(iconLabel, TweenInfo.new(0.18), { ImageTransparency = 1 }):Play()
 			end
 		elseif newIcon and newIcon ~= "" then
 			iconLabel = Instance.new("ImageLabel")
@@ -3188,7 +3195,7 @@ function Window:AddTag(opts)
 			iconLabel.ZIndex = Z.Content + 3
 			iconLabel.Parent = chip
 			api.Icon = iconLabel
-			Tween(iconLabel, { ImageTransparency = 0 }, 0.18)
+			TweenService:Create(iconLabel, TweenInfo.new(0.18), { ImageTransparency = 0 }):Play()
 		end
 	end
 
@@ -3206,9 +3213,16 @@ function Window:AddTag(opts)
 			end
 		end
 		if chip and chip.Parent then
-			Tween(chip, { BackgroundTransparency = 1, Size = UDim2.fromOffset(0, 24) }, 0.18)
-			Tween(label, { TextTransparency = 1 }, 0.18)
-			Tween(iconLabel, { ImageTransparency = 1 }, 0.18)
+			TweenService:Create(chip, TweenInfo.new(0.18), {
+				BackgroundTransparency = 1,
+				Size = UDim2.fromOffset(0, 24),
+			}):Play()
+			if label then
+				TweenService:Create(label, TweenInfo.new(0.18), { TextTransparency = 1 }):Play()
+			end
+			if iconLabel then
+				TweenService:Create(iconLabel, TweenInfo.new(0.18), { ImageTransparency = 1 }):Play()
+			end
 			task.delay(0.2, function()
 				if chip then chip:Destroy() end
 			end)
@@ -3219,9 +3233,13 @@ function Window:AddTag(opts)
 
 	task.defer(function()
 		if chip.Parent then
-			Tween(chip, { BackgroundTransparency = 0 }, 0.22)
-			if label then Tween(label, { TextTransparency = 0 }, 0.22) end
-			if iconLabel then Tween(iconLabel, { ImageTransparency = 0 }, 0.22) end
+			TweenService:Create(chip, TweenInfo.new(0.22), { BackgroundTransparency = 0 }):Play()
+			if label then
+				TweenService:Create(label, TweenInfo.new(0.22), { TextTransparency = 0 }):Play()
+			end
+			if iconLabel then
+				TweenService:Create(iconLabel, TweenInfo.new(0.22), { ImageTransparency = 0 }):Play()
+			end
 		end
 	end)
 
