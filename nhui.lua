@@ -2579,7 +2579,12 @@ function NHUI:LoadingScreen(opts)
 	return {
 		Instance = holder,
 		Destroy = function()
-			NHUI.Tween(bannerImage, { ImageTransparency = 1 }, fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			local t3 = TweenService:Create(
+				bannerImage,
+				TweenInfo.new(fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+				{ ImageTransparency = 1 }
+			)
+			t3:Play()
 			task.delay(fadeOut + 0.05, function()
 				if holder and holder.Parent then
 					holder:Destroy()
