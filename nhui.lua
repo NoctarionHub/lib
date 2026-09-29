@@ -631,7 +631,7 @@ local function Tween(instance, props, duration, style, direction)
 	local t = TweenService:Create(
 		instance,
 		TweenInfo.new(
-			math.max(duration or 0.25, 0),
+			math.max(tonumber(duration) or 0.25, 0),
 			style or Enum.EasingStyle.Quint,
 			direction or Enum.EasingDirection.Out
 		),
@@ -2522,7 +2522,7 @@ Window.__index = Window
 local Tab = {}
 Tab.__index = Tab
 
-local NHUI_BANNER_ASSET = "rbxassetid://82213459696859"   -- ganti dengan asset banner kamu
+local NHUI_BANNER_ASSET = "rbxassetid://82213459696859"
 
 function NHUI:LoadingScreen(opts)
 	opts = opts or {}
@@ -2532,7 +2532,6 @@ function NHUI:LoadingScreen(opts)
 	local fadeIn      = opts.FadeIn or 0.3
 	local fadeOut     = opts.FadeOut or 0.4
 
-	-- container (biar bisa offset -26 seperti Rayfield)
 	local holder = Instance.new("Frame")
 	holder.Name = "NHUI_LoadingBanner"
 	holder.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -2551,24 +2550,24 @@ function NHUI:LoadingScreen(opts)
 	bannerImage.Image = bannerAsset
 	bannerImage.Position = UDim2.new(0.5, -26, 0.5, 0)
 	bannerImage.Size = UDim2.fromOffset(bannerSize, bannerSize)
-	bannerImage.ImageTransparency = 1   -- mulai transparan
+	bannerImage.ImageTransparency = 1
 	bannerImage.ZIndex = 5001
 	bannerImage.Parent = holder
 
-	local t1 = TweenService:Create(
+	local tweenService = game:GetService("TweenService")
+
+	tweenService:Create(
 		bannerImage,
 		TweenInfo.new(fadeIn, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 		{ ImageTransparency = 0 }
-	)
-	t1:Play()
+	):Play()
 
 	task.delay(fadeIn + holdTime, function()
-		local t2 = TweenService:Create(
+		tweenService:Create(
 			bannerImage,
 			TweenInfo.new(fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 			{ ImageTransparency = 1 }
-		)
-		t2:Play()
+		):Play()
 		task.delay(fadeOut + 0.05, function()
 			if holder and holder.Parent then
 				holder:Destroy()
@@ -2579,12 +2578,11 @@ function NHUI:LoadingScreen(opts)
 	return {
 		Instance = holder,
 		Destroy = function()
-			local t3 = TweenService:Create(
+			tweenService:Create(
 				bannerImage,
 				TweenInfo.new(fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 				{ ImageTransparency = 1 }
-			)
-			t3:Play()
+			):Play()
 			task.delay(fadeOut + 0.05, function()
 				if holder and holder.Parent then
 					holder:Destroy()
