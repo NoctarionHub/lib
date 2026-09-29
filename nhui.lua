@@ -3001,13 +3001,15 @@ function NHUI:CreateWindow(opts)
 	end
 
 	task.spawn(function()
-        task.wait(0.5)
+    task.wait(0.5)
+    if banner and banner.Destroy then
         banner:Destroy()
-        task.wait(0.5)
-        if not self._destroyed then
-            self:Open()
-        end
-    end)
+    end
+    task.wait(0.5)
+    if not self._destroyed then
+        self:Open()
+    end
+end)
 
 	return self
 end
