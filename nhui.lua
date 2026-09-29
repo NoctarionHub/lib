@@ -2543,10 +2543,8 @@ function NHUI:LoadingScreen(opts)
 	opts = opts or {}
 	local bannerAsset = opts.Banner or NHUI_BANNER_ASSET
 	local bannerSize  = opts.BannerSize or 262
-	local holdTime    = opts.HoldTime or 0.25
-	local fadeIn      = opts.FadeIn or 0.15
-	local fadeOut     = opts.FadeOut or 0.2
-	local gap         = opts.Gap or 1
+	local holdTime    = opts.HoldTime or 0.5   -- berapa lama banner diam
+	local gap         = opts.Gap or 0.5        -- jeda setelah banner hilang, sebelum window muncul
 
 	local holder = Instance.new("Frame")
 	holder.Name = "NHUI_LoadingBanner"
@@ -2566,11 +2564,9 @@ function NHUI:LoadingScreen(opts)
 	bannerImage.Image = bannerAsset
 	bannerImage.Position = UDim2.new(0.5, -26, 0.5, 0)
 	bannerImage.Size = UDim2.fromOffset(bannerSize, bannerSize)
-	bannerImage.ImageTransparency = 1
+	bannerImage.ImageTransparency = 0   -- LANGSUNG MUNCUL, gak fade in
 	bannerImage.ZIndex = 5001
 	bannerImage.Parent = holder
-
-	local tweenService = game:GetService("TweenService")
 
 	-- state
 	local finished = false
@@ -2585,41 +2581,22 @@ function NHUI:LoadingScreen(opts)
 		table.clear(finishCallbacks)
 	end
 
-	-- fade in
-	tweenService:Create(
-		bannerImage,
-		TweenInfo.new(fadeIn, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-		{ ImageTransparency = 0 }
-	):Play()
-
-	-- jadwal: hold → fade out → destroy
-	task.delay(fadeIn + holdTime, function()
+	-- jadwal: diam → destroy
+	task.delay(holdTime, function()
 		if finished then return end
-
-		tweenService:Create(
-			bannerImage,
-			TweenInfo.new(fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-			{ ImageTransparency = 1 }
-		):Play()
-
-		task.delay(fadeOut + 0.05, function()
-			if holder and holder.Parent then
-				holder:Destroy()
-			end
-			fireFinished()
-		end)
+		if holder and holder.Parent then
+			holder:Destroy()
+		end
+		fireFinished()
 	end)
 
 	return {
 		Instance = holder,
 
-		-- total durasi banner tampil sampai hilang
-		Duration = fadeIn + holdTime + fadeOut + 0.05,
+		Duration = holdTime,
 
-		-- gap default (bisa di-override dari opts.Gap)
 		Gap = gap,
 
-		-- dipanggil kalau banner udah bener-bener hilang
 		OnFinished = function(callback)
 			if finished then
 				task.spawn(callback)
@@ -2630,16 +2607,9 @@ function NHUI:LoadingScreen(opts)
 
 		Destroy = function()
 			finished = true
-			tweenService:Create(
-				bannerImage,
-				TweenInfo.new(fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-				{ ImageTransparency = 1 }
-			):Play()
-			task.delay(fadeOut + 0.05, function()
-				if holder and holder.Parent then
-					holder:Destroy()
-				end
-			end)
+			if holder and holder.Parent then
+				holder:Destroy()
+			end
 		end,
 	}
 end
@@ -3075,7 +3045,6 @@ function NHUI:CreateWindow(opts)
     local loadingOpts = opts.Loading or {}
     local gap = loadingOpts.Gap or banner.Gap or 0.5
 
-    -- tunggu banner bener-bener hilang, baru tunggu gap, baru Open()
     banner.OnFinished(function()
         if self._destroyed then return end
         task.wait(gap)
