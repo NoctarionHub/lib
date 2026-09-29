@@ -2578,12 +2578,7 @@ end
  
 function NHUI:CreateWindow(opts)
 	opts = opts or {}
-
-	local banner = nil
-	if opts.Loading ~= false then
-		banner = NHUI:LoadingScreen(opts.Loading or {})
-	end
-
+	local banner = NHUI:LoadingScreen(opts.Loading or {})
 	local size = opts.Size or UDim2.fromOffset(605, 405)
  
 	if IsMobileDevice then
@@ -2601,12 +2596,13 @@ function NHUI:CreateWindow(opts)
 	main.Name = "Window"
 	main.AnchorPoint = Vector2.new(0.5, 0.5)
 	main.Position = UDim2.fromScale(0.5, IsMobileDevice and 0.5 or 0.55)
-	main.Size = size
+	main.Size = UDim2.new(size.X.Scale, size.X.Offset, 0, 0)
 	main.BackgroundColor3 = NHUI.Theme.Background
 	main.BackgroundTransparency = 1
 	main.BorderSizePixel = 0
 	main.ClipsDescendants = true
 	main.ZIndex = Z.Window
+	main.Visible = false
 	main.Parent = root
 	Corner(main, NHUI.Theme.CornerRadius)
 	Stroke(main, Color3.new(1, 1, 1), 1, 0.92)
@@ -2839,7 +2835,7 @@ function NHUI:CreateWindow(opts)
 		_normalSize     = size,
 		_fullscreen     = false,
 		_janitor        = jan,
-		_state          = "open",
+		_state          = "closed",
 		_busy           = false,
 		_destroyed      = false,
 		_searchIndex    = {},
@@ -2848,6 +2844,7 @@ function NHUI:CreateWindow(opts)
 		_tabChangeListeners = {},
 		_tagContainer     = tagContainer,
 		_tags             = {},
+		_normalSize = size,
 	}, Window)
  
 	table.insert(NHUI._Windows, self)
@@ -3003,8 +3000,7 @@ function NHUI:CreateWindow(opts)
 		task.spawn(SetupDiscordInvite, opts.Discord)
 	end
 
-	if banner then
-    task.spawn(function()
+	task.spawn(function()
         task.wait(0.5)
         banner:Destroy()
         task.wait(0.5)
@@ -3012,9 +3008,6 @@ function NHUI:CreateWindow(opts)
             self:Open()
         end
     end)
-else
-    self:Open()
-end
 
 	return self
 end
