@@ -2537,48 +2537,8 @@ Window.__index = Window
 local Tab = {}
 Tab.__index = Tab
 
-local NHUI_BANNER_ASSET = "rbxassetid://82213459696859"
-
-function NHUI:LoadingScreen(opts)
-	opts = opts or {}
-	local bannerAsset = opts.Banner or NHUI_BANNER_ASSET
-	local bannerSize  = opts.BannerSize or 262
-
-	local holder = Instance.new("Frame")
-	holder.Name = "NHUI_LoadingBanner"
-	holder.AnchorPoint = Vector2.new(0.5, 0.5)
-	holder.BackgroundTransparency = 1
-	holder.BorderSizePixel = 0
-	holder.Position = UDim2.fromScale(0.5, 0.5)
-	holder.Size = UDim2.fromOffset(bannerSize + 58, bannerSize)
-	holder.ZIndex = 5000
-	holder.Parent = NHUI._Root
-
-	local bannerImage = Instance.new("ImageLabel")
-	bannerImage.Name = "BannerImage"
-	bannerImage.AnchorPoint = Vector2.new(0.5, 0.5)
-	bannerImage.BackgroundTransparency = 1
-	bannerImage.BorderSizePixel = 0
-	bannerImage.Image = bannerAsset
-	bannerImage.Position = UDim2.new(0.5, -26, 0.5, 0)
-	bannerImage.Size = UDim2.fromOffset(bannerSize, bannerSize)
-	bannerImage.ImageTransparency = 0
-	bannerImage.ZIndex = 5001
-	bannerImage.Parent = holder
-
-	return {
-		Instance = holder,
-		Destroy = function()
-			if holder and holder.Parent then
-				holder:Destroy()
-			end
-		end,
-	}
-end
- 
 function NHUI:CreateWindow(opts)
 	opts = opts or {}
-	local banner = NHUI:LoadingScreen(opts.Loading or {})
 	local size = opts.Size or UDim2.fromOffset(605, 405)
  
 	if IsMobileDevice then
@@ -2596,13 +2556,12 @@ function NHUI:CreateWindow(opts)
 	main.Name = "Window"
 	main.AnchorPoint = Vector2.new(0.5, 0.5)
 	main.Position = UDim2.fromScale(0.5, IsMobileDevice and 0.5 or 0.55)
-	main.Size = UDim2.new(size.X.Scale, size.X.Offset, 0, 0)
+	main.Size = size
 	main.BackgroundColor3 = NHUI.Theme.Background
 	main.BackgroundTransparency = 1
 	main.BorderSizePixel = 0
 	main.ClipsDescendants = true
 	main.ZIndex = Z.Window
-	main.Visible = false
 	main.Parent = root
 	Corner(main, NHUI.Theme.CornerRadius)
 	Stroke(main, Color3.new(1, 1, 1), 1, 0.92)
@@ -2820,7 +2779,7 @@ function NHUI:CreateWindow(opts)
 		Tween(resizeHandle, { ImageTransparency = 0.35 }, 0.12)
 	end))
  
-	--Tween(main, { BackgroundTransparency = 0.15 }, 0.6, Enum.EasingStyle.Exponential)
+	Tween(main, { BackgroundTransparency = 0.15 }, 0.6, Enum.EasingStyle.Exponential)
  
 	local self = setmetatable({
 		_gui            = main,
@@ -2835,7 +2794,7 @@ function NHUI:CreateWindow(opts)
 		_normalSize     = size,
 		_fullscreen     = false,
 		_janitor        = jan,
-		_state          = "closed",
+		_state          = "open",
 		_busy           = false,
 		_destroyed      = false,
 		_searchIndex    = {},
@@ -2844,7 +2803,6 @@ function NHUI:CreateWindow(opts)
 		_tabChangeListeners = {},
 		_tagContainer     = tagContainer,
 		_tags             = {},
-		_normalSize = size,
 	}, Window)
  
 	table.insert(NHUI._Windows, self)
@@ -2999,17 +2957,6 @@ function NHUI:CreateWindow(opts)
 	if opts.Discord and opts.Discord.Enabled then
 		task.spawn(SetupDiscordInvite, opts.Discord)
 	end
-
-	task.spawn(function()
-    task.wait(0.5)
-    if banner and banner.Destroy then
-        banner:Destroy()
-    end
-    task.wait(0.5)
-    if not self._destroyed then
-        self:Open()
-    end
-end)
 
 	return self
 end
