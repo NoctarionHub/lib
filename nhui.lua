@@ -2699,6 +2699,24 @@ function NHUI:CreateWindow(opts)
 	tagLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	tagLayout.Padding = UDim.new(0, 6)
 	tagLayout.Parent = tagContainer
+
+	local titleToTagGap = 10
+local function updateTagPosition()
+    if not titleLabel or not tagContainer then return end
+    local titleWidth = titleLabel.TextBounds.X / GetUIScale()
+    local subWidth = subLabel and (subLabel.TextBounds.X / GetUIScale()) or 0
+    local maxTextWidth = math.max(titleWidth, subWidth)
+    local offsetX = titleStartX + maxTextWidth + titleToTagGap
+    tagContainer.Position = UDim2.new(0, offsetX, 0.5, 0)
+end
+
+titleLabel:GetPropertyChangedSignal("Text"):Connect(updateTagPosition)
+titleLabel:GetPropertyChangedSignal("TextBounds"):Connect(updateTagPosition)
+if subLabel then
+    subLabel:GetPropertyChangedSignal("Text"):Connect(updateTagPosition)
+    subLabel:GetPropertyChangedSignal("TextBounds"):Connect(updateTagPosition)
+end
+task.defer(updateTagPosition)
  
 	local tabBar = Instance.new("ScrollingFrame")
 	tabBar.Name = "TabBar"
