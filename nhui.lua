@@ -627,16 +627,28 @@ local Z = {
 	ModalTop = 810,
 }
 
-local function Tween(instance, props, duration, style, direction)
-	local t = TweenService:Create(
-		instance,
-		TweenInfo.new(
-			math.max(tonumber(duration) or 0.25, 0),
-			style or Enum.EasingStyle.Quint,
-			direction or Enum.EasingDirection.Out
-		),
-		props
-	)
+local function Tween(instance, a, b, c, d)
+	local props, info
+
+	if typeof(a) == "TweenInfo" then
+		info, props = a, b
+	elseif typeof(b) == "TweenInfo" then
+		props, info = a, b
+	else
+		props = a
+		info = TweenInfo.new(
+			math.max(tonumber(b) or 0.25, 0),
+			c or Enum.EasingStyle.Quint,
+			d or Enum.EasingDirection.Out
+		)
+	end
+
+	if type(props) ~= "table" then
+		warn("[NHUI Tween] props must table, got:", typeof(props))
+		return nil
+	end
+
+	local t = TweenService:Create(instance, info, props)
 	t:Play()
 	return t
 end
