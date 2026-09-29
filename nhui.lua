@@ -2543,8 +2543,6 @@ function NHUI:LoadingScreen(opts)
 	opts = opts or {}
 	local bannerAsset = opts.Banner or NHUI_BANNER_ASSET
 	local bannerSize  = opts.BannerSize or 262
-	local holdTime    = opts.HoldTime or 0.5
-	local gap         = opts.Gap or 0.5
 
 	local holder = Instance.new("Frame")
 	holder.Name = "NHUI_LoadingBanner"
@@ -2568,26 +2566,9 @@ function NHUI:LoadingScreen(opts)
 	bannerImage.ZIndex = 5001
 	bannerImage.Parent = holder
 
-	local destroyed = false
-
-	-- banner hilang setelah holdTime
-	task.delay(holdTime, function()
-		if destroyed then return end
-		destroyed = true
-		if holder and holder.Parent then
-			holder:Destroy()
-		end
-	end)
-
 	return {
 		Instance = holder,
-
-		-- TOTAL waktu dari sekarang sampai window boleh muncul:
-		-- holdTime (banner diam) + gap (jeda sebelum window)
-		TotalDuration = holdTime + gap,
-
 		Destroy = function()
-			destroyed = true
 			if holder and holder.Parent then
 				holder:Destroy()
 			end
@@ -3023,12 +3004,10 @@ function NHUI:CreateWindow(opts)
 	end
 
 	if banner then
-    local loadingOpts = opts.Loading or {}
-    local gap = loadingOpts.Gap or banner.Gap or 0.5
-
-    banner.OnFinished(function()
-        if self._destroyed then return end
-        task.wait(totalWait)
+    task.spawn(function()
+        task.wait(0.5)
+        banner:Destroy()
+        task.wait(0.5)
         if not self._destroyed then
             self:Open()
         end
