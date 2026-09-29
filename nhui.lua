@@ -11358,8 +11358,8 @@ end
 	searchIcon.Image = ResolveIcon("search")
 	searchIcon.ImageColor3 = NHUI.Theme.TextDim
 	searchIcon.Size = UDim2.fromOffset(16, 16)
-	searchIcon.AnchorPoint = Vector2.new(0, 0.5)
-	searchIcon.Position = UDim2.new(0, 12, 0.5, 0)
+	searchIcon.AnchorPoint = Vector2.new(0, 0)
+	searchIcon.Position = UDim2.new(12, 7)
 	searchIcon.AutoButtonColor = false
 	searchIcon.ImageTransparency = 0
 	searchIcon.ZIndex = Z.Content + 4
