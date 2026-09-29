@@ -11815,9 +11815,9 @@ end
 		Tween(card, { BackgroundTransparency = 0.96 }, 0.15)
 	end)
 
-	searchHit.MouseButton1Click:Connect(function()
+	--[[searchHit.MouseButton1Click:Connect(function()
 		if not searchOpen then expandSearch() end
-	end)
+	end)]]
 	searchIcon.MouseButton1Click:Connect(function()
 		if searchOpen then collapseSearch() else expandSearch() end
 	end)
