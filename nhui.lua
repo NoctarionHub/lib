@@ -11171,7 +11171,7 @@ function Tab:AddDropdown(opts)
 	local headerH = hasDesc and 56 or 44
 	local jan = self._janitor
 
-	local GAP        = 6
+	local GAP        = 1
 	local PAD_TOP    = 3
 	local PAD_BOT    = 6
 	local OPT_H      = 38
@@ -11319,7 +11319,7 @@ end
 	panel.Name = "Panel"
 	panel.BackgroundTransparency = 1
 	panel.BorderSizePixel = 0
-	panel.Position = UDim2.fromOffset(0, headerH, 0)
+	panel.Position = UDim2.fromOffset(0, headerH + GAP)
 	panel.Size = UDim2.new(1, 0, 1, -(headerH + GAP))
 	panel.ZIndex = Z.Content
 	panel.ClipsDescendants = true
@@ -11358,20 +11358,20 @@ end
 	searchIcon.Image = ResolveIcon("search")
 	searchIcon.ImageColor3 = NHUI.Theme.TextDim
 	searchIcon.Size = UDim2.fromOffset(16, 16)
-	searchIcon.AnchorPoint = Vector2.new(0, 0)
-	searchIcon.Position = UDim2.new(12, 7)
+	searchIcon.AnchorPoint = Vector2.new(0, 0.5)
+	searchIcon.Position = UDim2.new(0, 12, 0.5, 0)
 	searchIcon.AutoButtonColor = false
 	searchIcon.ImageTransparency = 0
 	searchIcon.ZIndex = Z.Content + 4
 	searchIcon.Parent = searchFrame
 
-	--[[local searchHit = Instance.new("TextButton")
+	local searchHit = Instance.new("TextButton")
 	searchHit.Text = ""
 	searchHit.AutoButtonColor = false
 	searchHit.BackgroundTransparency = 1
 	searchHit.Size = UDim2.fromOffset(SRCH_H, SRCH_H)
 	searchHit.ZIndex = Z.Content + 3
-	searchHit.Parent = searchFrame]]
+	searchHit.Parent = searchFrame
 
 	local searchInput = Instance.new("TextBox")
 	searchInput.BackgroundTransparency = 1
@@ -11815,9 +11815,9 @@ end
 		Tween(card, { BackgroundTransparency = 0.96 }, 0.15)
 	end)
 
-	--[[searchHit.MouseButton1Click:Connect(function()
+	searchHit.MouseButton1Click:Connect(function()
 		if not searchOpen then expandSearch() end
-	end)]]
+	end)
 	searchIcon.MouseButton1Click:Connect(function()
 		if searchOpen then collapseSearch() else expandSearch() end
 	end)
