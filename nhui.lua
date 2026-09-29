@@ -131,6 +131,11 @@ local function FormatNumber(v)
 	end
 	return string.format("%.4g", v)
 end
+
+local function ContrastColor(color)
+	local luminance = 0.299 * color.R + 0.587 * color.G + 0.114 * color.B
+	return luminance > 0.5 and Color3.fromRGB(0, 0, 0) or Color3.new(1, 1, 1)
+end
  
 local ACRYLIC_DOF_NAME = "NHUI_AcrylicDOF"
 local ACRYLIC_DISTANCE = 0.001
@@ -1286,6 +1291,350 @@ function NHUI:Notify(opts)
 		Dismiss = dismiss,
 	}
 end
+
+local ToastStack = {}
+NHUI._ToastCounter = 0
+
+local TOAST_MAX_LIVE = 6
+local TOAST_ICON_SIZE = 24
+local TOAST_AVATAR_SIZE = 32
+local TOAST_LEFT_PAD = 18
+local TOAST_RIGHT_PAD = 18
+local TOAST_AVATAR_LEFT_PAD = 10
+local TOAST_AVATAR_RIGHT_PAD = 28
+local TOAST_ICON_GAP = 12
+local TOAST_STACK_PAD = 8
+local TOAST_MIN_WIDTH = 140
+local TOAST_MAX_WIDTH = 320
+
+local TOAST_SLIDE_INFO = TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+local TOAST_GROW_INFO  = TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+local TOAST_FADE_LONG  = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+local TOAST_FADE_SHORT = TweenInfo.new(0.3, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+local TOAST_SHRINK_INFO = TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+
+local function ToastAutoDuration(text)
+	return math.clamp(#tostring(text or "") * 0.06 + 3, 3, 9)
+end
+
+local function GetToastHolder(position)
+	local key = position == "Bottom" and "ToastHolderBottom" or "ToastHolderTop"
+	local root = NHUI._Root
+	local holder = root:FindFirstChild(key)
+	if holder then return holder end
+
+	holder = Instance.new("Frame")
+	holder.Name = key
+	holder.AnchorPoint = Vector2.new(0.5, position == "Bottom" and 1 or 0)
+	holder.Position = position == "Bottom"
+		and UDim2.new(0.5, 0, 1, -12)
+		or UDim2.new(0.5, 0, 0, 12)
+	holder.Size = UDim2.new(0, TOAST_MAX_WIDTH, 1, -24)
+	holder.BackgroundTransparency = 1
+	holder.ZIndex = Z.Toast
+	holder.Parent = root
+
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Vertical
+	layout.VerticalAlignment = position == "Bottom"
+		and Enum.VerticalAlignment.Bottom
+		or Enum.VerticalAlignment.Top
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 0)
+	layout.Parent = holder
+
+	local entry = { holder = holder, items = {}, count = 0 }
+	ToastStack[position] = entry
+
+	LibJanitor:Add(RunService.Heartbeat:Connect(function()
+		if not holder.Parent then return end
+		local s = GetUIScale()
+		local view = ViewportSize()
+		holder.Size = UDim2.new(
+			0, math.max(1, math.min(TOAST_MAX_WIDTH, view.X / s - 40)),
+			1, math.max(1, view.Y / s - 24)
+		)
+	end))
+
+	return holder
+end
+
+function NHUI:Toast(opts)
+	opts = opts or {}
+
+	local title    = opts.Title or opts.title or ""
+	local subtitle = opts.Subtitle or opts.subtitle
+	local icon     = opts.Icon or opts.icon
+	local avatar   = opts.Avatar or opts.avatar
+	local minWidth = opts.MinWidth or opts.minWidth
+	local radius   = opts.Radius or opts.radius or 999
+	local position = (opts.Position or opts.position or "Top")
+	if position ~= "Bottom" then position = "Top" end
+
+	local duration = opts.Duration or opts.duration
+		or ToastAutoDuration(title .. (subtitle or ""))
+
+	local hasAvatar = type(avatar) == "number" and avatar ~= 0
+	local hasIcon   = hasAvatar or (icon ~= nil and icon ~= "")
+	local hasSubtitle = subtitle ~= nil and subtitle ~= ""
+
+	local iconSize = hasAvatar and TOAST_AVATAR_SIZE or TOAST_ICON_SIZE
+	local leftPad  = hasAvatar and TOAST_AVATAR_LEFT_PAD or TOAST_LEFT_PAD
+	local rightPad = hasAvatar and TOAST_AVATAR_RIGHT_PAD or TOAST_RIGHT_PAD
+	local clampedMin = math.clamp(minWidth or 0, TOAST_MIN_WIDTH, TOAST_MAX_WIDTH)
+
+	local holder = GetToastHolder(position)
+	local stack = ToastStack[position]
+
+	NHUI._ToastCounter = NHUI._ToastCounter + 1
+	local layoutOrder = NHUI._ToastCounter
+
+	local outer = Instance.new("Frame")
+	outer.Name = "Toast"
+	outer.BackgroundTransparency = 1
+	outer.Size = UDim2.new(0, 0, 0, 0)
+	outer.BorderSizePixel = 0
+	outer.ZIndex = Z.Toast
+	outer.LayoutOrder = position == "Bottom" and -layoutOrder or layoutOrder
+	outer.Parent = holder
+
+	local padHolder = Instance.new("UIPadding")
+	padHolder.PaddingTop = UDim.new(0, TOAST_STACK_PAD)
+	padHolder.Parent = outer
+
+	local body = Instance.new("Frame")
+	body.Name = "Body"
+	body.BackgroundColor3 = NHUI.Theme.Surface
+	body.BackgroundTransparency = 1
+	body.BorderSizePixel = 0
+	body.AnchorPoint = Vector2.new(0.5, 0.5)
+	body.Position = position == "Bottom"
+		and UDim2.new(0.5, 0, 0.5, 180)
+		or UDim2.new(0.5, 0, 0.5, -180)
+	body.Size = UDim2.new(1, 0, 1, 0)
+	body.ZIndex = Z.Toast
+	body.Parent = outer
+	local cornerObj = Instance.new("UICorner")
+	cornerObj.CornerRadius = (typeof(radius) == "UDim") and radius or UDim.new(0, radius)
+	cornerObj.Parent = body	local bodyStroke = Stroke(body, Color3.new(1, 1, 1), 1, 1)
+
+	local bodyGlow = CreateWindowAcrylic and nil
+
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft = UDim.new(0, leftPad)
+	pad.PaddingRight = UDim.new(0, rightPad)
+	pad.Parent = body
+
+	local row = Instance.new("UIListLayout")
+	row.FillDirection = Enum.FillDirection.Horizontal
+	row.VerticalAlignment = Enum.VerticalAlignment.Center
+	row.SortOrder = Enum.SortOrder.LayoutOrder
+	row.Padding = UDim.new(0, TOAST_ICON_GAP)
+	row.Parent = body
+
+	local iconImg
+	if hasIcon then
+		iconImg = Instance.new("ImageLabel")
+		iconImg.Name = "Icon"
+		iconImg.BackgroundColor3 = Color3.new(1, 1, 1)
+		iconImg.BackgroundTransparency = 1
+		iconImg.BorderSizePixel = 0
+		iconImg.ImageTransparency = 1
+		iconImg.Size = UDim2.fromOffset(iconSize, iconSize)
+		iconImg.LayoutOrder = 1
+		iconImg.ZIndex = Z.Toast + 1
+		iconImg.Parent = body
+		Corner(iconImg, iconSize / 2)
+
+		if hasAvatar then
+			task.spawn(function()
+				local ok, content = pcall(
+					Players.GetUserThumbnailAsync,
+					Players,
+					avatar,
+					Enum.ThumbnailType.HeadShot,
+					Enum.ThumbnailSize.Size100x100
+				)
+				if ok and content and iconImg.Parent then
+					iconImg.Image = content
+				end
+			end)
+		else
+			iconImg.Image = ResolveIcon(icon)
+			iconImg.ImageColor3 = NHUI.Theme.Text
+		end
+	end
+
+	local textColumn = Instance.new("Frame")
+	textColumn.Name = "Text"
+	textColumn.BackgroundTransparency = 1
+	textColumn.AutomaticSize = Enum.AutomaticSize.X
+	textColumn.Size = UDim2.fromOffset(0, hasSubtitle and 32 or 16)
+	textColumn.LayoutOrder = 2
+	textColumn.ZIndex = Z.Toast + 1
+	textColumn.Parent = body
+
+	local textLayout = Instance.new("UIListLayout")
+	textLayout.FillDirection = Enum.FillDirection.Vertical
+	textLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	textLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	textLayout.Padding = UDim.new(0, 1)
+	textLayout.Parent = textColumn
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.FontFace = NHUI.Theme.Font
+	titleLabel.Text = title
+	titleLabel.TextColor3 = NHUI.Theme.Text
+	titleLabel.TextTransparency = 1
+	titleLabel.TextSize = 14
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.AutomaticSize = Enum.AutomaticSize.X
+	titleLabel.Size = UDim2.fromOffset(0, 16)
+	titleLabel.LayoutOrder = 1
+	titleLabel.ZIndex = Z.Toast + 1
+	titleLabel.Parent = textColumn
+
+	local subLabel
+	if hasSubtitle then
+		subLabel = Instance.new("TextLabel")
+		subLabel.BackgroundTransparency = 1
+		subLabel.FontFace = NHUI.Theme.FontRegular
+		subLabel.Text = subtitle
+		subLabel.TextColor3 = NHUI.Theme.TextDim
+		subLabel.TextTransparency = 1
+		subLabel.TextSize = 12
+		subLabel.TextXAlignment = Enum.TextXAlignment.Left
+		subLabel.AutomaticSize = Enum.AutomaticSize.X
+		subLabel.Size = UDim2.fromOffset(0, 14)
+		subLabel.LayoutOrder = 2
+		subLabel.ZIndex = Z.Toast + 1
+		subLabel.Parent = textColumn
+	end
+
+	-- truncation guard
+	task.defer(function()
+		if not outer.Parent then return end
+		local measured = MeasureText(title, 14, 10000)
+		local subMeasured = hasSubtitle and MeasureText(subtitle, 12, 10000) or 0
+		local textW = math.max(measured, subMeasured)
+
+		local left = hasIcon and (leftPad + iconSize + TOAST_ICON_GAP) or leftPad
+		local naturalW = left + textW + rightPad
+		local finalW = math.clamp(naturalW, clampedMin, TOAST_MAX_WIDTH)
+
+		if left + textW + rightPad > TOAST_MAX_WIDTH then
+			local column = TOAST_MAX_WIDTH - left - rightPad
+			titleLabel.AutomaticSize = Enum.AutomaticSize.None
+			titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
+			titleLabel.Size = UDim2.fromOffset(math.max(column, 1), 16)
+			if subLabel then
+				subLabel.AutomaticSize = Enum.AutomaticSize.None
+				subLabel.TextTruncate = Enum.TextTruncate.AtEnd
+				subLabel.Size = UDim2.fromOffset(math.max(column, 1), 14)
+			end
+		end
+
+		outer.Size = UDim2.new(0, finalW, 0, 0)
+
+		local textH = hasSubtitle and (16 + 1 + 14) or 16
+		local bodyH = math.max(textH, hasIcon and iconSize or 0) + 18
+		local totalH = bodyH + TOAST_STACK_PAD
+
+		Tween(outer, { Size = UDim2.new(0, finalW, 0, totalH) }, TOAST_GROW_INFO)
+	end)
+
+	local dismissed = false
+
+	local function dismiss()
+		if dismissed or not outer.Parent then return end
+		dismissed = true
+
+		-- hapus dari daftar
+		for i, t in ipairs(stack.items) do
+			if t == outer then table.remove(stack.items, i) break end
+		end
+
+		Tween(body, TOAST_FADE_LONG, { BackgroundTransparency = 1 })
+		Tween(bodyStroke, TOAST_FADE_LONG, { Transparency = 1 })
+		Tween(titleLabel, TOAST_FADE_SHORT, { TextTransparency = 1 })
+		if subLabel then Tween(subLabel, TOAST_FADE_SHORT, { TextTransparency = 1 }) end
+		if iconImg then
+			Tween(iconImg, TOAST_FADE_SHORT, { ImageTransparency = 1, BackgroundTransparency = 1 })
+		end
+
+		Tween(body, TOAST_SHRINK_INFO, { Size = UDim2.new(1, -60, 1, 0) })
+		local collapse = TweenService:Create(outer, TOAST_SHRINK_INFO, {
+			Size = UDim2.new(0, outer.Size.X.Offset, 0, 0),
+		})
+		collapse:Play()
+		collapse.Completed:Wait()
+
+		if outer.Parent then outer:Destroy() end
+	end
+
+	table.insert(stack.items, outer)
+	while #stack.items > TOAST_MAX_LIVE do
+		local oldest = table.remove(stack.items, 1)
+		if oldest and oldest ~= outer then
+			-- paksa destroy
+			task.spawn(function()
+				Tween(oldest, TOAST_SHRINK_INFO, { Size = UDim2.new(0, oldest.Size.X.Offset, 0, 0) })
+				task.wait(0.6)
+				if oldest.Parent then oldest:Destroy() end
+			end)
+		end
+	end
+
+	local hovered = false
+	outer.MouseEnter:Connect(function() hovered = true end)
+	outer.MouseLeave:Connect(function() hovered = false end)
+	outer.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			dismiss()
+		end
+	end)
+
+	-- show
+	task.spawn(function()
+		if not outer.Parent then return end
+
+		-- slide in
+		local restPos = UDim2.new(0.5, 0, 0.5, 0)
+		Tween(body, TOAST_SLIDE_INFO, { Position = restPos })
+		Tween(body, TOAST_FADE_LONG, { BackgroundTransparency = 0 })
+		Tween(bodyStroke, TOAST_FADE_LONG, { Transparency = 0.9 })
+		Tween(titleLabel, TOAST_FADE_SHORT, { TextTransparency = 0 })
+
+		task.wait(0.05)
+		if not outer.Parent then return end
+		if iconImg then
+			Tween(iconImg, TOAST_FADE_SHORT, { ImageTransparency = 0, BackgroundTransparency = 0.95 })
+		end
+
+		task.wait(0.05)
+		if not outer.Parent then return end
+		if subLabel then
+			Tween(subLabel, TOAST_FADE_SHORT, { TextTransparency = 0.5 })
+		end
+
+		-- tunggu durasi
+		local elapsed = 0
+		while elapsed < duration and not dismissed and outer.Parent do
+			local dt = task.wait()
+			if not hovered then elapsed += dt end
+		end
+
+		dismiss()
+	end)
+
+	return {
+		Instance = outer,
+		Dismiss = dismiss,
+	}
+end
  
 local function ComputeDialogCenter(anchorFrame)
 	local view = ViewportSize()
@@ -2157,19 +2506,119 @@ Window.__index = Window
  
 local Tab = {}
 Tab.__index = Tab
+
+function NHUI:LoadingScreen(opts)
+	opts = opts or {}
+
+	local title    = opts.Title or "Loading"
+	local subtitle = opts.Subtitle
+	local banner   = opts.Banner or "rbxassetid://82213459696859"
+	local holdTime = opts.HoldTime or 1.0
+
+	local root = Instance.new("Frame")
+	root.Name = "NHUI_LoadingScreen"
+	root.BackgroundColor3 = opts.Background or Color3.fromRGB(8, 8, 10)
+	root.BackgroundTransparency = 1
+	root.BorderSizePixel = 0
+	root.Size = UDim2.fromScale(1, 1)
+	root.ZIndex = 5000
+	root.Parent = NHUI._Root
+
+	local center = Instance.new("Frame")
+	center.Name = "Center"
+	center.BackgroundTransparency = 1
+	center.AnchorPoint = Vector2.new(0.5, 0.5)
+	center.Position = UDim2.fromScale(0.5, 0.5)
+	center.Size = UDim2.fromOffset(320, 0)
+	center.AutomaticSize = Enum.AutomaticSize.Y
+	center.ZIndex = 5001
+	center.Parent = root
+
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Vertical
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 14)
+	layout.Parent = center
+
+	if banner and banner ~= "" then
+		local bannerImg = Instance.new("ImageLabel")
+		bannerImg.Name = "Banner"
+		bannerImg.BackgroundTransparency = 1
+		bannerImg.Image = banner
+		bannerImg.ScaleType = Enum.ScaleType.Fit
+		bannerImg.Size = UDim2.fromOffset(opts.BannerSize or 180, opts.BannerSize or 180)
+		bannerImg.LayoutOrder = 1
+		bannerImg.ZIndex = 5002
+		bannerImg.Parent = center
+	end
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.FontFace = NHUI.Theme.Font
+	titleLabel.Text = title
+	titleLabel.TextColor3 = Color3.new(1, 1, 1)
+	titleLabel.TextSize = 20
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+	titleLabel.AutomaticSize = Enum.AutomaticSize.XY
+	titleLabel.Size = UDim2.fromOffset(0, 24)
+	titleLabel.LayoutOrder = 2
+	titleLabel.ZIndex = 5002
+	titleLabel.Parent = center
+
+	if subtitle and subtitle ~= "" then
+		local subLabel = Instance.new("TextLabel")
+		subLabel.BackgroundTransparency = 1
+		subLabel.FontFace = NHUI.Theme.FontRegular
+		subLabel.Text = subtitle
+		subLabel.TextColor3 = NHUI.Theme.TextDim
+		subLabel.TextSize = 13
+		subLabel.TextXAlignment = Enum.TextXAlignment.Center
+		subLabel.AutomaticSize = Enum.AutomaticSize.XY
+		subLabel.Size = UDim2.fromOffset(0, 16)
+		subLabel.LayoutOrder = 3
+		subLabel.ZIndex = 5002
+		subLabel.Parent = center
+	end
+
+	Tween(root, { BackgroundTransparency = 0 }, 0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+	task.delay(holdTime, function()
+		Tween(root, { BackgroundTransparency = 1 }, 0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+		task.delay(0.5, function()
+			if root and root.Parent then
+				root:Destroy()
+			end
+		end)
+	end)
+
+	return {
+		Instance = root,
+		Destroy = function()
+			Tween(root, { BackgroundTransparency = 1 }, 0.3)
+			task.delay(0.4, function()
+				if root and root.Parent then root:Destroy() end
+			end)
+		end,
+	}
+end
  
 function NHUI:CreateWindow(opts)
 	opts = opts or {}
+
+	if opts.Loading ~= false then
+		NHUI:LoadingScreen(opts.Loading or {})
+	end
+
 	local size = opts.Size or UDim2.fromOffset(605, 405)
  
 	if IsMobileDevice then
 		-- Landscape layout: use the available height instead of flattening the window.
 		local vp = ViewportSize()
 		local s = GetUIScale()
-		size = UDim2.fromOffset(
-			math.floor((vp.X / s) * 0.64),
-			math.floor((vp.Y / s) * 0.96)
-		)
+		size = UDim2.new(0.13287,0,0.0341,0)
 	end
 	local margin = NHUI.Theme.Margin
  
@@ -2305,6 +2754,24 @@ function NHUI:CreateWindow(opts)
 		subLabel.ZIndex = Z.Content
 		subLabel.Parent = topbar
 	end
+
+	local tagContainer = Instance.new("Frame")
+	tagContainer.Name = "TagContainer"
+	tagContainer.BackgroundTransparency = 1
+	tagContainer.AnchorPoint = Vector2.new(1, 0.5)
+	tagContainer.Position = UDim2.new(1, -controlsHolder.Size.X.Offset - margin - 8, 0.5, 0)
+	tagContainer.Size = UDim2.fromOffset(0, 24)
+	tagContainer.AutomaticSize = Enum.AutomaticSize.X
+	tagContainer.ZIndex = Z.Content + 1
+	tagContainer.Parent = topbar
+
+	local tagLayout = Instance.new("UIListLayout")
+	tagLayout.FillDirection = Enum.FillDirection.Horizontal
+	tagLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	tagLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	tagLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	tagLayout.Padding = UDim.new(0, 5)
+	tagLayout.Parent = tagContainer
  
 	local tabBar = Instance.new("ScrollingFrame")
 	tabBar.Name = "TabBar"
@@ -2407,6 +2874,8 @@ function NHUI:CreateWindow(opts)
 		_useBlur        = opts.UseBlur ~= false,
 		_defaultTabName = opts.DefaultTab,
 		_tabChangeListeners = {},
+		_tagContainer     = tagContainer,
+		_tags             = {},
 	}, Window)
  
 	table.insert(NHUI._Windows, self)
@@ -2569,6 +3038,178 @@ function Window:SetTitle(title, subtitle)
 	if self._titleLabel then self._titleLabel.Text = title or self._titleLabel.Text end
 	if subtitle and self._subLabel then self._subLabel.Text = subtitle end
 end
+
+function Window:AddTag(opts)
+	opts = opts or {}
+	local text       = opts.Text or opts.text or opts.Title or opts.title
+	local icon       = opts.Icon or opts.icon
+	local iconSize   = opts.IconSize or opts.iconSize or 14
+	local color      = opts.Color or opts.color or Color3.fromRGB(255, 175, 15)
+	local order      = opts.Order or opts.order or (#self._tags + 1)
+	local radius     = opts.Radius or opts.radius or 12
+
+	if not text and not icon then
+		return nil
+	end
+
+	local jan  = self._janitor
+	local root = self._tagContainer
+
+	local chip = Instance.new("Frame")
+	chip.Name = "Tag"
+	chip.BackgroundColor3 = color
+	chip.BackgroundTransparency = 1
+	chip.BorderSizePixel = 0
+	chip.AutomaticSize = Enum.AutomaticSize.X
+	chip.Size = UDim2.fromOffset(10, 24)
+	chip.LayoutOrder = order
+	chip.ZIndex = Z.Content + 2
+	chip.Parent = root
+	Corner(chip, radius)
+
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft = UDim.new(0, 10)
+	pad.PaddingRight = UDim.new(0, 10)
+	pad.Parent = chip
+
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 5)
+	layout.Parent = chip
+
+	local contrast = ContrastColor(color)
+
+	local iconLabel
+	if icon then
+		iconLabel = Instance.new("ImageLabel")
+		iconLabel.BackgroundTransparency = 1
+		iconLabel.Image = ResolveIcon(icon)
+		iconLabel.ImageColor3 = contrast
+		iconLabel.ImageTransparency = 1
+		iconLabel.Size = UDim2.fromOffset(iconSize, iconSize)
+		iconLabel.LayoutOrder = 1
+		iconLabel.ZIndex = Z.Content + 3
+		iconLabel.Parent = chip
+	end
+
+	local label
+	if text then
+		label = Instance.new("TextLabel")
+		label.BackgroundTransparency = 1
+		label.FontFace = NHUI.Theme.Font
+		label.Text = text
+		label.TextColor3 = contrast
+		label.TextTransparency = 1
+		label.TextSize = 13
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.TextYAlignment = Enum.TextYAlignment.Center
+		label.AutomaticSize = Enum.AutomaticSize.X
+		label.Size = UDim2.fromOffset(0, 16)
+		label.LayoutOrder = 2
+		label.ZIndex = Z.Content + 3
+		label.Parent = chip
+	end
+
+	local api = {
+		Instance = chip,
+		Icon = iconLabel,
+		Label = label,
+	}
+
+	function api.SetColor(_, newColor)
+		color = newColor
+		contrast = ContrastColor(color)
+		Tween(chip, { BackgroundColor3 = color }, 0.18)
+		if iconLabel then Tween(iconLabel, { ImageColor3 = contrast }, 0.18) end
+		if label then Tween(label, { TextColor3 = contrast }, 0.18) end
+	end
+
+	function api.SetText(_, newText)
+		text = tostring(newText or "")
+		if label then
+			label.Text = text
+			label.Visible = text ~= ""
+		elseif text ~= "" then
+			label = Instance.new("TextLabel")
+			label.BackgroundTransparency = 1
+			label.FontFace = NHUI.Theme.Font
+			label.Text = text
+			label.TextColor3 = contrast
+			label.TextTransparency = 1
+			label.TextSize = 13
+			label.TextXAlignment = Enum.TextXAlignment.Left
+			label.TextYAlignment = Enum.TextYAlignment.Center
+			label.AutomaticSize = Enum.AutomaticSize.X
+			label.Size = UDim2.fromOffset(0, 16)
+			label.LayoutOrder = 2
+			label.ZIndex = Z.Content + 3
+			label.Parent = chip
+			api.Label = label
+			Tween(label, { TextTransparency = 0 }, 0.18)
+		end
+	end
+
+	function api.SetIcon(_, newIcon)
+		icon = newIcon
+		if iconLabel then
+			if newIcon and newIcon ~= "" then
+				iconLabel.Image = ResolveIcon(newIcon)
+				Tween(iconLabel, { ImageTransparency = 0 }, 0.18)
+			else
+				Tween(iconLabel, { ImageTransparency = 1 }, 0.18)
+			end
+		elseif newIcon and newIcon ~= "" then
+			iconLabel = Instance.new("ImageLabel")
+			iconLabel.BackgroundTransparency = 1
+			iconLabel.Image = ResolveIcon(newIcon)
+			iconLabel.ImageColor3 = contrast
+			iconLabel.ImageTransparency = 1
+			iconLabel.Size = UDim2.fromOffset(iconSize, iconSize)
+			iconLabel.LayoutOrder = 1
+			iconLabel.ZIndex = Z.Content + 3
+			iconLabel.Parent = chip
+			api.Icon = iconLabel
+			Tween(iconLabel, { ImageTransparency = 0 }, 0.18)
+		end
+	end
+
+	function api.Set(props)
+		if props.Color or props.color then api:SetColor(props.Color or props.color) end
+		if props.Text ~= nil or props.text ~= nil then api:SetText(props.Text or props.text) end
+		if props.Icon ~= nil or props.icon ~= nil then api:SetIcon(props.Icon or props.icon) end
+	end
+
+	function api.Remove()
+		for i, tag in ipairs(self._tags) do
+			if tag == api then
+				table.remove(self._tags, i)
+				break
+			end
+		end
+		if chip and chip.Parent then
+			Tween(chip, { BackgroundTransparency = 1, Size = UDim2.fromOffset(0, 24) }, 0.18)
+			Tween(label, { TextTransparency = 1 }, 0.18)
+			Tween(iconLabel, { ImageTransparency = 1 }, 0.18)
+			task.delay(0.2, function()
+				if chip then chip:Destroy() end
+			end)
+		end
+	end
+
+	table.insert(self._tags, api)
+
+	task.defer(function()
+		if chip.Parent then
+			Tween(chip, { BackgroundTransparency = 0 }, 0.22)
+			if label then Tween(label, { TextTransparency = 0 }, 0.22) end
+			if iconLabel then Tween(iconLabel, { ImageTransparency = 0 }, 0.22) end
+		end
+	end)
+
+	return api
+end
  
 function Window:IsOpen()
 	return self._state == "open"
@@ -2589,6 +3230,8 @@ function Window:Destroy()
 		Size = UDim2.new(gui.Size.X.Scale, gui.Size.X.Offset, 0, 0),
 	}, 0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
 	Tween(gui, { BackgroundTransparency = 1 }, 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+
+	self._tags = {}
  
 	task.delay(0.34, function()
 		self._janitor:Destroy()
