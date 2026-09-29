@@ -11171,7 +11171,7 @@ function Tab:AddDropdown(opts)
 	local headerH = hasDesc and 56 or 44
 	local jan = self._janitor
 
-	local GAP        = 1
+	local GAP        = 0
 	local PAD_TOP    = 0
 	local PAD_BOT    = 6
 	local OPT_H      = 38
