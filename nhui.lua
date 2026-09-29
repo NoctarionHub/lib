@@ -2507,99 +2507,60 @@ Window.__index = Window
 local Tab = {}
 Tab.__index = Tab
 
+local NHUI_BANNER_ASSET = "rbxassetid://82213459696859"   -- ganti dengan asset banner kamu
+
 function NHUI:LoadingScreen(opts)
 	opts = opts or {}
+	local bannerAsset = opts.Banner or NHUI_BANNER_ASSET
+	local bannerSize  = opts.BannerSize or 262
+	local holdTime    = opts.HoldTime or 0.8
+	local fadeIn      = opts.FadeIn or 0.3
+	local fadeOut     = opts.FadeOut or 0.4
 
-	local title    = opts.Title or "Loading"
-	local subtitle = opts.Subtitle
-	local banner   = opts.Banner or "rbxassetid://82213459696859"
-	local holdTime = opts.HoldTime or 1.0
+	-- container (biar bisa offset -26 seperti Rayfield)
+	local holder = Instance.new("Frame")
+	holder.Name = "NHUI_LoadingBanner"
+	holder.AnchorPoint = Vector2.new(0.5, 0.5)
+	holder.BackgroundTransparency = 1
+	holder.BorderSizePixel = 0
+	holder.Position = UDim2.fromScale(0.5, 0.5)
+	holder.Size = UDim2.fromOffset(bannerSize + 58, bannerSize)
+	holder.ZIndex = 5000
+	holder.Parent = NHUI._Root
 
-	local root = Instance.new("Frame")
-	root.Name = "NHUI_LoadingScreen"
-	root.BackgroundColor3 = opts.Background or Color3.fromRGB(8, 8, 10)
-	root.BackgroundTransparency = 1
-	root.BorderSizePixel = 0
-	root.Size = UDim2.fromScale(1, 1)
-	root.ZIndex = 5000
-	root.Parent = NHUI._Root
+	local bannerImage = Instance.new("ImageLabel")
+	bannerImage.Name = "BannerImage"
+	bannerImage.AnchorPoint = Vector2.new(0.5, 0.5)
+	bannerImage.BackgroundTransparency = 1
+	bannerImage.BorderSizePixel = 0
+	bannerImage.Image = bannerAsset
+	bannerImage.Position = UDim2.new(0.5, -26, 0.5, 0)
+	bannerImage.Size = UDim2.fromOffset(bannerSize, bannerSize)
+	bannerImage.ImageTransparency = 1   -- mulai transparan
+	bannerImage.ZIndex = 5001
+	bannerImage.Parent = holder
 
-	local center = Instance.new("Frame")
-	center.Name = "Center"
-	center.BackgroundTransparency = 1
-	center.AnchorPoint = Vector2.new(0.5, 0.5)
-	center.Position = UDim2.fromScale(0.5, 0.5)
-	center.Size = UDim2.fromOffset(320, 0)
-	center.AutomaticSize = Enum.AutomaticSize.Y
-	center.ZIndex = 5001
-	center.Parent = root
+	-- fade in
+	Tween(bannerImage, { ImageTransparency = 0 }, fadeIn, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
-	local layout = Instance.new("UIListLayout")
-	layout.FillDirection = Enum.FillDirection.Vertical
-	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.VerticalAlignment = Enum.VerticalAlignment.Center
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Padding = UDim.new(0, 14)
-	layout.Parent = center
-
-	if banner and banner ~= "" then
-		local bannerImg = Instance.new("ImageLabel")
-		bannerImg.Name = "Banner"
-		bannerImg.BackgroundTransparency = 1
-		bannerImg.Image = banner
-		bannerImg.ScaleType = Enum.ScaleType.Fit
-		bannerImg.Size = UDim2.fromOffset(opts.BannerSize or 180, opts.BannerSize or 180)
-		bannerImg.LayoutOrder = 1
-		bannerImg.ZIndex = 5002
-		bannerImg.Parent = center
-	end
-
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.FontFace = NHUI.Theme.Font
-	titleLabel.Text = title
-	titleLabel.TextColor3 = Color3.new(1, 1, 1)
-	titleLabel.TextSize = 20
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Center
-	titleLabel.AutomaticSize = Enum.AutomaticSize.XY
-	titleLabel.Size = UDim2.fromOffset(0, 24)
-	titleLabel.LayoutOrder = 2
-	titleLabel.ZIndex = 5002
-	titleLabel.Parent = center
-
-	if subtitle and subtitle ~= "" then
-		local subLabel = Instance.new("TextLabel")
-		subLabel.BackgroundTransparency = 1
-		subLabel.FontFace = NHUI.Theme.FontRegular
-		subLabel.Text = subtitle
-		subLabel.TextColor3 = NHUI.Theme.TextDim
-		subLabel.TextSize = 13
-		subLabel.TextXAlignment = Enum.TextXAlignment.Center
-		subLabel.AutomaticSize = Enum.AutomaticSize.XY
-		subLabel.Size = UDim2.fromOffset(0, 16)
-		subLabel.LayoutOrder = 3
-		subLabel.ZIndex = 5002
-		subLabel.Parent = center
-	end
-
-	Tween(root, { BackgroundTransparency = 0 }, 0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-
-	task.delay(holdTime, function()
-		Tween(root, { BackgroundTransparency = 1 }, 0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-
-		task.delay(0.5, function()
-			if root and root.Parent then
-				root:Destroy()
+	-- tunggu, terus fade out + destroy
+	task.delay(fadeIn + holdTime, function()
+		Tween(bannerImage, { ImageTransparency = 1 }, fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		task.delay(fadeOut + 0.05, function()
+			if holder and holder.Parent then
+				holder:Destroy()
 			end
 		end)
 	end)
 
 	return {
-		Instance = root,
+		Instance = holder,
 		Destroy = function()
-			Tween(root, { BackgroundTransparency = 1 }, 0.3)
-			task.delay(0.4, function()
-				if root and root.Parent then root:Destroy() end
+			Tween(bannerImage, { ImageTransparency = 1 }, fadeOut, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			task.delay(fadeOut + 0.05, function()
+				if holder and holder.Parent then
+					holder:Destroy()
+				end
 			end)
 		end,
 	}
@@ -2608,8 +2569,9 @@ end
 function NHUI:CreateWindow(opts)
 	opts = opts or {}
 
+	local banner = nil
 	if opts.Loading ~= false then
-		NHUI:LoadingScreen(opts.Loading or {})
+		banner = NHUI:LoadingScreen(opts.Loading or {})
 	end
 
 	local size = opts.Size or UDim2.fromOffset(605, 405)
@@ -3030,6 +2992,19 @@ function NHUI:CreateWindow(opts)
 	if opts.Discord and opts.Discord.Enabled then
 		task.spawn(SetupDiscordInvite, opts.Discord)
 	end
+
+	task.spawn(function()
+		local loadingOpts = opts.Loading or {}
+		local fadeIn  = loadingOpts.FadeIn  or 0.3
+		local fadeOut = loadingOpts.FadeOut or 0.4
+		local hold    = loadingOpts.HoldTime or 0.8
+
+		task.wait(fadeIn + hold + fadeOut + 0.1)
+		if banner then banner:Destroy() end
+		if not self._destroyed then
+			self:Open()
+		end
+	end)
 
 	return self
 end
