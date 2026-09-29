@@ -11171,7 +11171,7 @@ function Tab:AddDropdown(opts)
 	local headerH = hasDesc and 56 or 44
 	local jan = self._janitor
 
-	local GAP        = 4
+	local GAP        = 6
 	local PAD_TOP    = 3
 	local PAD_BOT    = 6
 	local OPT_H      = 38
@@ -11359,7 +11359,7 @@ end
 	searchIcon.ImageColor3 = NHUI.Theme.TextDim
 	searchIcon.Size = UDim2.fromOffset(16, 16)
 	searchIcon.AnchorPoint = Vector2.new(0, 0.5)
-	searchIcon.Position = UDim2.new(0, 12, 0.5, 0)
+	searchIcon.Position = UDim2.new(0, 12, 0.5, -4)
 	searchIcon.AutoButtonColor = false
 	searchIcon.ImageTransparency = 0
 	searchIcon.ZIndex = Z.Content + 4
