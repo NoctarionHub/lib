@@ -2881,7 +2881,7 @@ if opts.HubCard and opts.HubCard.Enabled ~= false then
 
     -- Dorong tabBar turun supaya tidak nabrak HubCard
     tabBar.Position = UDim2.fromOffset(margin, 58 + HUB_OFFSET)
-    tabBar.Size = UDim2.new(0, 130, 1, -(58 + HUB_OFFSET + margin))
+    tabBar.Size = UDim2.new(0, SIDEBAR_W, 1, -(58 + HUB_OFFSET + margin))
 
     -- Indicator tab ikut turun
     tabIndicatorLayer.Position = tabBar.Position
