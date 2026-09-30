@@ -2790,26 +2790,33 @@ task.defer(updateTagPosition)
 	resizeHandle.ZIndex = Z.Content + 4
 	resizeHandle.Parent = main
 
-	-- ============================================================
--- NHUI HubCard (port dari WindUI)
--- ============================================================
 if opts.HubCard and opts.HubCard.Enabled ~= false then
     local hub = opts.HubCard
     local HUB_W, HUB_H = 192, 110
     local HUB_RADIUS = 10
     local HUB_OFFSET = 115  -- dorong tabBar turun segini
 
-    -- Kartu utama
+   -- Holder dulu
+    local hubHolder = Instance.new("Frame")
+    hubHolder.Name = "HubCardHolder"
+    hubHolder.BackgroundTransparency = 1
+    hubHolder.Position = UDim2.fromOffset(margin, 53)
+    hubHolder.Size = UDim2.fromOffset(SIDEBAR_W, HUB_H)
+    hubHolder.ClipsDescendants = true
+    hubHolder.ZIndex = Z.Content + 1
+    hubHolder.Parent = main
+
+    -- Baru hubCard-nya, parent ke holder
     local hubCard = Instance.new("Frame")
     hubCard.Name = "HubCard"
     hubCard.BackgroundColor3 = NHUI.Theme.Surface
     hubCard.BackgroundTransparency = 0.35
     hubCard.BorderSizePixel = 0
     hubCard.ClipsDescendants = true
-    hubCard.Position = UDim2.fromOffset(margin, 53)
-    hubCard.Size = UDim2.fromOffset(HUB_W, HUB_H)
-    hubCard.ZIndex = Z.Content + 1
-    hubCard.Parent = main
+    hubCard.Position = UDim2.fromOffset(0, 0)
+    hubCard.Size = UDim2.fromScale(1, 1)
+    hubCard.ZIndex = Z.Content + 2
+    hubCard.Parent = hubHolder
     Corner(hubCard, HUB_RADIUS)
     Stroke(hubCard, Color3.new(1, 1, 1), 1, 0.9)
 
