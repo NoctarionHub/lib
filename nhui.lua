@@ -3170,6 +3170,164 @@ function Window:AddTag(opts)
 
 	return api
 end
+
+function Window:AddProfile(opts)
+	opts = opts or {}
+	local title       = opts.Title or opts.title or "User"
+	local description = opts.Description or opts.description
+	local image       = opts.Image or opts.image
+	local userId      = opts.UserId or opts.userId
+	local avatarSize  = opts.AvatarSize or opts.avatarSize or 34
+	local PAD         = 17
+
+	-- fallback ke LocalPlayer kalau kosong
+	local resolvedUserId = userId
+	if not resolvedUserId and (not image or image == "") then
+		resolvedUserId = Players.LocalPlayer and Players.LocalPlayer.UserId or nil
+	end
+
+	-- container utama di sidebar bawah
+	local holder = Instance.new("Frame")
+	holder.Name = "Profile"
+	holder.BackgroundTransparency = 1
+	holder.AnchorPoint = Vector2.new(0.5, 1)
+	holder.Position = UDim2.fromScale(0.5, 1)
+	holder.Size = UDim2.new(1, 0, 0, 60)
+	holder.ZIndex = Z.Content + 1
+	holder.Parent = self._sidebar or self._gui
+
+	-- layout: avatar kiri + teks kanan
+	local row = Instance.new("Frame")
+	row.BackgroundTransparency = 1
+	row.Position = UDim2.fromOffset(PAD, 0)
+	row.Size = UDim2.new(1, -PAD * 2, 1, 0)
+	row.ZIndex = Z.Content + 2
+	row.Parent = holder
+
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.Padding = UDim.new(0, 10)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = row
+
+	-- avatar bulat
+	local avatarHolder = Instance.new("Frame")
+	avatarHolder.BackgroundColor3 = Color3.new(1, 1, 1)
+	avatarHolder.BackgroundTransparency = 0.95
+	avatarHolder.BorderSizePixel = 0
+	avatarHolder.ClipsDescendants = true
+	avatarHolder.Size = UDim2.fromOffset(avatarSize, avatarSize)
+	avatarHolder.LayoutOrder = 1
+	avatarHolder.ZIndex = Z.Content + 3
+	avatarHolder.Parent = row
+	Corner(avatarHolder, avatarSize / 2)
+	Stroke(avatarHolder, Color3.new(1, 1, 1), 1, 0.8)
+
+	local avatarImg = Instance.new("ImageLabel")
+	avatarImg.BackgroundTransparency = 1
+	avatarImg.ScaleType = Enum.ScaleType.Crop
+	avatarImg.Size = UDim2.fromScale(1, 1)
+	avatarImg.ZIndex = Z.Content + 4
+	avatarImg.Parent = avatarHolder
+	Corner(avatarImg, avatarSize / 2)
+
+	if resolvedUserId then
+		task.spawn(function()
+			local ok, content = pcall(
+				Players.GetUserThumbnailAsync,
+				Players,
+				resolvedUserId,
+				Enum.ThumbnailType.HeadShot,
+				Enum.ThumbnailSize.Size100x100
+			)
+			if ok and content and avatarImg.Parent then
+				avatarImg.Image = content
+			end
+		end)
+	elseif image then
+		avatarImg.Image = ResolveIcon(image)
+	end
+
+	-- teks
+	local textCol = Instance.new("Frame")
+	textCol.BackgroundTransparency = 1
+	textCol.AutomaticSize = Enum.AutomaticSize.X
+	textCol.Size = UDim2.fromOffset(0, avatarSize)
+	textCol.LayoutOrder = 2
+	textCol.ZIndex = Z.Content + 3
+	textCol.Parent = row
+
+	local textLayout = Instance.new("UIListLayout")
+	textLayout.FillDirection = Enum.FillDirection.Vertical
+	textLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	textLayout.Padding = UDim.new(0, 2)
+	textLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	textLayout.Parent = textCol
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.FontFace = NHUI.Theme.Font
+	titleLabel.Text = title
+	titleLabel.TextColor3 = NHUI.Theme.Text
+	titleLabel.TextSize = 14
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	titleLabel.AutomaticSize = Enum.AutomaticSize.X
+	titleLabel.Size = UDim2.fromOffset(0, 16)
+	titleLabel.LayoutOrder = 1
+	titleLabel.ZIndex = Z.Content + 4
+	titleLabel.Parent = textCol
+
+	local descLabel
+	if description and description ~= "" then
+		descLabel = Instance.new("TextLabel")
+		descLabel.BackgroundTransparency = 1
+		descLabel.FontFace = NHUI.Theme.FontRegular
+		descLabel.Text = description
+		descLabel.TextColor3 = NHUI.Theme.TextDim
+		descLabel.TextSize = 12
+		descLabel.TextXAlignment = Enum.TextXAlignment.Left
+		descLabel.TextTruncate = Enum.TextTruncate.AtEnd
+		descLabel.AutomaticSize = Enum.AutomaticSize.X
+		descLabel.Size = UDim2.fromOffset(0, 14)
+		descLabel.LayoutOrder = 2
+		descLabel.ZIndex = Z.Content + 4
+		descLabel.Parent = textCol
+	end
+
+	self._profile = holder
+
+	return {
+		Instance = holder,
+		SetTitle = function(_, v) titleLabel.Text = tostring(v or "") end,
+		SetDescription = function(_, v)
+			if descLabel then descLabel.Text = tostring(v or "") end
+		end,
+		SetImage = function(_, v)
+			if resolvedUserId then return end
+			avatarImg.Image = ResolveIcon(v)
+		end,
+		SetUserId = function(_, v)
+			resolvedUserId = v
+			task.spawn(function()
+				local ok, content = pcall(
+					Players.GetUserThumbnailAsync,
+					Players,
+					v,
+					Enum.ThumbnailType.HeadShot,
+					Enum.ThumbnailSize.Size100x100
+				)
+				if ok and content and avatarImg.Parent then
+					avatarImg.Image = content
+				end
+			end)
+		end,
+		Destroy = function()
+			if holder.Parent then holder:Destroy() end
+		end,
+	}
+end
  
 function Window:IsOpen()
 	return self._state == "open"
@@ -10737,221 +10895,6 @@ function Tab:AddGradientCard(opts)
 	end
  
 	return { Instance = card, Destroy = function() card:Destroy() end }
-end
-
-function Tab:AddProfile(opts)
-	opts = opts or {}
-	local jan = self._janitor
-	local title       = opts.Title or "Profile"
-	local description = opts.Description or ""
-	local image       = opts.Image
-	local userId      = opts.UserId
-	local buttons     = opts.Buttons or {}
-
-	local PAD = 14
-	local AVATAR = 56
-	local hasDesc = description ~= ""
-	local hasButtons = #buttons > 0
-
-	local titleH = 18
-	local descH = 16
-	local buttonH = 30
-	local buttonGap = 6
-	local textBlockH = titleH + (hasDesc and (3 + descH) or 0)
-	local contentH = math.max(AVATAR, textBlockH)
-	local buttonBlockH = hasButtons and (10 + buttonH) or 0
-	local height = PAD * 2 + contentH + buttonBlockH
-
-	local card = BaseCard(self._page, height)
-	self._window:_RegisterSearchable(self, title, card)
-
-	-- ===== Avatar =====
-	local avatarHolder = Instance.new("Frame")
-	avatarHolder.Name = "Avatar"
-	avatarHolder.BackgroundColor3 = Color3.new(1, 1, 1)
-	avatarHolder.BackgroundTransparency = 0.9
-	avatarHolder.BorderSizePixel = 0
-	avatarHolder.ClipsDescendants = true
-	avatarHolder.Position = UDim2.fromOffset(PAD, PAD)
-	avatarHolder.Size = UDim2.fromOffset(AVATAR, AVATAR)
-	avatarHolder.ZIndex = Z.Content + 1
-	avatarHolder.Parent = card
-	Corner(avatarHolder, AVATAR / 2)
-	Stroke(avatarHolder, Color3.new(1, 1, 1), 1, 0.8)
-
-	local avatarImg = Instance.new("ImageLabel")
-	avatarImg.BackgroundTransparency = 1
-	avatarImg.ScaleType = Enum.ScaleType.Crop
-	avatarImg.Size = UDim2.fromScale(1, 1)
-	avatarImg.ZIndex = Z.Content + 2
-	avatarImg.Parent = avatarHolder
-	Corner(avatarImg, AVATAR / 2)
-
-local resolvedUserId = userId
-local resolvedImage  = image
-
-if not resolvedUserId and (not resolvedImage or resolvedImage == "") then
-	resolvedUserId = Players.LocalPlayer and Players.LocalPlayer.UserId or nil
-end
-
-if resolvedUserId then
-	task.spawn(function()
-		local ok, content = pcall(
-			Players.GetUserThumbnailAsync,
-			Players,
-			resolvedUserId,
-			Enum.ThumbnailType.HeadShot,
-			Enum.ThumbnailSize.Size100x100
-		)
-		if ok and content and avatarImg.Parent then
-			avatarImg.Image = content
-		end
-	end)
-elseif resolvedImage then
-	avatarImg.Image = ResolveIcon(resolvedImage)
-end
-
-	-- ===== Text block =====
-	local textX = PAD + AVATAR + 12
-	local textW = 1
-	local textHolder = Instance.new("Frame")
-	textHolder.Name = "Text"
-	textHolder.BackgroundTransparency = 1
-	textHolder.Position = UDim2.fromOffset(textX, PAD)
-	textHolder.Size = UDim2.new(1, -(textX + PAD), 0, contentH)
-	textHolder.ZIndex = Z.Content + 1
-	textHolder.Parent = card
-
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Name = "Title"
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.FontFace = NHUI.Theme.Font
-	titleLabel.Text = title
-	titleLabel.TextColor3 = NHUI.Theme.Text
-	titleLabel.TextSize = 15
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	titleLabel.TextYAlignment = Enum.TextYAlignment.Top
-	titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
-	titleLabel.Position = UDim2.fromOffset(0, math.floor((contentH - textBlockH) / 2))
-	titleLabel.Size = UDim2.new(1, 0, 0, titleH)
-	titleLabel.ZIndex = Z.Content + 2
-	titleLabel.Parent = textHolder
-
-	local descLabel
-	if hasDesc then
-		descLabel = Instance.new("TextLabel")
-		descLabel.Name = "Description"
-		descLabel.BackgroundTransparency = 1
-		descLabel.FontFace = NHUI.Theme.FontRegular
-		descLabel.Text = description
-		descLabel.TextColor3 = NHUI.Theme.TextDim
-		descLabel.TextSize = 12
-		descLabel.TextXAlignment = Enum.TextXAlignment.Left
-		descLabel.TextYAlignment = Enum.TextYAlignment.Top
-		descLabel.TextWrapped = true
-		descLabel.Position = UDim2.fromOffset(0, titleLabel.Position.Y.Offset + titleH + 3)
-		descLabel.Size = UDim2.new(1, 0, 0, descH)
-		descLabel.ZIndex = Z.Content + 2
-		descLabel.Parent = textHolder
-	end
-
-	-- ===== Buttons =====
-	local buttonRefs = {}
-	if hasButtons then
-		local btnRow = Instance.new("Frame")
-		btnRow.Name = "Buttons"
-		btnRow.BackgroundTransparency = 1
-		btnRow.Position = UDim2.fromOffset(PAD, PAD + contentH + 10)
-		btnRow.Size = UDim2.new(1, -PAD * 2, 0, buttonH)
-		btnRow.ZIndex = Z.Content + 1
-		btnRow.Parent = card
-
-		local btnLayout = Instance.new("UIListLayout")
-		btnLayout.FillDirection = Enum.FillDirection.Horizontal
-		btnLayout.Padding = UDim.new(0, buttonGap)
-		btnLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		btnLayout.Parent = btnRow
-
-		local n = #buttons
-		local totalGap = buttonGap * (n - 1)
-		local eachW = UDim.new(1 / n, -totalGap / n)
-
-		for i, btn in ipairs(buttons) do
-			local filled = btn.Filled == true
-			local tint = filled and NHUI.Theme.Accent or Color3.new(1, 1, 1)
-
-			local button = Instance.new("TextButton")
-			button.Name = "Btn" .. i
-			button.Text = ""
-			button.AutoButtonColor = false
-			button.BackgroundColor3 = tint
-			button.BackgroundTransparency = filled and 0.85 or 1
-			button.BorderSizePixel = 0
-			button.Size = eachW
-			button.LayoutOrder = i
-			button.ZIndex = Z.Content + 1
-			button.Parent = btnRow
-			Corner(button, 8)
-			local buttonStroke = Stroke(button, tint, 1, filled and 0.7 or 0.85)
-
-			local lbl = Instance.new("TextLabel")
-			lbl.BackgroundTransparency = 1
-			lbl.FontFace = NHUI.Theme.Font
-			lbl.Text = tostring(btn.Text or "Button")
-			lbl.TextColor3 = NHUI.Theme.Text
-			lbl.TextSize = 13
-			lbl.Size = UDim2.fromScale(1, 1)
-			lbl.ZIndex = Z.Content + 2
-			lbl.Parent = button
-
-			jan:Add(button.MouseEnter:Connect(function()
-				Tween(button, { BackgroundTransparency = math.max(button.BackgroundTransparency - 0.1, 0) }, 0.12)
-				Tween(buttonStroke, { Transparency = math.max(buttonStroke.Transparency - 0.15, 0) }, 0.12)
-			end))
-			jan:Add(button.MouseLeave:Connect(function()
-				Tween(button, { BackgroundTransparency = filled and 0.85 or 1 }, 0.12)
-				Tween(buttonStroke, { Transparency = filled and 0.7 or 0.85 }, 0.12)
-			end))
-			jan:Add(button.MouseButton1Click:Connect(function()
-				if btn.Callback then task.spawn(btn.Callback) end
-			end))
-
-			table.insert(buttonRefs, { Button = button, Label = lbl, Stroke = buttonStroke })
-		end
-	end
-
-	local title = opts.Title
-if not title or title == "" then
-	title = Players.LocalPlayer and Players.LocalPlayer.DisplayName or "Profile"
-end
-
-	return {
-		Instance = card,
-		SetTitle = function(_, v) titleLabel.Text = tostring(v or "") end,
-		SetDescription = function(_, v)
-			if descLabel then descLabel.Text = tostring(v or "") end
-		end,
-		SetImage = function(_, v)
-			if userId then return end
-			avatarImg.Image = ResolveIcon(v)
-		end,
-		SetUserId = function(_, v)
-			userId = v
-			task.spawn(function()
-				local ok, content = pcall(
-					Players.GetUserThumbnailAsync,
-					Players,
-					v,
-					Enum.ThumbnailType.HeadShot,
-					Enum.ThumbnailSize.Size100x100
-				)
-				if ok and content and avatarImg.Parent then
-					avatarImg.Image = content
-				end
-			end)
-		end,
-		Destroy = function() card:Destroy() end,
-	}
 end
  
 function Tab:AddToggle(opts)
