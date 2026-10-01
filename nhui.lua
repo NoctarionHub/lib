@@ -2887,7 +2887,7 @@ task.defer(updateTagPosition)
  
 	local toggleKey = opts.ToggleKeybind
 	if toggleKey == nil then
-		toggleKey = Enum.KeyCode.RightShift
+		toggleKey = Enum.KeyCode.F
 	end
  
 	if toggleKey then
