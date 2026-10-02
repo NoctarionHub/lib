@@ -2545,9 +2545,9 @@ function NHUI:CreateWindow(opts)
     local vp = ViewportSize()
     local s = GetUIScale()
     size = UDim2.fromOffset(
-        math.floor(vp.X / s * 0.94),
-        math.floor(vp.Y / s * 0.85)
-    )
+			math.floor((vp.X / s) * 0.64),
+			math.floor((vp.Y / s) * 0.96)
+		)
 end
 	local margin = NHUI.Theme.Margin
  
