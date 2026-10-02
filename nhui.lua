@@ -2915,9 +2915,9 @@ task.defer(updateTagPosition)
 		local bandY = -(topInset / GetUIScale()) + ((topInset / GetUIScale()) - toggleSize) / 2
  
 		mobileToggle.AnchorPoint = Vector2.new(0, 0)
-		mobileToggle.Position = opts.TogglePosition or UDim2.fromOffset(300, math.floor(bandY))
+		mobileToggle.Position = opts.TogglePosition or UDim2.new(0.13287,0,0.0341,0)
 		mobileToggle.Size = UDim2.fromOffset(toggleSize, toggleSize)
-		mobileToggle.Image = "rbxassetid://136834285051667"
+		mobileToggle.Image = "rbxassetid://82213459696859"
 		mobileToggle.ZIndex = Z.Toast
 		mobileToggle.Parent = root
  
