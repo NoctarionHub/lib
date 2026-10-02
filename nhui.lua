@@ -2542,11 +2542,13 @@ function NHUI:CreateWindow(opts)
 	local size = opts.Size or UDim2.fromOffset(605, 405)
  
 	if IsMobileDevice then
-		-- Landscape layout: use the available height instead of flattening the window.
-		local vp = ViewportSize()
-		local s = GetUIScale()
-		size = UDim2.new(0.13287,0,0.0341,0)
-	end
+    local vp = ViewportSize()
+    local s = GetUIScale()
+    size = UDim2.fromOffset(
+        math.floor(vp.X / s * 0.94),
+        math.floor(vp.Y / s * 0.85)
+    )
+end
 	local margin = NHUI.Theme.Margin
  
 	local root = NHUI._Root
