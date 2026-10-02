@@ -2922,7 +2922,7 @@ task.defer(updateTagPosition)
 		mobileToggle.Parent = root
  
 		local mobileToggleCorner = Instance.new("UICorner")
-		mobileToggleCorner.CornerRadius = UDim.new(0, 7)
+		mobileToggleCorner.CornerRadius = UDim.new(1, 0)
 		mobileToggleCorner.Parent = mobileToggle
  
 		-- Draggable is deprecated and swallows touch input (Activated never fires),
