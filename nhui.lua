@@ -2905,8 +2905,8 @@ task.defer(updateTagPosition)
 	if IsMobileDevice then
 		local mobileToggle = Instance.new("ImageButton")
 		mobileToggle.Name = "MobileToggleButton"
-		mobileToggle.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-		mobileToggle.BackgroundTransparency = 0
+		mobileToggle.BackgroundColor3 = Color3.fromRGB(1, 1, 1)
+		mobileToggle.BackgroundTransparency = 1
 		mobileToggle.BorderSizePixel = 0
 		-- Alinhado com a barra do Roblox: a ScreenGui comeca abaixo do inset, entao
 		-- subir inset.Y coloca o botao na mesma faixa das pilulas do topo.
