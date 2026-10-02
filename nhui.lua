@@ -2905,13 +2905,13 @@ task.defer(updateTagPosition)
 	if IsMobileDevice then
 		local mobileToggle = Instance.new("ImageButton")
 		mobileToggle.Name = "MobileToggleButton"
-		mobileToggle.BackgroundColor3 = Color3.fromRGB(1, 1, 1)
-		mobileToggle.BackgroundTransparency = 1
+		mobileToggle.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		mobileToggle.BackgroundTransparency = 0
 		mobileToggle.BorderSizePixel = 0
 		-- Alinhado com a barra do Roblox: a ScreenGui comeca abaixo do inset, entao
 		-- subir inset.Y coloca o botao na mesma faixa das pilulas do topo.
 		local topInset  = GuiService:GetGuiInset().Y
-		local toggleSize = 45
+		local toggleSize = 50
 		local bandY = -(topInset / GetUIScale()) + ((topInset / GetUIScale()) - toggleSize) / 2
  
 		mobileToggle.AnchorPoint = Vector2.new(0, 0)
@@ -2922,7 +2922,7 @@ task.defer(updateTagPosition)
 		mobileToggle.Parent = root
  
 		local mobileToggleCorner = Instance.new("UICorner")
-		mobileToggleCorner.CornerRadius = UDim.new(1, 0)
+		mobileToggleCorner.CornerRadius = UDim.new(0, 7)
 		mobileToggleCorner.Parent = mobileToggle
  
 		-- Draggable is deprecated and swallows touch input (Activated never fires),
