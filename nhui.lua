@@ -11356,7 +11356,7 @@ function Tab:AddDropdown(opts)
 		al.Parent = actions
 	end
 
-	-- list
+		-- list
 	local list = Instance.new("ScrollingFrame")
 	list.Name = "Options"
 	list.BackgroundTransparency = 1
@@ -11364,16 +11364,20 @@ function Tab:AddDropdown(opts)
 	list.Size = UDim2.new(1, 0, 0, 0)
 	list.AutomaticSize = Enum.AutomaticSize.None
 	list.CanvasSize = UDim2.new(0, 0, 0, 0)
-	list.ScrollBarThickness = 3
+	list.ScrollBarThickness = 6            -- lebih tebal, bisa ditarik
 	list.ScrollBarImageColor3 = NHUI.Theme.TextDim
 	list.ScrollBarImageTransparency = 0
 	list.ScrollingDirection = Enum.ScrollingDirection.Y
+	list.ScrollingEnabled = true            -- pastikan aktif
+	list.Active = true
+	list.ElasticBehavior = Enum.ElasticBehavior.Never
+	list.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
 	list.LayoutOrder = 2
 	list.ZIndex = Z.Content + 1
 	list.Parent = panel
 
 	local listPad = Instance.new("UIPadding")
-	listPad.PaddingRight = UDim.new(0, 6)
+	listPad.PaddingRight = UDim.new(0, 8)   -- ruang buat scrollbar
 	listPad.Parent = list
 
 	local listLayout = Instance.new("UIListLayout")
@@ -11381,19 +11385,18 @@ function Tab:AddDropdown(opts)
 	listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	listLayout.Parent = list
 
-	local emptyLabel = Instance.new("TextLabel")
-	emptyLabel.Name = "Empty"
-	emptyLabel.BackgroundTransparency = 1
-	emptyLabel.FontFace = NHUI.Theme.FontRegular
-	emptyLabel.Text = "No matches"
-	emptyLabel.TextColor3 = NHUI.Theme.TextDim
-	emptyLabel.TextSize = 13
-	emptyLabel.TextTransparency = 0.55
-	emptyLabel.Visible = false
-	emptyLabel.Size = UDim2.new(1, -12, 0, OPT_H)
-	emptyLabel.LayoutOrder = 9999
-	emptyLabel.ZIndex = Z.Content + 2
-	emptyLabel.Parent = list
+	-- update CanvasSize tiap kali konten berubah
+	local function updateCanvas()
+		list.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + LIST_PAD * 2)
+	end
+	listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+	task.defer(updateCanvas)
+
+	local function syncScrollHint()
+		local overflow = list.AbsoluteCanvasSize.Y - list.AbsoluteWindowSize.Y
+		local more = ddOpen and list.AbsoluteWindowSize.Y > 0 and overflow > 1
+		tw(list, { ScrollBarImageTransparency = more and 0.15 or 1 }, twHint)
+	end
 
 	local optionFrames = {}
 	local ddOpen = false
@@ -11502,6 +11505,8 @@ function Tab:AddDropdown(opts)
 		if cardTween then cardTween:Cancel() end
 		cardTween = tw(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
 		list.Size = UDim2.new(1, 0, 0, listSize())
+		updateCanvas()                    -- <-- tambah ini
+		syncScrollHint()
 	end
 
 	local function buildOption(name, order)
@@ -11618,6 +11623,7 @@ function Tab:AddDropdown(opts)
 		end)
 
 		table.insert(optionFrames, data)
+		updateCanvas()
 		return data
 	end
 
@@ -11699,6 +11705,8 @@ function Tab:AddDropdown(opts)
 		if cardTween then cardTween:Cancel() end
 		cardTween = tw(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
 		list.Size = UDim2.new(1, 0, 0, listSize())
+		list.CanvasPosition = Vector2.new(0, 0)   -- reset scroll ke atas
+		updateCanvas()                             -- <-- tambah ini
 		for _, d in ipairs(optionFrames) do renderOption(d, true) end
 		syncScrollHint()
 		task.defer(bringIntoView)
@@ -11726,6 +11734,21 @@ function Tab:AddDropdown(opts)
 			closeDropdown_()
 		end
 	end))
+
+
+	jan:Add(list:GetPropertyChangedSignal("CanvasPosition"):Connect(syncScrollHint))
+	jan:Add(list:GetPropertyChangedSignal("AbsoluteWindowSize"):Connect(syncScrollHint))
+	list.InputChanged:Connect(function(input)
+		if not ddOpen then return end
+		if input.UserInputType == Enum.UserInputType.MouseWheel then
+			local y = math.clamp(
+				list.CanvasPosition.Y - input.Position.Z * 40,
+				0, math.max(list.AbsoluteCanvasSize.Y - list.AbsoluteWindowSize.Y, 0)
+			)
+			list.CanvasPosition = Vector2.new(0, y)
+			syncScrollHint()
+		end
+	end)
 
 	jan:Add(function()
 		if cardTween then cardTween:Cancel() end
@@ -11769,6 +11792,7 @@ function Tab:AddDropdown(opts)
 			end
 			updateLabel()
 			updateCorners()
+			updateCanvas()                     -- <-- tambah ini
 		end,
 		Refresh = function(_, newOptions)
 			if newOptions then
@@ -11779,6 +11803,7 @@ function Tab:AddDropdown(opts)
 			end
 			updateLabel()
 			updateCorners()
+			updateCanvas()                     -- <-- tambah ini
 		end,
 		OnChanged = function(_, fn) return signal.Connect(fn) end,
 		Destroy = function()
