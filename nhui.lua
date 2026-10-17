@@ -11366,7 +11366,7 @@ function Tab:AddDropdown(opts)
 	list.CanvasSize = UDim2.new(0, 0, 0, 0)
 	list.ScrollBarThickness = 3
 	list.ScrollBarImageColor3 = NHUI.Theme.TextDim
-	list.ScrollBarImageTransparency = 1
+	list.ScrollBarImageTransparency = 0
 	list.ScrollingDirection = Enum.ScrollingDirection.Y
 	list.LayoutOrder = 2
 	list.ZIndex = Z.Content + 1
@@ -14871,7 +14871,7 @@ function NHUI:Unload()
 	LibJanitor:Destroy()
 	if NHUI._Root then NHUI._Root:Destroy() end
 end
- 
+
 do
 	local globalTable = GetGlobalTable()
 	globalTable.__NHUI_Unload = function()
