@@ -11356,19 +11356,21 @@ function Tab:AddDropdown(opts)
 		al.Parent = actions
 	end
 
-		-- list
+	-- list
 	local list = Instance.new("ScrollingFrame")
 	list.Name = "Options"
 	list.BackgroundTransparency = 1
 	list.BorderSizePixel = 0
 	list.Size = UDim2.new(1, 0, 0, 0)
 	list.AutomaticSize = Enum.AutomaticSize.None
+	-- biar Roblox otomatis hitung canvas dari UIListLayout di dalamnya
+	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	list.CanvasSize = UDim2.new(0, 0, 0, 0)
-	list.ScrollBarThickness = 6            -- lebih tebal, bisa ditarik
+	list.ScrollBarThickness = 5
 	list.ScrollBarImageColor3 = NHUI.Theme.TextDim
-	list.ScrollBarImageTransparency = 0
+	list.ScrollBarImageTransparency = 0.15
 	list.ScrollingDirection = Enum.ScrollingDirection.Y
-	list.ScrollingEnabled = true            -- pastikan aktif
+	list.ScrollingEnabled = true
 	list.Active = true
 	list.ElasticBehavior = Enum.ElasticBehavior.Never
 	list.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
@@ -11377,7 +11379,8 @@ function Tab:AddDropdown(opts)
 	list.Parent = panel
 
 	local listPad = Instance.new("UIPadding")
-	listPad.PaddingRight = UDim.new(0, 8)   -- ruang buat scrollbar
+	listPad.PaddingRight = UDim.new(0, 8)
+	listPad.PaddingBottom = UDim.new(0, LIST_PAD)
 	listPad.Parent = list
 
 	local listLayout = Instance.new("UIListLayout")
@@ -11479,25 +11482,27 @@ function Tab:AddDropdown(opts)
 		tw(list, { ScrollBarImageTransparency = more and 0.4 or 1 }, twHint)
 	end
 
-	local function openHeight()
+	local function countVisible()
 		local n = 0
 		for _, d in ipairs(optionFrames) do
 			if d.frame.Visible then n += 1 end
 		end
+		return n
+	end
+
+	local function listSize()
+		local n = countVisible()
+		local rows = math.min(math.max(n, 1), MAX_VIS)
+		return listHeight(rows)
+	end
+
+	local function openHeight()
+		local n = countVisible()
 		local overhead = PAD_TOP + PAD_BOT
 			+ (actions and (ACT_H + OPT_GAP) or 0)
 		local avail = pageHeight()
 		local rows = math.min(math.max(n, 1), MAX_VIS, rowsFit(avail - overhead))
 		return overhead + listHeight(rows)
-	end
-
-	local function listSize()
-		local n = 0
-		for _, d in ipairs(optionFrames) do
-			if d.frame.Visible then n += 1 end
-		end
-		local rows = math.min(math.max(n, 1), MAX_VIS)
-		return listHeight(rows)
 	end
 
 	local function resizeToList()
@@ -11705,8 +11710,7 @@ function Tab:AddDropdown(opts)
 		if cardTween then cardTween:Cancel() end
 		cardTween = tw(card, { Size = UDim2.new(1, 0, 0, headerH + GAP + openHeight()) }, twOpen)
 		list.Size = UDim2.new(1, 0, 0, listSize())
-		list.CanvasPosition = Vector2.new(0, 0)   -- reset scroll ke atas
-		updateCanvas()                             -- <-- tambah ini
+		list.CanvasPosition = Vector2.new(0, 0)
 		for _, d in ipairs(optionFrames) do renderOption(d, true) end
 		syncScrollHint()
 		task.defer(bringIntoView)
@@ -11735,6 +11739,25 @@ function Tab:AddDropdown(opts)
 		end
 	end))
 
+		-- scroll fallback (mouse wheel + touch drag di area list)
+	jan:Add(list.InputChanged:Connect(function(input)
+		if not ddOpen then return end
+		if input.UserInputType == Enum.UserInputType.MouseWheel then
+			local maxY = math.max(list.AbsoluteCanvasSize.Y - list.AbsoluteWindowSize.Y, 0)
+			local y = math.clamp(list.CanvasPosition.Y - input.Position.Z * 45, 0, maxY)
+			list.CanvasPosition = Vector2.new(0, y)
+			syncScrollHint()
+		end
+	end))
+
+	-- kalau touch/mouse di list, aktifkan scrolling (kadang panel ClipsDescendants bikin input ditelan)
+	jan:Add(list.InputBegan:Connect(function(input)
+		if not ddOpen then return end
+		if input.UserInputType == Enum.UserInputType.Touch
+			or input.UserInputType == Enum.UserInputType.MouseButton1 then
+			list.ScrollingEnabled = true
+		end
+	end))
 
 	jan:Add(list:GetPropertyChangedSignal("CanvasPosition"):Connect(syncScrollHint))
 	jan:Add(list:GetPropertyChangedSignal("AbsoluteWindowSize"):Connect(syncScrollHint))
