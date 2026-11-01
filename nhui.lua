@@ -2903,79 +2903,61 @@ task.defer(updateTagPosition)
 	end
  
 	if true then
-    -- 1. Buat ScreenGui di CoreGui
-    local toggleGui = Instance.new("ScreenGui")
-    toggleGui.Name = "NHUI_ToggleGui"
+    local CoreGui = game:GetService("CoreGui")
     
-    -- Gunakan CoreGui (atau fallback ke PlayerGui kalau tidak ada akses)
-    local coreGui = game:GetService("CoreGui")
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "Toggleui"
+    
+    -- Coba taruh di CoreGui, kalau gagal (executor tertentu) fallback ke PlayerGui
     local success, err = pcall(function()
-        toggleGui.Parent = coreGui
+        screenGui.Parent = CoreGui
     end)
     if not success then
-        toggleGui.Parent = PlayerGui
+        screenGui.Parent = PlayerGui
     end
-    
-    toggleGui.ResetOnSpawn = false
-    toggleGui.DisplayOrder = 99999
-    toggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    toggleGui.IgnoreGuiInset = false -- Harus FALSE agar Draggable tidak meloncat
 
-    -- 2. Buat Tombol (Persis seperti kodemu)
+    screenGui.ResetOnSpawn = false
+    screenGui.DisplayOrder = 999
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    -- Button dengan Draggable = true (Murni WindUI)
     local button = Instance.new("TextButton")
     button.Name = "Toggle"
-    button.Parent = toggleGui
+    button.Parent = screenGui
     button.BackgroundColor3 = Color3.fromRGB(0,0,0)
     button.BackgroundTransparency = 0
     button.Position = opts.TogglePosition or UDim2.new(0.13287, 0, 0.0341, 0)
     button.Size = UDim2.new(0, 50, 0, 50)
     button.Font = Enum.Font.SourceSans
     button.Text = ""
-    button.TextColor3 = Color3.fromRGB(248, 248, 248)
+    button.TextColor3 = Color3.fromRGB(248,248,248)
     button.TextSize = 18
-    button.Draggable = true -- ✨ Sihir Draggable ✨
+    button.Draggable = true -- ✨ INI KUNCINYA ✨
     button.ZIndex = 999
-
+    
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1, 0)
+    corner.CornerRadius = UDim.new(1,0)
     corner.Parent = button
-
-    -- 3. Icon ImageLabel
+    
     local icon = Instance.new("ImageLabel")
     icon.Name = "Icon"
     icon.Parent = button
-    icon.Size = UDim2.new(1, 0, 1, 0)
+    icon.Size = UDim2.new(1,0,1,0)
     icon.BackgroundTransparency = 1
-    icon.Image = "rbxassetid://81687776861363" -- Ganti kalau perlu
+    icon.Image = "rbxassetid://81687776861363" -- Icon N
     icon.ZIndex = 999
     
     local iconCorner = Instance.new("UICorner")
-    iconCorner.CornerRadius = UDim.new(1, 0)
+    iconCorner.CornerRadius = UDim.new(1,0)
     iconCorner.Parent = icon
-
-    -- 4. Bedain antara Klik & Drag
-    local isDragging = false
-    local dragStartPos = Vector2.zero
-
-    button.MouseButton1Down:Connect(function()
-        isDragging = false
-        dragStartPos = Vector2.new(button.AbsolutePosition.X, button.AbsolutePosition.Y)
+    
+    -- Event klik untuk buka/tutup UI NHUI
+    button.MouseButton1Click:Connect(function()
+        self:Toggle()
     end)
 
-    button.MouseButton1Up:Connect(function()
-        local endPos = Vector2.new(button.AbsolutePosition.X, button.AbsolutePosition.Y)
-        -- Kalau posisi berubah lebih dari 5 pixel, berarti ini Drag
-        if (endPos - dragStartPos).Magnitude > 5 then
-            isDragging = true
-        end
-        
-        if not isDragging then
-            self:Toggle() -- Buka UI
-        end
-    end)
-
-    -- Masukin ke Janitor biar kehapus pas script di-unload
-    jan:Add(toggleGui)
+    -- Masukin ke janitor biar kehapus otomatis kalau Window di-destroy
+    jan:Add(screenGui)
 end
 	
 elseif toggleKey then
