@@ -2928,7 +2928,7 @@ task.defer(updateTagPosition)
 
     jan:Add(mobileToggle.InputBegan:Connect(function(input)
         if input.UserInputType ~= Enum.UserInputType.Touch
-            and input.UserInputType ~= Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
+            and input.UserInputType ~= Enum.UserInputType.MouseButton1 or input.UserInputType ~= Enum.UserInputType.MouseMovement then
             return
         end
         if dragInput then return end
