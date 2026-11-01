@@ -2908,6 +2908,7 @@ task.defer(updateTagPosition)
     mobileToggle.BackgroundColor3 = Color3.fromRGB(1, 1, 1)
     mobileToggle.BackgroundTransparency = 0
     mobileToggle.BorderSizePixel = 0
+	mobileToggle.Draggable = true
     local topInset  = GuiService:GetGuiInset().Y
     local toggleSize = 50
     local bandY = -(topInset / GetUIScale()) + ((topInset / GetUIScale()) - toggleSize) / 2
