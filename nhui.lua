@@ -2903,62 +2903,72 @@ task.defer(updateTagPosition)
 	end
  
 	if true then
-    local mobileToggle = Instance.new("ImageButton")
-    mobileToggle.Name = "MobileToggleButton"
-    mobileToggle.BackgroundColor3 = Color3.fromRGB(1, 1, 1)
-    mobileToggle.BackgroundTransparency = 0
-    mobileToggle.BorderSizePixel = 0
-    local topInset  = GuiService:GetGuiInset().Y
-    local toggleSize = 50
-    local bandY = -(topInset / GetUIScale()) + ((topInset / GetUIScale()) - toggleSize) / 2
+    -- Pake PlayerGui biar sinkron sama UI lu
+    local toggleGui = Instance.new("ScreenGui")
+    toggleGui.Name = "NHUI_ToggleGui"
+    toggleGui.Parent = PlayerGui
+    toggleGui.ResetOnSpawn = false
+    toggleGui.DisplayOrder = 99999
+    toggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    toggleGui.IgnoreGuiInset = true -- Biar Draggable ga kena offset topbar
 
-    mobileToggle.AnchorPoint = Vector2.new(0, 0)
-    mobileToggle.Position = opts.TogglePosition or UDim2.new(0.13287, 0, 0.0341, 0)
-    mobileToggle.Size = UDim2.fromOffset(toggleSize, toggleSize)
-    mobileToggle.Image = "rbxassetid://81687776861363"
-    mobileToggle.ZIndex = Z.Toast
-    mobileToggle.Parent = root
+    -- Langsung pakai TextButton sebagai icon
+    local button = Instance.new("TextButton")
+    button.Name = "Toggle"
+    button.Parent = toggleGui
+    button.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    button.BackgroundTransparency = 0
+    button.Position = opts.TogglePosition or UDim2.new(0.13287,0,0.0341,0)
+    button.Size = UDim2.new(0,50,0,50)
+    button.Font = Enum.Font.SourceSans
+    button.Text = ""
+    button.TextColor3 = Color3.fromRGB(248,248,248)
+    button.TextSize = 18
+    button.Draggable = true -- ✨ SIHIRNYA DI SINI ✨
+    button.ZIndex = 999
 
-    local mobileToggleCorner = Instance.new("UICorner")
-    mobileToggleCorner.CornerRadius = UDim.new(1, 0)
-    mobileToggleCorner.Parent = mobileToggle
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1,0)
+    corner.Parent = button
 
-    local DRAG_SLOP = 8
-    local dragInput, dragStart, startPos, dragged
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "Icon"
+    icon.Parent = button
+    icon.Size = UDim2.new(1,0,1,0)
+    icon.BackgroundTransparency = 1
+    icon.Image = "rbxassetid://81687776861363" -- Ganti ID kalau mau
+    icon.ZIndex = 999
+    
+    local iconCorner = Instance.new("UICorner")
+    iconCorner.CornerRadius = UDim.new(1,0)
+    iconCorner.Parent = icon
 
-    jan:Add(mobileToggle.InputBegan:Connect(function(input)
-        if input.UserInputType ~= Enum.UserInputType.Touch
-            and input.UserInputType ~= Enum.UserInputType.MouseButton1 or input.UserInputType ~= Enum.UserInputType.MouseMovement then
-            return
-        end
-        if dragInput then return end
-        dragInput = input
-        dragStart = input.Position
-        startPos  = mobileToggle.Position
-        dragged   = false
-    end))
+    -- Logic buat bedain "Klik buka UI" vs "Geser icon"
+    local isDragging = false
+    
+    -- Saat mulai geser
+    button.DragBegin:Connect(function()
+        isDragging = true
+    end)
 
-    jan:Add(UserInputService.InputChanged:Connect(function(input)
-        if input ~= dragInput or not dragStart then return end
-        local delta = input.Position - dragStart
-        if not dragged and delta.Magnitude > DRAG_SLOP then dragged = true end
-        if not dragged then return end
-        local s = GetUIScale()
-        mobileToggle.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X / s,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y / s
-        )
-    end))
+    -- Saat selesai geser
+    button.DragEnd:Connect(function()
+        -- Delay 0.1 detik biar MouseButton1Click ga ikut kepicu
+        task.delay(0.1, function()
+            isDragging = false
+        end)
+    end)
 
-    jan:Add(UserInputService.InputEnded:Connect(function(input)
-        if input ~= dragInput then return end
-        dragInput, dragStart = nil, nil
-        if not dragged then
+    -- Saat di-klik (buka UI)
+    button.MouseButton1Click:Connect(function()
+        if not isDragging then
             self:Toggle()
         end
-    end))
+    end)
 
-    jan:Add(mobileToggle)
+    -- Masukin ke Janitor biar kehapus kalau script di-unload
+    jan:Add(toggleGui)
+
 elseif toggleKey then
     NHUI:Notify({
         Title = "Minimize Keybind",
