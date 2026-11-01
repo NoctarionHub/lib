@@ -2923,10 +2923,11 @@ task.defer(updateTagPosition)
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = mobileToggle
 
-    -- ============ DRAG LOGIC FIX FINAL (ANTI-LONCAT) ============
+    -- ============ DRAG LOGIC (THE REAL FIX) ============
     local dragging   = false
     local hasDragged = false
-    local clickOffset = Vector2.zero 
+    local startMousePos = Vector2.zero
+    local startTogglePos = Vector2.zero
 
     jan:Add(mobileToggle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -2934,42 +2935,42 @@ task.defer(updateTagPosition)
             dragging   = true
             hasDragged = false
             
-            -- Hitung selisih jarak antara kursor dan sudut kiri-atas icon SAAT INI JUGA
-            local mousePos = UserInputService:GetMouseLocation()
-            local absPos   = mobileToggle.AbsolutePosition
+            -- Simpan posisi klik awal di layar (pakai input.Position, bukan AbsolutePosition)
+            startMousePos = Vector2.new(input.Position.X, input.Position.Y)
             
-            -- Simpan jarak (selisih) klik agar icon gak loncat ke cursor
-            clickOffset = Vector2.new(
-                mousePos.X - absPos.X,
-                mousePos.Y - absPos.Y
+            -- Simpan posisi offset icon saat ini (bukan absolut, biar gak kena scale)
+            startTogglePos = Vector2.new(
+                mobileToggle.Position.X.Offset,
+                mobileToggle.Position.Y.Offset
             )
+            
+            -- Kalau lu gak pakai UIScale di root, ganti s jadi 1
+            local s = GetUIScale()
+            startTogglePos = startTogglePos * s
         end
     end))
 
-    jan:Add(RunService.RenderStepped:Connect(function()
+    jan:Add(UserInputService.InputChanged:Connect(function(input)
         if not dragging then return end
-        
-        local mousePos = UserInputService:GetMouseLocation()
-        local currentPos = Vector2.new(mousePos.X, mousePos.Y)
-        
-        -- Cek apakah user beneran geser atau cuma klik biasa
-        if not hasDragged then
-            local absPos = mobileToggle.AbsolutePosition
-            local delta = currentPos - (absPos + clickOffset)
-            if delta.Magnitude > 5 then
-                hasDragged = true
-            end
+        if input.UserInputType ~= Enum.UserInputType.MouseMovement
+        and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+        local currentMousePos = Vector2.new(input.Position.X, input.Position.Y)
+        local delta = currentMousePos - startMousePos
+
+        if not hasDragged and delta.Magnitude > 5 then
+            hasDragged = true
         end
 
         if hasDragged then
             local s = GetUIScale()
+            local newTogglePos = startTogglePos + delta
             
-            -- Hitung posisi target di layar (pixel murni)
-            local targetX = currentPos.X - clickOffset.X
-            local targetY = currentPos.Y - clickOffset.Y
-            
-            -- Ubah ke UDim2 (di-scale agar UI-nya pas)
-            mobileToggle.Position = UDim2.fromOffset(targetX / s, targetY / s)
+            -- Set posisi dalam Offset (pixel) murni, gak pakai Scale dari UDim2
+            mobileToggle.Position = UDim2.new(
+                0, newTogglePos.X / s,
+                0, newTogglePos.Y / s
+            )
         end
     end))
 
@@ -2987,7 +2988,7 @@ task.defer(updateTagPosition)
     end))
 
     jan:Add(mobileToggle)
-
+	
 elseif toggleKey then
     NHUI:Notify({
         Title = "Minimize Keybind",
