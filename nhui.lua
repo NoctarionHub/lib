@@ -2903,107 +2903,62 @@ task.defer(updateTagPosition)
 	end
  
 	if true then
-    -- 1. Bikin ScreenGui baru KHUSUS buat icon (TANPA UIScale)
-    local iconGui = Instance.new("ScreenGui")
-    iconGui.Name = "NHUI_FloatingIcon"
-    iconGui.ResetOnSpawn = false
-    iconGui.IgnoreGuiInset = true
-    iconGui.DisplayOrder = 99999
-    iconGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    iconGui.Parent = PlayerGui
-
-    -- Simpan ke janitor biar kehapus pas unload
-    jan:Add(iconGui)
-
-    -- 2. Frame pembungkus (yang bakal digeser)
-    local dragHolder = Instance.new("Frame")
-    dragHolder.Name = "MobileToggleHolder"
-    dragHolder.BackgroundTransparency = 1
-    dragHolder.AnchorPoint = Vector2.new(0, 0)
-    dragHolder.Position = UDim2.fromOffset(50, 50)
-    dragHolder.Size = UDim2.fromOffset(50, 50)
-    dragHolder.Active = true
-    dragHolder.ZIndex = 1
-    dragHolder.Parent = iconGui
-
-    -- 3. ImageButton (Icon N)
     local mobileToggle = Instance.new("ImageButton")
     mobileToggle.Name = "MobileToggleButton"
     mobileToggle.BackgroundColor3 = Color3.fromRGB(1, 1, 1)
     mobileToggle.BackgroundTransparency = 0
     mobileToggle.BorderSizePixel = 0
-    mobileToggle.AutoButtonColor = false
-    mobileToggle.Size = UDim2.fromScale(1, 1)
+    local topInset  = GuiService:GetGuiInset().Y
+    local toggleSize = 50
+    local bandY = -(topInset / GetUIScale()) + ((topInset / GetUIScale()) - toggleSize) / 2
+
+    mobileToggle.AnchorPoint = Vector2.new(0, 0)
+    mobileToggle.Position = opts.TogglePosition or UDim2.new(0.13287, 0, 0.0341, 0)
+    mobileToggle.Size = UDim2.fromOffset(toggleSize, toggleSize)
     mobileToggle.Image = "rbxassetid://81687776861363"
-    mobileToggle.ZIndex = 2
-    mobileToggle.Parent = dragHolder
+    mobileToggle.ZIndex = Z.Toast
+    mobileToggle.Parent = root
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1, 0)
-    corner.Parent = mobileToggle
+    local mobileToggleCorner = Instance.new("UICorner")
+    mobileToggleCorner.CornerRadius = UDim.new(1, 0)
+    mobileToggleCorner.Parent = mobileToggle
 
-    -- ============ DRAG LOGIC MURNI (TANPA SCALE) ============
-    local dragging   = false
-    local hasDragged = false
-    local startMouse = Vector2.zero
-    local startPos   = Vector2.zero
+    local DRAG_SLOP = 8
+    local dragInput, dragStart, startPos, dragged
 
-    -- Saat klik/tap
     jan:Add(mobileToggle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            dragging   = true
-            hasDragged = false
-            startMouse = Vector2.new(input.Position.X, input.Position.Y)
-            startPos   = Vector2.new(
-                dragHolder.AbsolutePosition.X,
-                dragHolder.AbsolutePosition.Y
-            )
+        if input.UserInputType ~= Enum.UserInputType.Touch
+            and input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+            return
         end
+        if dragInput then return end
+        dragInput = input
+        dragStart = input.Position
+        startPos  = mobileToggle.Position
+        dragged   = false
     end))
 
-    -- Saat geser
     jan:Add(UserInputService.InputChanged:Connect(function(input)
-        if not dragging then return end
-        if input.UserInputType ~= Enum.UserInputType.MouseMovement
-        and input.UserInputType ~= Enum.UserInputType.Touch then return end
-
-        local currentMouse = Vector2.new(input.Position.X, input.Position.Y)
-        local delta = currentMouse - startMouse
-
-        if not hasDragged and delta.Magnitude > 5 then
-            hasDragged = true
-        end
-
-        if hasDragged then
-            -- Kalkulasi murni pixel layar (100% akurat karena tanpa UIScale)
-            local targetX = startPos.X + delta.X
-            local targetY = startPos.Y + delta.Y
-            
-            -- Kurangi inset Y karena pakai IgnoreGuiInset = true
-            local inset = GuiService:GetGuiInset()
-            
-            dragHolder.Position = UDim2.fromOffset(
-                targetX, 
-                targetY - inset.Y
-            )
-        end
+        if input ~= dragInput or not dragStart then return end
+        local delta = input.Position - dragStart
+        if not dragged and delta.Magnitude > DRAG_SLOP then dragged = true end
+        if not dragged then return end
+        local s = GetUIScale()
+        mobileToggle.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X / s,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y / s
+        )
     end))
 
-    -- Saat lepas
     jan:Add(UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            if dragging then
-                dragging = false
-                if not hasDragged then
-                    self:Toggle()
-                end
-                hasDragged = false
-            end
+        if input ~= dragInput then return end
+        dragInput, dragStart = nil, nil
+        if not dragged then
+            self:Toggle()
         end
     end))
-	
+
+    jan:Add(mobileToggle)
 elseif toggleKey then
     NHUI:Notify({
         Title = "Minimize Keybind",
