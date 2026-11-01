@@ -2925,30 +2925,35 @@ task.defer(updateTagPosition)
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = mobileToggle
 
-    -- ============ DRAG LOGIC (PC + MOBILE) ============
+    -- ============ DRAG LOGIC (PC + MOBILE, STABLE) ============
     local dragging   = false
-    local dragStart  = nil
-    local startPos   = nil
     local hasDragged = false
+    local dragStart  = Vector2.zero
+    local startPos   = nil
 
-    local function beginDrag(input)
+    local function startDrag(input)
         if input.UserInputType ~= Enum.UserInputType.MouseButton1
             and input.UserInputType ~= Enum.UserInputType.Touch then
             return
         end
         dragging   = true
         hasDragged = false
-        dragStart  = input.Position
+        dragStart  = Vector2.new(input.Position.X, input.Position.Y)
         startPos   = mobileToggle.Position
     end
 
-    local function updateDrag(input)
-        if not dragging or not dragStart then return end
-        local delta = input.Position - dragStart
+    local function moveDrag(input)
+        if not dragging or not startPos then return end
+        if input.UserInputType ~= Enum.UserInputType.MouseMovement
+            and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+        local now = Vector2.new(input.Position.X, input.Position.Y)
+        local delta = now - dragStart
         if not hasDragged and delta.Magnitude > 6 then
             hasDragged = true
         end
         if not hasDragged then return end
+
         local s = GetUIScale()
         mobileToggle.Position = UDim2.new(
             startPos.X.Scale, startPos.X.Offset + delta.X / s,
@@ -2956,43 +2961,31 @@ task.defer(updateTagPosition)
         )
     end
 
-    local function endDrag()
+    local function finishDrag()
         if not dragging then return end
-        dragging  = false
-        dragStart = nil
-        -- Kalau tidak geser = klik → toggle window
+        dragging = false
         if not hasDragged then
             self:Toggle()
         end
         hasDragged = false
+        startPos = nil
     end
 
-    -- Bind ke tombol itu sendiri (bekerja di semua device)
-    jan:Add(mobileToggle.InputBegan:Connect(beginDrag))
-    jan:Add(mobileToggle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch then
-            updateDrag(input)
-        end
-    end))
-    jan:Add(mobileToggle.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-            endDrag()
-        end
+    -- ✅ Bind ke UserInputService (global) — lebih reliable untuk drag
+    jan:Add(mobileToggle.InputBegan:Connect(startDrag))
+
+    jan:Add(UserInputService.InputChanged:Connect(function(input)
+        moveDrag(input)
     end))
 
-    -- Fallback: kalau mouse keluar tombol saat drag
     jan:Add(UserInputService.InputEnded:Connect(function(input)
-        if dragging
-            and (input.UserInputType == Enum.UserInputType.MouseButton1
-                or input.UserInputType == Enum.UserInputType.Touch) then
-            endDrag()
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            finishDrag()
         end
     end))
 
     jan:Add(mobileToggle)
-	
 elseif toggleKey then
     NHUI:Notify({
         Title = "Minimize Keybind",
