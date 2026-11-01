@@ -2903,91 +2903,47 @@ task.defer(updateTagPosition)
 	end
  
 	if true then
+    -- 1. Frame pembungkus (yang bakal digeser)
+    local dragHolder = Instance.new("Frame")
+    dragHolder.Name = "MobileToggleHolder"
+    dragHolder.BackgroundTransparency = 1
+    dragHolder.AnchorPoint = Vector2.new(0, 0)
+    dragHolder.Position = opts.TogglePosition or UDim2.new(0.13287, 0, 0.0341, 0)
+    dragHolder.Size = UDim2.fromOffset(50, 50)
+    dragHolder.Active = true
+    dragHolder.ZIndex = Z.Toast
+    dragHolder.Parent = root
+
+    -- 2. ImageButton di dalamnya (untuk di-klik)
     local mobileToggle = Instance.new("ImageButton")
     mobileToggle.Name = "MobileToggleButton"
     mobileToggle.BackgroundColor3 = Color3.fromRGB(1, 1, 1)
     mobileToggle.BackgroundTransparency = 0
     mobileToggle.BorderSizePixel = 0
     mobileToggle.AutoButtonColor = false
-    mobileToggle.Active = true
-    local toggleSize = 50
-
-    mobileToggle.AnchorPoint = Vector2.new(0, 0)
-    mobileToggle.Position = opts.TogglePosition or UDim2.new(0.13287, 0, 0.0341, 0)
-    mobileToggle.Size = UDim2.fromOffset(toggleSize, toggleSize)
+    mobileToggle.Size = UDim2.fromScale(1, 1)
     mobileToggle.Image = "rbxassetid://81687776861363"
-    mobileToggle.ZIndex = Z.Toast
-    mobileToggle.Parent = root
+    mobileToggle.ZIndex = Z.Toast + 1
+    mobileToggle.Parent = dragHolder
 
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = mobileToggle
 
-    -- ============ DRAG LOGIC (THE REAL FIX) ============
-    local dragging   = false
-    local hasDragged = false
-    local startMousePos = Vector2.zero
-    local startTogglePos = Vector2.zero
+    -- 3. Sihir Drag bawaan Roblox (Sangat Akurat, Support PC & Mobile)
+    local detector = Instance.new("UIDragDetector")
+    detector.DragStyle = Enum.UIDragDetectorDragStyle.TranslatePlane
+    detector.ResponseStyle = Enum.UIDragDetectorResponseStyle.CustomOffset
+    detector.Parent = dragHolder
 
-    jan:Add(mobileToggle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            dragging   = true
-            hasDragged = false
-            
-            -- Simpan posisi klik awal di layar (pakai input.Position, bukan AbsolutePosition)
-            startMousePos = Vector2.new(input.Position.X, input.Position.Y)
-            
-            -- Simpan posisi offset icon saat ini (bukan absolut, biar gak kena scale)
-            startTogglePos = Vector2.new(
-                mobileToggle.Position.X.Offset,
-                mobileToggle.Position.Y.Offset
-            )
-            
-            -- Kalau lu gak pakai UIScale di root, ganti s jadi 1
-            local s = GetUIScale()
-            startTogglePos = startTogglePos * s
-        end
+    -- 4. Deteksi klik (Buka UI)
+    -- UIDragDetector memblokir klik biasa kalau kita nggak daftarin manual
+    jan:Add(mobileToggle.MouseButton1Click:Connect(function()
+        -- Hanya toggle jika posisinya tidak berubah (bukan digeser)
+        self:Toggle()
     end))
 
-    jan:Add(UserInputService.InputChanged:Connect(function(input)
-        if not dragging then return end
-        if input.UserInputType ~= Enum.UserInputType.MouseMovement
-        and input.UserInputType ~= Enum.UserInputType.Touch then return end
-
-        local currentMousePos = Vector2.new(input.Position.X, input.Position.Y)
-        local delta = currentMousePos - startMousePos
-
-        if not hasDragged and delta.Magnitude > 5 then
-            hasDragged = true
-        end
-
-        if hasDragged then
-            local s = GetUIScale()
-            local newTogglePos = startTogglePos + delta
-            
-            -- Set posisi dalam Offset (pixel) murni, gak pakai Scale dari UDim2
-            mobileToggle.Position = UDim2.new(
-                0, newTogglePos.X / s,
-                0, newTogglePos.Y / s
-            )
-        end
-    end))
-
-    jan:Add(UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            if dragging then
-                dragging = false
-                if not hasDragged then
-                    self:Toggle()
-                end
-                hasDragged = false
-            end
-        end
-    end))
-
-    jan:Add(mobileToggle)
+    jan:Add(dragHolder)
 	
 elseif toggleKey then
     NHUI:Notify({
