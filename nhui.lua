@@ -2923,42 +2923,49 @@ task.defer(updateTagPosition)
     mobileToggleCorner.CornerRadius = UDim.new(1, 0)
     mobileToggleCorner.Parent = mobileToggle
 
-    local DRAG_SLOP = 8
-    local dragInput, dragStart, startPos, dragged
+    -- DRAG LOGIC (FIXED)
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPos
 
     jan:Add(mobileToggle.InputBegan:Connect(function(input)
-        if input.UserInputType ~= Enum.UserInputType.Touch
-            and input.UserInputType ~= Enum.UserInputType.MouseButton1 then
-            return
+        if input.UserInputType == Enum.UserInputType.MouseButton1 
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragInput = input
+            dragStart = input.Position
+            startPos = mobileToggle.Position
+            
+            -- Ubah posisi saat masih ditahan
+            local changeConn
+            changeConn = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    -- Cek apakah cuma di klik (tidak geser jauh)
+                    local delta = input.Position - dragStart
+                    if delta.Magnitude < 10 then
+                        self:Toggle()
+                    end
+                    changeConn:Disconnect()
+                end
+            end)
         end
-        if dragInput then return end
-        dragInput = input
-        dragStart = input.Position
-        startPos  = mobileToggle.Position
-        dragged   = false
     end))
 
     jan:Add(UserInputService.InputChanged:Connect(function(input)
-        if input ~= dragInput or not dragStart then return end
-        local delta = input.Position - dragStart
-        if not dragged and delta.Magnitude > DRAG_SLOP then dragged = true end
-        if not dragged then return end
-        local s = GetUIScale()
-        mobileToggle.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X / s,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y / s
-        )
-    end))
-
-    jan:Add(UserInputService.InputEnded:Connect(function(input)
-        if input ~= dragInput then return end
-        dragInput, dragStart = nil, nil
-        if not dragged then
-            self:Toggle()
+        if input == dragInput and dragging then
+            local s = GetUIScale()
+            local delta = input.Position - dragStart
+            mobileToggle.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X / s,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y / s
+            )
         end
     end))
 
     jan:Add(mobileToggle)
+	
 elseif toggleKey then
     NHUI:Notify({
         Title = "Minimize Keybind",
