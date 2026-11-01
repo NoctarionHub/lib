@@ -2903,18 +2903,30 @@ task.defer(updateTagPosition)
 	end
  
 	if true then
-    -- 1. Frame pembungkus (yang bakal digeser)
+    -- 1. Bikin ScreenGui baru KHUSUS buat icon (TANPA UIScale)
+    local iconGui = Instance.new("ScreenGui")
+    iconGui.Name = "NHUI_FloatingIcon"
+    iconGui.ResetOnSpawn = false
+    iconGui.IgnoreGuiInset = true
+    iconGui.DisplayOrder = 99999
+    iconGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    iconGui.Parent = PlayerGui
+
+    -- Simpan ke janitor biar kehapus pas unload
+    jan:Add(iconGui)
+
+    -- 2. Frame pembungkus (yang bakal digeser)
     local dragHolder = Instance.new("Frame")
     dragHolder.Name = "MobileToggleHolder"
     dragHolder.BackgroundTransparency = 1
     dragHolder.AnchorPoint = Vector2.new(0, 0)
-    dragHolder.Position = opts.TogglePosition or UDim2.new(0.13287, 0, 0.0341, 0)
+    dragHolder.Position = UDim2.fromOffset(50, 50)
     dragHolder.Size = UDim2.fromOffset(50, 50)
     dragHolder.Active = true
-    dragHolder.ZIndex = Z.Toast
-    dragHolder.Parent = root
+    dragHolder.ZIndex = 1
+    dragHolder.Parent = iconGui
 
-    -- 2. ImageButton di dalamnya (untuk di-klik)
+    -- 3. ImageButton (Icon N)
     local mobileToggle = Instance.new("ImageButton")
     mobileToggle.Name = "MobileToggleButton"
     mobileToggle.BackgroundColor3 = Color3.fromRGB(1, 1, 1)
@@ -2923,72 +2935,67 @@ task.defer(updateTagPosition)
     mobileToggle.AutoButtonColor = false
     mobileToggle.Size = UDim2.fromScale(1, 1)
     mobileToggle.Image = "rbxassetid://81687776861363"
-    mobileToggle.ZIndex = Z.Toast + 1
+    mobileToggle.ZIndex = 2
     mobileToggle.Parent = dragHolder
 
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = mobileToggle
 
-    -- 3. Custom Drag Logic (100% Akurat di PC & Mobile)
-    local dragging = false
+    -- ============ DRAG LOGIC MURNI (TANPA SCALE) ============
+    local dragging   = false
     local hasDragged = false
-    local startMousePos = Vector2.zero
-    local startPosOffset = Vector2.zero
+    local startMouse = Vector2.zero
+    local startPos   = Vector2.zero
 
-    -- Saat mouse / jari menyentuh
+    -- Saat klik/tap
     jan:Add(mobileToggle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
+            dragging   = true
             hasDragged = false
-            startMousePos = Vector2.new(input.Position.X, input.Position.Y)
-            
-            -- Simpan posisi awal icon (dalam bentuk pixel murni / Absolute)
-            startPosOffset = Vector2.new(
+            startMouse = Vector2.new(input.Position.X, input.Position.Y)
+            startPos   = Vector2.new(
                 dragHolder.AbsolutePosition.X,
                 dragHolder.AbsolutePosition.Y
             )
         end
     end))
 
-    -- Saat mouse / jari bergerak
+    -- Saat geser
     jan:Add(UserInputService.InputChanged:Connect(function(input)
         if not dragging then return end
         if input.UserInputType ~= Enum.UserInputType.MouseMovement
         and input.UserInputType ~= Enum.UserInputType.Touch then return end
 
-        local currentMousePos = Vector2.new(input.Position.X, input.Position.Y)
-        local delta = currentMousePos - startMousePos
+        local currentMouse = Vector2.new(input.Position.X, input.Position.Y)
+        local delta = currentMouse - startMouse
 
         if not hasDragged and delta.Magnitude > 5 then
             hasDragged = true
         end
 
         if hasDragged then
-            -- Hitung posisi murni menggunakan AbsolutePosition
-            local targetX = startPosOffset.X + delta.X
-            local targetY = startPosOffset.Y + delta.Y
+            -- Kalkulasi murni pixel layar (100% akurat karena tanpa UIScale)
+            local targetX = startPos.X + delta.X
+            local targetY = startPos.Y + delta.Y
             
-            -- Ambil nilai UIScale untuk dibagi
-            local s = GetUIScale()
-            
-            -- Set posisi pakai Offset. Karena ada GUI Inset, kita kurangi Y-nya.
+            -- Kurangi inset Y karena pakai IgnoreGuiInset = true
             local inset = GuiService:GetGuiInset()
+            
             dragHolder.Position = UDim2.fromOffset(
-                targetX / s, 
-                (targetY - inset.Y) / s
+                targetX, 
+                targetY - inset.Y
             )
         end
     end))
 
-    -- Saat mouse / jari dilepas
+    -- Saat lepas
     jan:Add(UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
             if dragging then
                 dragging = false
-                -- Kalau cuma klik, buka UI
                 if not hasDragged then
                     self:Toggle()
                 end
@@ -2996,8 +3003,6 @@ task.defer(updateTagPosition)
             end
         end
     end))
-
-    jan:Add(dragHolder)
 	
 elseif toggleKey then
     NHUI:Notify({
