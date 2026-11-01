@@ -2912,8 +2912,7 @@ task.defer(updateTagPosition)
     mobileToggle.Active = true
     local topInset   = GuiService:GetGuiInset().Y
     local toggleSize = 50
-    local bandY = -(topInset / GetUIScale()) + ((topInset / GetUIScale()) - toggleSize) / 2
-
+    
     mobileToggle.AnchorPoint = Vector2.new(0, 0)
     mobileToggle.Position = opts.TogglePosition or UDim2.new(0.13287, 0, 0.0341, 0)
     mobileToggle.Size = UDim2.fromOffset(toggleSize, toggleSize)
@@ -2925,63 +2924,60 @@ task.defer(updateTagPosition)
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = mobileToggle
 
-    -- ============ DRAG LOGIC (PC + MOBILE, STABLE) ============
+    -- ============ DRAG LOGIC FIX (PC + MOBILE) ============
     local dragging   = false
     local hasDragged = false
     local dragStart  = Vector2.zero
     local startPos   = nil
 
-    local function startDrag(input)
-        if input.UserInputType ~= Enum.UserInputType.MouseButton1
-            and input.UserInputType ~= Enum.UserInputType.Touch then
-            return
+    -- 1. Saat mouse / jari menyentuh icon
+    jan:Add(mobileToggle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            hasDragged = false
+            dragStart = Vector2.new(input.Position.X, input.Position.Y)
+            startPos = mobileToggle.Position
         end
-        dragging   = true
-        hasDragged = false
-        dragStart  = Vector2.new(input.Position.X, input.Position.Y)
-        startPos   = mobileToggle.Position
-    end
-
-    local function moveDrag(input)
-        if not dragging or not startPos then return end
-        if input.UserInputType ~= Enum.UserInputType.MouseMovement
-            and input.UserInputType ~= Enum.UserInputType.Touch then return end
-
-        local now = Vector2.new(input.Position.X, input.Position.Y)
-        local delta = now - dragStart
-        if not hasDragged and delta.Magnitude > 6 then
-            hasDragged = true
-        end
-        if not hasDragged then return end
-
-        local s = GetUIScale()
-        mobileToggle.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X / s,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y / s
-        )
-    end
-
-    local function finishDrag()
-        if not dragging then return end
-        dragging = false
-        if not hasDragged then
-            self:Toggle()
-        end
-        hasDragged = false
-        startPos = nil
-    end
-
-    -- ✅ Bind ke UserInputService (global) — lebih reliable untuk drag
-    jan:Add(mobileToggle.InputBegan:Connect(startDrag))
-
-    jan:Add(UserInputService.InputChanged:Connect(function(input)
-        moveDrag(input)
     end))
 
+    -- 2. RenderStepped menangkap pergerakan mouse global walau kena GUI Focus
+    local dragConnection
+    dragConnection = RunService.RenderStepped:Connect(function()
+        if not dragging then return end
+        
+        local mousePos = UserInputService:GetMouseLocation()
+        local currentPos = Vector2.new(mousePos.X, mousePos.Y)
+        local delta = currentPos - dragStart
+
+        -- Jika geseran lebih dari 5 pixel, anggap drag (bukan klik)
+        if not hasDragged and delta.Magnitude > 5 then
+            hasDragged = true
+        end
+
+        if hasDragged and startPos then
+            local s = GetUIScale()
+            mobileToggle.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X / s,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y / s
+            )
+        end
+    end)
+    jan:Add(dragConnection)
+
+    -- 3. Saat mouse / jari dilepas
     jan:Add(UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-            finishDrag()
+        or input.UserInputType == Enum.UserInputType.Touch then
+            if dragging then
+                dragging = false
+                -- Jika cuma klik (tidak geser jauh), buka UI
+                if not hasDragged then
+                    self:Toggle()
+                end
+                hasDragged = false
+                startPos = nil
+            end
         end
     end))
 
