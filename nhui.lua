@@ -2930,17 +2930,71 @@ task.defer(updateTagPosition)
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = mobileToggle
 
-    -- 3. Sihir Drag bawaan Roblox (Sangat Akurat, Support PC & Mobile)
-    local detector = Instance.new("UIDragDetector")
-    detector.DragStyle = Enum.UIDragDetectorDragStyle.TranslatePlane
-    detector.ResponseStyle = Enum.UIDragDetectorResponseStyle.CustomOffset
-    detector.Parent = dragHolder
+    -- 3. Custom Drag Logic (100% Akurat di PC & Mobile)
+    local dragging = false
+    local hasDragged = false
+    local startMousePos = Vector2.zero
+    local startPosOffset = Vector2.zero
 
-    -- 4. Deteksi klik (Buka UI)
-    -- UIDragDetector memblokir klik biasa kalau kita nggak daftarin manual
-    jan:Add(mobileToggle.MouseButton1Click:Connect(function()
-        -- Hanya toggle jika posisinya tidak berubah (bukan digeser)
-        self:Toggle()
+    -- Saat mouse / jari menyentuh
+    jan:Add(mobileToggle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            hasDragged = false
+            startMousePos = Vector2.new(input.Position.X, input.Position.Y)
+            
+            -- Simpan posisi awal icon (dalam bentuk pixel murni / Absolute)
+            startPosOffset = Vector2.new(
+                dragHolder.AbsolutePosition.X,
+                dragHolder.AbsolutePosition.Y
+            )
+        end
+    end))
+
+    -- Saat mouse / jari bergerak
+    jan:Add(UserInputService.InputChanged:Connect(function(input)
+        if not dragging then return end
+        if input.UserInputType ~= Enum.UserInputType.MouseMovement
+        and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+        local currentMousePos = Vector2.new(input.Position.X, input.Position.Y)
+        local delta = currentMousePos - startMousePos
+
+        if not hasDragged and delta.Magnitude > 5 then
+            hasDragged = true
+        end
+
+        if hasDragged then
+            -- Hitung posisi murni menggunakan AbsolutePosition
+            local targetX = startPosOffset.X + delta.X
+            local targetY = startPosOffset.Y + delta.Y
+            
+            -- Ambil nilai UIScale untuk dibagi
+            local s = GetUIScale()
+            
+            -- Set posisi pakai Offset. Karena ada GUI Inset, kita kurangi Y-nya.
+            local inset = GuiService:GetGuiInset()
+            dragHolder.Position = UDim2.fromOffset(
+                targetX / s, 
+                (targetY - inset.Y) / s
+            )
+        end
+    end))
+
+    -- Saat mouse / jari dilepas
+    jan:Add(UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            if dragging then
+                dragging = false
+                -- Kalau cuma klik, buka UI
+                if not hasDragged then
+                    self:Toggle()
+                end
+                hasDragged = false
+            end
+        end
     end))
 
     jan:Add(dragHolder)
