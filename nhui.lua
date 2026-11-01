@@ -2908,7 +2908,9 @@ task.defer(updateTagPosition)
     mobileToggle.BackgroundColor3 = Color3.fromRGB(1, 1, 1)
     mobileToggle.BackgroundTransparency = 0
     mobileToggle.BorderSizePixel = 0
-    local topInset  = GuiService:GetGuiInset().Y
+    mobileToggle.AutoButtonColor = false
+    mobileToggle.Active = true
+    local topInset   = GuiService:GetGuiInset().Y
     local toggleSize = 50
     local bandY = -(topInset / GetUIScale()) + ((topInset / GetUIScale()) - toggleSize) / 2
 
@@ -2919,48 +2921,73 @@ task.defer(updateTagPosition)
     mobileToggle.ZIndex = Z.Toast
     mobileToggle.Parent = root
 
-    local mobileToggleCorner = Instance.new("UICorner")
-    mobileToggleCorner.CornerRadius = UDim.new(1, 0)
-    mobileToggleCorner.Parent = mobileToggle
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1, 0)
+    corner.Parent = mobileToggle
 
-    -- DRAG LOGIC (FIXED)
-    local dragging = false
-    local dragInput
-    local dragStart
-    local startPos
+    -- ============ DRAG LOGIC (PC + MOBILE) ============
+    local dragging   = false
+    local dragStart  = nil
+    local startPos   = nil
+    local hasDragged = false
 
-    jan:Add(mobileToggle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 
-        or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragInput = input
-            dragStart = input.Position
-            startPos = mobileToggle.Position
-            
-            -- Ubah posisi saat masih ditahan
-            local changeConn
-            changeConn = input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                    -- Cek apakah cuma di klik (tidak geser jauh)
-                    local delta = input.Position - dragStart
-                    if delta.Magnitude < 10 then
-                        self:Toggle()
-                    end
-                    changeConn:Disconnect()
-                end
-            end)
+    local function beginDrag(input)
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1
+            and input.UserInputType ~= Enum.UserInputType.Touch then
+            return
+        end
+        dragging   = true
+        hasDragged = false
+        dragStart  = input.Position
+        startPos   = mobileToggle.Position
+    end
+
+    local function updateDrag(input)
+        if not dragging or not dragStart then return end
+        local delta = input.Position - dragStart
+        if not hasDragged and delta.Magnitude > 6 then
+            hasDragged = true
+        end
+        if not hasDragged then return end
+        local s = GetUIScale()
+        mobileToggle.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X / s,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y / s
+        )
+    end
+
+    local function endDrag()
+        if not dragging then return end
+        dragging  = false
+        dragStart = nil
+        -- Kalau tidak geser = klik → toggle window
+        if not hasDragged then
+            self:Toggle()
+        end
+        hasDragged = false
+    end
+
+    -- Bind ke tombol itu sendiri (bekerja di semua device)
+    jan:Add(mobileToggle.InputBegan:Connect(beginDrag))
+    jan:Add(mobileToggle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+            updateDrag(input)
+        end
+    end))
+    jan:Add(mobileToggle.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            endDrag()
         end
     end))
 
-    jan:Add(UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local s = GetUIScale()
-            local delta = input.Position - dragStart
-            mobileToggle.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X / s,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y / s
-            )
+    -- Fallback: kalau mouse keluar tombol saat drag
+    jan:Add(UserInputService.InputEnded:Connect(function(input)
+        if dragging
+            and (input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch) then
+            endDrag()
         end
     end))
 
