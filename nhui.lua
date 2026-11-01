@@ -2908,7 +2908,6 @@ task.defer(updateTagPosition)
     mobileToggle.BackgroundColor3 = Color3.fromRGB(1, 1, 1)
     mobileToggle.BackgroundTransparency = 0
     mobileToggle.BorderSizePixel = 0
-	mobileToggle.Draggable = true
     local topInset  = GuiService:GetGuiInset().Y
     local toggleSize = 50
     local bandY = -(topInset / GetUIScale()) + ((topInset / GetUIScale()) - toggleSize) / 2
@@ -2929,7 +2928,7 @@ task.defer(updateTagPosition)
 
     jan:Add(mobileToggle.InputBegan:Connect(function(input)
         if input.UserInputType ~= Enum.UserInputType.Touch
-            and input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+            and input.UserInputType ~= Enum.UserInputType.MouseMovement then
             return
         end
         if dragInput then return end
