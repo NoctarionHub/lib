@@ -2923,60 +2923,56 @@ task.defer(updateTagPosition)
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = mobileToggle
 
-    -- ============ DRAG LOGIC (FIXED OFFSET) ============
+    -- ============ DRAG LOGIC (PC + MOBILE 100% AKURAT) ============
     local dragging   = false
     local hasDragged = false
-    local clickOffset = Vector2.zero -- <--- PENTING: Simpan jarak klik awal
+    local dragStart  = Vector2.zero
+    local startPos   = UDim2.new(0, 0, 0, 0)
 
+    -- 1. Ambil posisi awal klik
     jan:Add(mobileToggle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
             dragging   = true
             hasDragged = false
-            
-            -- Hitung offset antara cursor dan sudut kiri atas icon
-            local absPos = mobileToggle.AbsolutePosition
+            dragStart  = Vector2.new(input.Position.X, input.Position.Y)
+            startPos   = mobileToggle.Position
+        end
+    end))
+
+    -- 2. Update posisi berdasarkan InputChanged (yang membawa posisi mouse akurat)
+    jan:Add(UserInputService.InputChanged:Connect(function(input)
+        if not dragging then return end
+        if input.UserInputType ~= Enum.UserInputType.MouseMovement
+        and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+        local currentPos = Vector2.new(input.Position.X, input.Position.Y)
+        local delta = currentPos - dragStart
+
+        -- Anggap ini drag kalau geser lebih dari 5 pixel
+        if not hasDragged and delta.Magnitude > 5 then
+            hasDragged = true
+        end
+
+        if hasDragged then
+            -- Ambil skala UI
             local s = GetUIScale()
-            clickOffset = Vector2.new(
-                (input.Position.X / s) - (absPos.X / s),
-                (input.Position.Y / s) - (absPos.Y / s)
+            
+            -- Set posisi persis seperti hitungan mouse + delta
+            mobileToggle.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + (delta.X / s),
+                startPos.Y.Scale, startPos.Y.Offset + (delta.Y / s)
             )
         end
     end))
 
-    -- RenderStepped menangkap pergerakan mouse (PC & Mobile)
-    jan:Add(RunService.RenderStepped:Connect(function()
-        if not dragging then return end
-        
-        local mousePos = UserInputService:GetMouseLocation()
-        -- Kurangi Gui Inset agar sinkron dengan input.Position
-        local inset = GuiService:GetGuiInset()
-        local currentPos = Vector2.new(mousePos.X, mousePos.Y - inset.Y)
-        
-        -- Hitung posisi berdasarkan input posisi dikurangi offset awal
-        local s = GetUIScale()
-        local targetPosX = (currentPos.X / s) - clickOffset.X
-        local targetPosY = (currentPos.Y / s) - clickOffset.Y
-
-        -- Jika cursor belum geser 5 pixel, anggap masih klik biasa
-        if not hasDragged then
-            local delta = currentPos - (mobileToggle.AbsolutePosition + clickOffset * s)
-            if delta.Magnitude > 5 then
-                hasDragged = true
-            end
-        end
-
-        if hasDragged then
-            mobileToggle.Position = UDim2.fromOffset(targetPosX, targetPosY)
-        end
-    end))
-
-    -- Selesai Drag
+    -- 3. Selesai drag / lepas mouse
     jan:Add(UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
             if dragging then
                 dragging = false
+                -- Kalau cuma klik (tidak geser), buka UI
                 if not hasDragged then
                     self:Toggle()
                 end
