@@ -879,7 +879,7 @@ local function GetRoot()
 	screenGui.Name = "NHUI"
 	screenGui.ResetOnSpawn = false
 	screenGui.IgnoreGuiInset = false
-	screenGui.DisplayOrder = 9999
+	screenGui.DisplayOrder = 999
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	screenGui.Parent = parent
 	return screenGui
